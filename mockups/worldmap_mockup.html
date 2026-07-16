@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Eldrathor — World Map Mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Marcellus&family=Spectral:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --myth:#5cc6ff;
+    --myth-deep:#4a9fd4;
+    --myth-pale:#9fe0ff;
+    --nav-blue:#152232;
+    --nav-blue-line:#2c4a6a;
+    --gold:#d9a94e;
+    --ruby:#e0687a;
+    --emerald:#5fd6a0;
+    --amethyst:#b58fe0;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#05070d;font-family:'Spectral',Georgia,serif;
+    display:flex;justify-content:center;gap:40px;flex-wrap:wrap;min-height:100vh;padding:24px}
+
+  .phone{width:390px;height:844px;background:#04060c;border-radius:44px;overflow:hidden;
+    position:relative;box-shadow:0 0 0 10px #0e0a06,0 30px 80px rgba(0,0,0,.7);
+    display:flex;flex-direction:column}
+
+  /* transition flash bar at very top (hint of reaching through the Vein) */
+  .transition-hint{position:absolute;top:0;left:0;right:0;height:3px;z-index:20;
+    background:linear-gradient(90deg,transparent,var(--myth),transparent);
+    box-shadow:0 0 12px var(--myth);animation:sweep 3s ease-in-out infinite}
+  @keyframes sweep{0%,100%{opacity:.3}50%{opacity:1}}
+
+  /* cold projected sky */
+  .sky{position:absolute;inset:0;
+    background:
+      radial-gradient(120% 80% at 50% 12%, rgba(60,120,180,.28), transparent 55%),
+      radial-gradient(90% 60% at 50% 100%, rgba(40,90,140,.35), transparent 60%),
+      linear-gradient(180deg,#0a1626 0%,#081120 45%,#050a14 100%);}
+  /* scanning scry-lines to sell "viewed through the Vein" */
+  .scry{position:absolute;inset:0;opacity:.06;pointer-events:none;
+    background:repeating-linear-gradient(0deg,transparent 0 3px,#7fd0f0 3px 4px)}
+
+  /* HUD */
+  .hud{position:absolute;top:0;left:0;right:0;z-index:10;padding:16px 18px 10px;
+    display:flex;justify-content:space-between;align-items:flex-start}
+  .hud-l .kick{font-family:'Cinzel',serif;font-size:9px;letter-spacing:.28em;color:#5f88a8}
+  .hud-l .ttl{font-family:'Cinzel',serif;font-weight:700;font-size:19px;letter-spacing:.14em;
+    color:#eaf3fb;margin-top:3px;text-shadow:0 0 16px rgba(92,198,255,.35)}
+  .hud-l .prog{font-family:'Spectral';font-style:italic;font-size:11px;color:#6f9bc0;margin-top:4px}
+  .vein-count{display:flex;align-items:center;gap:6px;background:rgba(20,40,60,.7);
+    border:1px solid #2c4a6a;border-radius:18px;padding:6px 12px}
+  .vein-gem{color:var(--myth);font-size:12px;text-shadow:0 0 8px var(--myth)}
+  .vein-num{font-family:'Cinzel',serif;font-weight:600;font-size:12px;color:#cfe6f5}
+
+  /* mountain stage */
+  .stage{flex:1;position:relative;overflow:hidden}
+
+  /* 3/4 mountain built from layered angled facets */
+  .mtn-back{position:absolute;left:50%;bottom:70px;transform:translateX(-50%);
+    width:340px;height:560px;
+    background:linear-gradient(135deg,#20304a 0%,#182742 45%,#0e1b30 100%);
+    clip-path:polygon(50% 0,86% 46%,100% 100%,0 100%,14% 46%);opacity:.85}
+  .mtn-face{position:absolute;left:50%;bottom:70px;transform:translateX(-50%);
+    width:340px;height:560px;
+    background:linear-gradient(115deg,#2a3e5e 0%,#1c2e4a 38%,#12203a 62%,#0a1526 100%);
+    clip-path:polygon(50% 2%,50% 100%,0 100%,14% 46%);opacity:.95}
+  .mtn-lite{position:absolute;left:50%;bottom:70px;transform:translateX(-50%);
+    width:340px;height:560px;
+    background:linear-gradient(160deg,rgba(92,180,240,.18),transparent 55%);
+    clip-path:polygon(50% 2%,86% 46%,50% 100%);}
+  /* snow/mist cap glow */
+  .cap-glow{position:absolute;left:50%;top:22%;transform:translateX(-50%);
+    width:120px;height:120px;border-radius:50%;
+    background:radial-gradient(circle,rgba(159,224,255,.35),transparent 65%);filter:blur(4px)}
+
+  /* the spiral ley-path (SVG) sits over the mountain */
+  svg.path{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+
+  /* crystal nodes */
+  .node{position:absolute;transform:translate(-50%,-50%);cursor:pointer;z-index:6;
+    display:flex;flex-direction:column;align-items:center;gap:5px}
+  .gem{width:34px;height:34px;position:relative;
+    display:flex;align-items:center;justify-content:center}
+  .gem .shard{width:22px;height:30px;
+    clip-path:polygon(50% 0,100% 34%,80% 100%,20% 100%,0 34%);
+    box-shadow:0 0 14px currentColor;position:relative}
+  .gem::after{content:"";position:absolute;width:44px;height:44px;border-radius:50%;
+    background:radial-gradient(circle,currentColor,transparent 62%);opacity:.28}
+  .nlabel{font-family:'Cinzel',serif;font-size:9px;letter-spacing:.08em;
+    color:#bcd8ec;text-shadow:0 1px 4px #000;white-space:nowrap}
+  .nsub{font-family:'Spectral';font-size:8px;font-style:italic;color:#6f9bc0;margin-top:-3px}
+
+  /* states */
+  .cleared{color:var(--emerald)}
+  .cleared .shard{background:linear-gradient(160deg,#9fffd0,#3fbf88)}
+  .current{color:var(--myth)}
+  .current .shard{background:linear-gradient(160deg,#bfeaff,#4a9fd4)}
+  .current .gem{animation:pulse 2s ease-in-out infinite}
+  @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.16)}}
+  .locked{color:#3a4a5e}
+  .locked .shard{background:linear-gradient(160deg,#33475e,#22303f);box-shadow:none}
+  .locked .nlabel{color:#4a5f72}
+  .locked::after{content:"";}
+  .summit{color:var(--ruby)}
+  .summit .shard{width:26px;height:34px;background:linear-gradient(160deg,#ffd0d8,#c0485e)}
+
+  .lockicon{font-size:8px;color:#4a5f72}
+
+  /* bottom tab bar (constant dark blue) */
+  .tabs{position:absolute;bottom:0;left:0;right:0;height:70px;display:flex;align-items:center;
+    background:linear-gradient(180deg,#1a2b40,var(--nav-blue));border-top:2px solid var(--nav-blue-line);
+    z-index:15;box-shadow:0 -4px 14px rgba(0,0,0,.55)}
+  .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+    cursor:pointer;color:#5f7a98;font-family:'Cinzel',serif;font-size:8.5px;letter-spacing:.08em}
+  .tab.active{color:#8fbfe0}
+  .tab-ic{font-size:18px}
+  .tab.world{flex:none;width:78px;position:relative}
+  .world-orb{width:56px;height:56px;margin-top:-24px;border-radius:50%;
+    background:radial-gradient(circle at 50% 38%,#2a4d6e,#152232 72%);border:2px solid #5cc6ff;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 0 22px rgba(92,198,255,.6),0 4px 10px rgba(0,0,0,.5),inset 0 2px 6px rgba(120,200,240,.3)}
+  .world-orb .tab-ic{font-size:26px;filter:drop-shadow(0 0 8px rgba(92,198,255,.9))}
+  .tab.world .lbl{color:#8fbfe0;margin-top:2px;font-size:8.5px}
+
+  .caption{max-width:390px;color:#6f9bc0;font-family:'Spectral';font-size:12px;
+    font-style:italic;text-align:center;line-height:1.6;align-self:center}
+</style>
+</head>
+<body>
+  <div class="phone">
+    <div class="transition-hint"></div>
+    <div class="sky"></div>
+    <div class="scry"></div>
+
+    <div class="stage">
+      <div class="mtn-back"></div>
+      <div class="mtn-face"></div>
+      <div class="mtn-lite"></div>
+      <div class="cap-glow"></div>
+
+      <!-- spiral ley-path connecting the worlds, 6 o'clock up to summit -->
+      <svg class="path" viewBox="0 0 390 620">
+        <path d="M 150 560 Q 90 500 120 440 Q 160 380 250 380 Q 300 330 250 280 Q 190 250 180 200 Q 185 150 195 110"
+          fill="none" stroke="#5cc6ff" stroke-width="2" stroke-dasharray="3 7"
+          stroke-linecap="round" opacity="0.5"/>
+      </svg>
+
+      <!-- WORLD CRYSTALS: clockwise spiral 6 o'clock -> summit -->
+      <!-- W1 base / 7 o'clock -->
+      <div class="node cleared" style="left:38%;top:90%">
+        <div class="gem"><div class="shard"></div></div>
+        <div class="nlabel">SHORELINE FOREST</div><div class="nsub">World 1 · cleared</div>
+      </div>
+      <!-- W2 ~9-10 o'clock (near-left, climbing) -->
+      <div class="node cleared" style="left:30%;top:71%">
+        <div class="gem"><div class="shard"></div></div>
+        <div class="nlabel">PENINSULA TOWN</div><div class="nsub">World 2 · cleared</div>
+      </div>
+      <!-- W3 ~12-1 o'clock (wraps to right) -->
+      <div class="node current" style="left:64%;top:61%">
+        <div class="gem"><div class="shard"></div></div>
+        <div class="nlabel">THE RAVINE PATH</div><div class="nsub">World 3 · in progress</div>
+      </div>
+      <!-- W4 ~1-2 o'clock (right, higher) -->
+      <div class="node locked" style="left:62%;top:45%">
+        <div class="gem"><div class="shard"></div></div>
+        <div class="nlabel">THE FORGE ⌁</div><div class="nsub">World 4 · locked</div>
+      </div>
+      <!-- W5 upper -->
+      <div class="node locked" style="left:47%;top:32%">
+        <div class="gem"><div class="shard"></div></div>
+        <div class="nlabel">UPPER CASTLE</div><div class="nsub">World 5 · locked</div>
+      </div>
+      <!-- Summit / Vaelyx -->
+      <div class="node summit locked" style="left:50%;top:18%">
+        <div class="gem"><div class="shard"></div></div>
+        <div class="nlabel" style="color:#e0a0aa">VAELYX ✦</div><div class="nsub">The Summit</div>
+      </div>
+    </div>
+
+    <div class="hud">
+      <div class="hud-l">
+        <div class="kick">SCRYING THE VEIN</div>
+        <div class="ttl">THE MOUNTAIN</div>
+        <div class="prog">2 of 6 held · the Vein hums with distant power</div>
+      </div>
+      <span class="vein-count"><span class="vein-gem">◆</span><span class="vein-num">1,240</span></span>
+    </div>
+
+    <!-- tab bar -->
+    <div class="tabs">
+      <div class="tab"><span class="tab-ic">🏘️</span>TOWN</div>
+      <div class="tab"><span class="tab-ic">👥</span>PARTY</div>
+      <div class="tab world active">
+        <div class="world-orb"><span class="tab-ic">⛰️</span></div>
+        <span class="lbl">WORLD</span>
+      </div>
+      <div class="tab"><span class="tab-ic">⚖️</span>MARKET</div>
+      <div class="tab"><span class="tab-ic">✦</span>BINDER</div>
+    </div>
+  </div>
+
+  <div class="caption">
+    World Map — a cold Worldvein projection (you're scrying the mountain remotely).<br>
+    3/4 view, crystals spiral clockwise from the shore (6 o'clock) up to Vaelyx at the summit.<br>
+    Green = cleared · glowing blue pulse = current · dim = locked · ruby = the dragon.<br>
+    Tap an unlocked crystal → enter that World's Expedition Map.
+  </div>
+</body>
+</html>
