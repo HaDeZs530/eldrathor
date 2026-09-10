@@ -1,6 +1,8 @@
 # Bottom Tab Bar Lock (2026-09-10)
 
 > **Status:** LOCKED (Anthony). Agents must not invent alternate nav layouts.
+>
+> **Supersedes** `docs/Eldrathor_Design_Doc.md` §3b prior tab list (Town·Characters·World·Player and "Market lives INSIDE Town"). Full §3b body rewrite may still be pending on TonyWork if MCP truncated the large design doc; this lock file + CLAUDE.md + handoff are authoritative until that lands.
 
 ## Tabs (left → right)
 
@@ -30,4 +32,4 @@ Switching between families must **crossfade/transition** background, border, and
 
 - `app/src/components/TabBar.jsx` — persistent 5-tab bar
 - `app/src/theme/` — hub skin CSS vars + transitions; WORLD/MIND kits unchanged for expedition
-- Design source: `docs/Eldrathor_Design_Doc.md` §3b
+- Design source: `docs/Eldrathor_Design_Doc.md` §3b (pending full rewrite on TonyWork) + this lock file
