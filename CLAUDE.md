@@ -17,27 +17,37 @@ Eldrathor: a UI-based iOS RPG (Vite + React now; Capacitor iOS wrap later). The 
 - Active abilities exist ONLY on class gems (weapons = stats only; armor gems = passive only).
 - Weapons DROP (+ merge as growth); armor is CRAFTED only (never drops).
 
-## Art direction
+## Art direction (LOCKED — dual modes)
 - Master rule: WARM/sunlit = reality (Town, town functions, Characters, Player screens). COLD/dark Mythros-blue = Vein projection (World map, Expedition map, Combat).
-- Fantasy, not sci-fi: Cinzel/Marcellus-class display fonts, jewel tones, carved/ornamented frames. No monospace/HUD fonts, no neon circuit aesthetics.
+- **Dual graphical modes (not either/or):**
+  - **WORLD** — fun MICRO-PIXEL, warm/sunlit (Veinbinder physically in Veinharbor). Pixel kit for warm reality.
+  - **MIND VIEW** — refined fantasy-sim + Mythros-blue magic aura (Veinbinder seeing the party in his head via blue magic — diegetic projection, NOT a second physical place). Refined kit for cold projection.
+- Mode switch when entering/leaving Mind View must feel intentional.
+- Fantasy, not sci-fi: Cinzel/Marcellus-class display fonts on Mind View; jewel tones; carved/ornamented / aura frames. No monospace/HUD fonts, no neon circuit aesthetics.
 - Reference mockups: `mockups/town_mockup_v3.html` (warm pole), `mockups/worldmap_mockup.html` (cold pole).
 - Nav: 5-tab bar (Town · Party · [World glowing center orb] · Market · Binder), constant dark blue on every screen.
+- Full detail: design doc §3c.
+
+## Who may implement
+- Owner design lock lives in the main Claude chat + design doc.
+- **Boss / Grok Bot may implement** code and docs on feature branches (GitHub MCP or local). Claude Code / Cowork also execute builds. Same rules for everyone: never contradict LOCKED design.
 
 ## Code conventions
 - App lives in `app/` (Vite + React, JavaScript). Keep it runnable with `npm run dev` at all times.
 - Mobile-portrait-first (390×844 target). No browser storage APIs in artifacts/components that must run in claude.ai.
 - Prefer simple readable React state over frameworks/libraries; no new dependencies without a stated reason.
-- The current prototype's row-based map is SUPERSEDED — the territory model (design doc §8c) is the spec: pannable organic node web, fog of war, hidden node types, respawns + named variants, roaming rares warding the boss, extraction = fresh map.
+- Theme modules: `app/src/theme/` (WORLD | MIND). Map modules: `app/src/map/` (territory graph, not rows).
+- The old prototype's row-based pyramid map is SUPERSEDED — the territory model (design doc §8c) is the spec: pannable organic node web, fog of war, hidden node types, respawns + named variants, roaming rares warding the boss, extraction = fresh map.
 
 ## Current priorities (from the handoff doc)
-1. Rebuild the expedition map to the territory model (§8c).
-2. Combat screen v2: battle stage + visibly-firing special buttons + scrolling feed + swingy resolver + speed toggle.
+1. Rebuild the expedition map to the territory model (§8c) + scaffold dual UI kits (WORLD / MIND).
+2. Combat screen v2: battle stage + visibly-firing special buttons + scrolling feed + swingy resolver + speed toggle (MIND theme).
 3. Playtest & tune (fight lengths, respawn cadence, named rate, map size).
-4. Growth spend screens: weapon merging, gem trees, Veinbinder Bond/Craft trees.
-5. Art direction decision + style bible (pixel vs painterly — undecided; don't commit assets to either yet).
+4. Growth spend screens: weapon merging, gem trees, Veinbinder Bond/Craft trees (WORLD theme).
+5. Asset production for both kits + style bible (dual-mode locked; don't force a single style).
 
 ## Workflow
-- Design decisions happen in the owner's main Claude chat and land in the design doc. Cowork/Code executes.
+- Design decisions happen in the owner's main Claude chat and land in the design doc. Cowork/Code/Boss/Grok Bot execute.
 - When a design question arises mid-build, implement the smallest reasonable placeholder, comment it `// DESIGN-OPEN:`, and surface it in your summary — do not decide game design unilaterally.
 
 ## Git workflow
