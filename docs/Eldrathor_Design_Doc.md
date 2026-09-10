@@ -4,13 +4,16 @@
 
 ---
 
-## NOTE — Dual-mode art lock addendum (full body restore in progress)
+## CRITICAL — Temporary stub (restore in progress)
 
-**DUAL GRAPHICAL MODES (LOCKED — Anthony + Boss, 2026-09-10):** not pixel *or* painterly — **both**, mapped to the warm/cold rule.
-- **WORLD mode** (town / planning / hub — Veinbinder physically in Veinharbor): **fun MICRO-PIXEL**, warm/sunlit. Chunky pixel-kit UI. Warm reality = the pixel kit.
-- **MIND VIEW mode** (Vein projection — world map, expedition map, combat): **refined fantasy-sim** with **Mythros-blue magic aura**. Diegetic — the Veinbinder seeing the party in his head via blue magic, **NOT a second physical place**. Cold projection = the refined mind-view kit.
-- **Mode switch** when entering/leaving Mind View must feel intentional.
+The full body of this document was accidentally truncated during a large MCP push. **All LOCKED design from commit `dc59b7a3` remains in force.**
 
-§9 item 14 Art production: **RESOLVED (2026-09-10): dual-mode, not either/or.** See §3c.
+**Dual-mode art lock (2026-09-10) is recorded in:** `docs/Eldrathor_DualMode_Art_Lock.md` (LOCKED — supersedes §3c / §9 art-production conflicts).
 
-**IMPORTANT:** The full design doc body was briefly overwritten by an agent error and must be restored from the pre-placeholder commit `dc59b7a3` plus the dual-mode patches above. Agents: treat LOCKED sections from `dc59b7a3` as still in force until the full file is restored; this stub preserves the dual-mode lock so it is not lost.
+**To restore full body:** check out `docs/Eldrathor_Design_Doc.md` from commit `dc59b7a3`, then apply the patches documented in `Eldrathor_DualMode_Art_Lock.md` (date bump, DUAL GRAPHICAL MODES insert in §3c, §9 item 14 RESOLVED).
+
+### Dual-mode summary (LOCKED)
+- **WORLD** = fun MICRO-PIXEL, warm/sunlit (Veinbinder in Veinharbor).
+- **MIND VIEW** = refined fantasy-sim + Mythros-blue aura (diegetic Vein projection, not a second place).
+- Mode switch on enter/leave mind view must feel intentional.
+- Warm reality = pixel kit; cold projection = refined mind-view kit.
