@@ -1,17 +1,27 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTheme } from './theme/ThemeProvider.jsx';
-import { frame, colors } from './theme/tokens.js';
+import { frame, colors, TAB_HUB_SKIN } from './theme/tokens.js';
 import { genTerritory, revealNeighbors } from './map/genTerritory.js';
 import TerritoryMap from './map/TerritoryMap.jsx';
 import { ARCHETYPES, DEFAULT_PARTY } from './data.js';
 import { resolveFight, rollLoot } from './combat.js';
-import { Header, Harbor, PartyEditor } from './components/HarborViews.jsx';
+import { Header, Harbor, PartyEditor, MountainSelect, PlaceholderPanel } from './components/HarborViews.jsx';
+import TabBar from './components/TabBar.jsx';
 
-// Dual-mode vertical slice: WORLD harbor/party · MIND TerritoryMap expedition (§8c).
+// Hub tabs + dual-mode expedition: WORLD harbor chrome · MIND TerritoryMap (§3b/§8c).
+
+const HUB_LABELS = {
+  player: 'Veinbinder',
+  party: 'Party',
+  mountain: 'The Mountain',
+  town: 'Veinharbor',
+  market: 'Market',
+};
 
 export default function Eldrathor() {
-  const { enterMindView, exitMindView, currentMode } = useTheme();
-  const [screen, setScreen] = useState('harbor');
+  const { enterMindView, exitMindView, currentMode, setHubSkinForTab } = useTheme();
+  const [tab, setTab] = useState('town');
+  const [screen, setScreen] = useState('hub'); // hub | map
   const [party, setParty] = useState(DEFAULT_PARTY);
   const [worldvein, setWorldvein] = useState(0);
   const [stash, setStash] = useState([]);
@@ -30,10 +40,28 @@ export default function Eldrathor() {
     if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
   }, [log]);
 
+  useEffect(() => {
+    if (screen === 'hub') setHubSkinForTab(tab);
+  }, [tab, screen, setHubSkinForTab]);
+
+  function selectTab(id) {
+    if (screen !== 'hub') return;
+    setTab(id);
+    setHubSkinForTab(id);
+  }
+
   function pushLog(t, k = 'n') { setLog((l) => [...l, { t, k }]); }
   function doFlash(msg, color) {
     setFlash({ msg, color });
     setTimeout(() => setFlash(null), 1400);
+  }
+
+  function returnToHub(nextTab = 'mountain') {
+    exitMindView();
+    setScreen('hub');
+    setTab(nextTab);
+    setHubSkinForTab(nextTab);
+    setTerritory(null); setWorld(null); setCurrentId(null); setRunVein(0);
   }
 
   function enterWorld(w) {
@@ -68,8 +96,8 @@ export default function Eldrathor() {
         doFlash('Party defeated — returned to Veinharbor', colors.mindDanger);
         setTimeout(() => {
           setWorldvein((v) => v + runVein);
-          exitMindView(); setScreen('harbor'); setBusy(false);
-          setTerritory(null); setWorld(null); setCurrentId(null); setRunVein(0);
+          setBusy(false);
+          returnToHub('town');
         }, 1200);
         return;
       }
@@ -97,8 +125,8 @@ export default function Eldrathor() {
         setUnlocked((u) => Math.max(u, world.id + 1));
         setTimeout(() => {
           setWorldvein((v) => v + runVein + loot.worldvein);
-          exitMindView(); setScreen('harbor'); setBusy(false);
-          setTerritory(null); setWorld(null); setCurrentId(null); setRunVein(0);
+          setBusy(false);
+          returnToHub('mountain');
         }, 1500);
         return;
       }
@@ -111,24 +139,46 @@ export default function Eldrathor() {
     doFlash(`Extracted ${runVein} Worldvein`, colors.mythros);
     setWorldvein((v) => v + runVein);
     setTimeout(() => {
-      exitMindView(); setScreen('harbor');
-      setTerritory(null); setWorld(null); setCurrentId(null); setRunVein(0);
+      returnToHub('mountain');
     }, 600);
   }
+
+  const showTabBar = screen === 'hub';
+  const hubSkinHint = TAB_HUB_SKIN[tab] || 'rpg';
 
   return (
     <div style={S.root}>
       <style>{BASE_CSS}</style>
       <div className="eld-frame" style={S.frame}>
-        <Header worldvein={worldvein} mode={currentMode} colors={colors} />
+        <Header
+          worldvein={worldvein}
+          mode={currentMode}
+          colors={colors}
+          hubLabel={screen === 'map' ? 'Mind View' : HUB_LABELS[tab]}
+        />
         {flash && (
           <div style={{ ...S.flash, borderColor: flash.color, color: flash.color }}>{flash.msg}</div>
         )}
-        {screen === 'harbor' && (
-          <Harbor party={party} unlocked={unlocked} enterWorld={enterWorld} stash={stash} setScreen={setScreen} />
+        {screen === 'hub' && tab === 'town' && (
+          <Harbor party={party} stash={stash} setTab={selectTab} />
         )}
-        {screen === 'party' && (
-          <PartyEditor party={party} setParty={setParty} back={() => setScreen('harbor')} />
+        {screen === 'hub' && tab === 'party' && (
+          <PartyEditor party={party} setParty={setParty} />
+        )}
+        {screen === 'hub' && tab === 'mountain' && (
+          <MountainSelect unlocked={unlocked} enterWorld={enterWorld} />
+        )}
+        {screen === 'hub' && tab === 'player' && (
+          <PlaceholderPanel
+            title="Player"
+            blurb={`Veinbinder progression (Bond / Craft trees). Hub skin: ${hubSkinHint}. DESIGN-OPEN: full Veinbinder screen.`}
+          />
+        )}
+        {screen === 'hub' && tab === 'market' && (
+          <PlaceholderPanel
+            title="Market"
+            blurb="System-controlled dynamic vendor (§7e). Own top-level tab — warm RPG chrome. DESIGN-OPEN: vendor inventory UI."
+          />
         )}
         {screen === 'map' && world && territory && (
           <TerritoryMap
@@ -137,6 +187,8 @@ export default function Eldrathor() {
             log={log} logRef={logRef} onVisit={visitNode} onExtract={extract}
           />
         )}
+        {/* DESIGN: bottom bar is hub chrome; hide on expedition/combat full mind-view */}
+        {showTabBar && <TabBar activeTab={tab} onSelect={selectTab} />}
       </div>
     </div>
   );
