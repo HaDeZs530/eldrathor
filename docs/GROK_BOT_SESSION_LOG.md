@@ -1,83 +1,52 @@
-# Eldrathor — Grok Bot / Boss Session Log (transferable)
+# Grok Bot / Boss — Session Log (Eldrathor)
 
-*Living handoff for Claude Code, Cowork, or any other chat. Append dated entries; do not delete LOCKED decisions. Design SoT remains `docs/Eldrathor_Design_Doc.md`. Agent rules: `CLAUDE.md`.*
+**Purpose:** Transferable memory so Claude Code (or any other agent) can pick up without re-deriving locks from chat. Update this file when locks change or major milestones land.
 
-**Owner:** Anthony (HaDeZs530) · **Repo:** https://github.com/HaDeZs530/eldrathor · **Assistant:** Boss (Grok Bot)
-
----
-
-## How to use this file
-1. Read `CLAUDE.md` + this log + `docs/Eldrathor_TabBar_Lock.md` + latest handoff.
-2. Never contradict LOCKED sections in the design doc unless this log explicitly records a superseding lock with date.
-3. Prefer GitHub as sync hub. Local clone (TonyWork): `C:\Users\tosie\OneDrive\Documents\GitHub\eldrathor`. On that machine use `npm.cmd` (PowerShell blocks `npm.ps1`).
+**Repo:** `HaDeZs530/eldrathor` · Prototype: Vite + React under `app/`
 
 ---
 
-## Project snapshot (what the game is)
-UI-based iOS RPG (Vite + React now; Capacitor later). Player is a **Veinbinder** in **Veinharbor** who bonds **3 Adventurers** and directs expeditions up a Worldvein-saturated mountain. No character movement — all UI/tap. Combat auto-resolves (watchable). Single currency: **Worldvein**. Extract/death banks loot; map resets (roguelite). Growth between runs via Worldvein sinks (mostly unbuilt).
-
-**Dual art modes (LOCKED 2026-09-10):**
-- **WORLD / warm RPG:** Town, Market (and physical hub) — fun micro-pixel / warm RPG coloration.
-- **MIND VIEW / mana:** Player, Party, expedition map, combat — refined fantasy + Mythros-blue aura (Veinbinder seeing through the bond in his head — diegetic, not a second place).
-- **Mountain hub skin:** hybrid between the two.
-- Tab theme changes must **crossfade**, never snap.
+## Source of truth
+1. `docs/Eldrathor_Design_Doc.md` — game design (keep in sync with locks below when they supersede §3b).
+2. `docs/Eldrathor_DualMode_Art_Lock.md` — dual graphical modes.
+3. `docs/Eldrathor_TabBar_Lock.md` — 5-tab nav + theme crossfades (**UPDATED:** TabBar stays visible in expeditions/fights).
+4. **This file** — chronological locks + “what shipped” that may not yet be fully rewritten into the design doc.
 
 ---
 
-## LOCKED — Bottom tab bar (2026-09-10, supersedes older §3b 4-tab + “Market inside Town”)
-Persistent 5-tab bar, left → right:
-1. **Player** — Mind-view UI  
-2. **Party** — Mind-view UI  
-3. **Mountain** (center, emphasized) — hybrid look; island/world select  
-4. **Town** — warm RPG  
-5. **Market** — warm RPG (own tab)
+## LOCKED (do not reverse without Anthony)
 
-Authoritative short lock: `docs/Eldrathor_TabBar_Lock.md`. Design doc §3b full rewrite still pending (MCP size limits); treat TabBar_Lock + this log as nav SoT until §3b is patched.
+### Dual graphical modes
+- **World-view:** micro-pixel, dense, Eternal Hero–adjacent (harbor / island / overworld travel).
+- **Mind-view:** blue aura / ethereal (Player, Party, expedition territory, combat, loot).
+- Crossfade on tab change when mode switches; **no-op** if already in target mode.
 
-**Hub skins:** `mind` (Player/Party) · `mountain` (Mountain) · `rpg` (Town/Market) · ~380ms CSS crossfade.
+### Bottom TabBar (5 tabs)
+Order: **Town | Market | Mountain | Party | Player**.
+- **Mountain** = island / expedition entry (world-view map → difficulty → mind-view run).
+- TabBar stays **VISIBLE during expeditions AND fights**. Players can visit Town/Market/Party/Player while a fight resolves. Returning to Mountain restores exact run stage (incl. mid-fight / loot).
+- Do **not** hide TabBar on fight screens. (Supersedes older “prefer hidden on expedition” wording.)
 
-Shipped in **PR #2** (merged).
+### Island → run flow (PR #3)
+1. Island world map (not a button list) — nodes include Vaelyx summit.
+2. Difficulty placeholder (Hard/Brutal + modifiers later).
+3. Mind-view expedition (TerritoryMap).
+4. Visible fight screen → loot results.
+5. Run stage machine: `island | difficulty | expedition | fight | loot` — persisted across tab switches; fight timers survive.
 
----
+### Player / Party hub (Mind-view)
+- **Player:** stats top + scrollable upgrade stubs; Eternal Hero–style **gear paperdoll** (central silhouette + surrounding slots).
+- **Party:** bonded-3 + roster + create + member detail like Player (incl. paperdoll).
+- Dressable art later; slots are placeholders.
 
-## LOCKED — Mountain / run flow (Anthony 2026-09-10; screens-first priority)
-1. **Mountain tab → Island world map** — whole island, **5–7 world/level nodes**.  
-2. Tap world → **Difficulty screen** (placeholder for now; hold full difficulty design).  
-3. Confirm → **Expedition territory map** — theme transitions RPG → **Mind-view / mana**; procedural fog-of-war nodes (§8c).  
-4. Tap node → **Fight screen** (Mind-view).  
-5. **Run stage persistence:** switching tabs (e.g. Town) then returning must restore the **current stage** (island / difficulty / expedition / **active fight** / **loot results** if fight finished). Do not wipe the run.  
-6. Keep **tab bar visible during runs AND fights** so Town/Market/Party/Player remain reachable mid-run / while fights auto-resolve; Mountain returns to the **exact** stage (island / difficulty / expedition / **active fight in progress** / loot if fight finished). Do **not** hide the tab bar on fight screens.
-
-Priority: get important screens **looking proper**; start with island world map.
-
----
-
-## LOCKED — Player / Party hub screens (Anthony 2026-09-10)
-**Player tab (Mind-view):** top = Veinbinder base stats; below (scroll) = growth / purchasable upgrade placeholders. Economy costs **not locked** — show stubs / `???` (DESIGN-OPEN).
-
-**Party tab (Mind-view):** top = party-of-3 list box; below = extra roster characters + **Create new character** button. Tap party or roster member → detail screen shaped like Player (stats top, purchasable upgrades below).
-
-**Adventurer detail (LOCKED addendum):** Eternal Hero–style **gear/item boxes** — central class icon / shadow silhouette (dressable art later) with gear **SLOTS** around it (weapon, armor pieces, gem sockets as placeholders matching design stack). Stats section + scrollable upgrade placeholders still below. Player (Veinbinder) uses the same paperdoll panel when natural.
-
-Shipped as real layouts (not empty “coming soon”) in PR #3 with stub stats/upgrade rows + `GearPaperdoll`.
-
-## Shipped PRs
-| PR | Status | What |
-|----|--------|------|
-| [#1](https://github.com/HaDeZs530/eldrathor/pull/1) | Merged | Dual-mode themes scaffold, territory map v1 (graph fog-of-war), design doc dual-mode lock + restore |
-| [#2](https://github.com/HaDeZs530/eldrathor/pull/2) | Merged | 5-tab bar, hub skins + crossfade, Mountain/Town/Party wiring, placeholders Player/Market |
-| [#3](https://github.com/HaDeZs530/eldrathor/pull/3) | Open | Island world map + difficulty + Mind-view expedition + fight/loot; run persistence; TabBar visible mid-fight; Player/Party Mind-view layouts |
+### Gear paperdoll (LOCKED UI shape; acquisition DESIGN-OPEN)
+- Layout: central silhouette + surrounding gear/gem slots on Adventurer detail (+ Player).
+- **Acquisition path not locked yet** — see DESIGN-OPEN AFK section below. Do not hard-code “gear from expedition loot only” until Boss confirms after design review.
 
 ---
 
-## Code map (post PR #3)
-- `app/src/theme/` — tokens, ThemeProvider, world.css, mind.css, hub.css  
-- `app/src/map/` — `genTerritory.js`, `TerritoryMap.jsx`  
-- `app/src/components/TabBar.jsx`, `HarborViews.jsx`, `IslandWorldMap.jsx`, `DifficultyScreen.jsx`, `FightScreen.jsx`, `LootResults.jsx`, `PlayerScreen.jsx`, `PartyScreen.jsx`, `GearPaperdoll.jsx`  
-- `app/src/combat.js`, `data.js`, `App.jsx` (run stage machine: island | difficulty | expedition | fight | loot)  
-- Portrait frame ~390×844  
-
----
+## DESIGN-OPEN — AFK farm → materials → craft (Anthony 2026-09-10 note; NOT locked yet)
+Anthony flagged we missed **AFK farm mode**: intent is gear comes from **AFK groups farming crafting materials → craft items** (not primarily from expedition drops for armor; weapons still drop per design). Full design understanding needed before locking acquisition UI. **Do not change gear locks in code until Boss confirms after design review.** Keep gear/paperdoll slots as flexible placeholders. Expedition loot stubs may remain until this lands.
 
 ## Still TODO / DESIGN-OPEN (high signal)
 - Difficulty system (Hard/Brutal + modifiers) — placeholder only shipped  
@@ -89,8 +58,18 @@ Shipped as real layouts (not empty “coming soon”) in PR #3 with stub stats/u
 - Design doc §3b rewrite to match TabBar lock; clean `docs/_restore_b64/` leftovers  
 - Art asset pipeline (hands-off; dual kits)  
 - Capacitor iOS later  
+- **AFK farm mode + materials → craft pipeline** (design review first; then UI locks)
 
 §9 of the design doc lists intentional open design systems (gem tree contents, world enemy rosters, etc.) — those are not “missing file,” they are undesigned content.
+
+---
+
+## Code map (post PR #3)
+- `app/src/theme/` — tokens, ThemeProvider, world.css, mind.css, hub.css  
+- `app/src/map/` — `genTerritory.js`, `TerritoryMap.jsx`  
+- `app/src/components/TabBar.jsx`, `HarborViews.jsx`, `IslandWorldMap.jsx`, `DifficultyScreen.jsx`, `FightScreen.jsx`, `LootResults.jsx`, `PlayerScreen.jsx`, `PartyScreen.jsx`, `GearPaperdoll.jsx`  
+- `app/src/combat.js`, `data.js`, `App.jsx` (run stage machine: island | difficulty | expedition | fight | loot)  
+- Portrait frame ~390×844  
 
 ---
 
@@ -118,7 +97,8 @@ Shipped as real layouts (not empty “coming soon”) in PR #3 with stub stats/u
 11. PR #3: IslandWorldMap (6 nodes incl. Vaelyx summit) → Difficulty placeholder → Mind-view TerritoryMap → FightScreen (visible) → LootResults; run stage machine persisted across tabs.
 12. **LOCKED:** Player/Party Mind-view hub layouts (stats top + upgrade stubs; party-of-3 + roster + create + member detail). Included in PR #3.
 13. **LOCKED addendum:** Adventurer detail (and Player) include Eternal Hero–style gear paperdoll — central silhouette + surrounding gear/gem slots; dressable art later.
+14. Anthony note (DESIGN-OPEN, not locked): AFK farm mode — AFK groups farm crafting materials → craft items for gear. Full design review before changing acquisition UI/locks.
 
 ---
 
-*Last updated: 2026-09-10 by Boss (Grok Bot) — island map flow + TabBar mid-fight + Player/Party + gear paperdoll locks.*
+*Last updated: 2026-09-10 by Boss (Grok Bot) — island PR + AFK/craft DESIGN-OPEN note (gear acquisition not relocked).*
