@@ -1,8 +1,24 @@
-/** Shared design tokens + mode ids for Eldrathor dual UI kits. See design doc §3c. */
+/** Shared design tokens + mode ids for Eldrathor dual UI kits + hub skins. See design doc §3b/§3c. */
 
 export const MODE = {
   WORLD: 'WORLD',
   MIND: 'MIND',
+};
+
+/** Hub navigation chrome skins (tab bar). Distinct from WORLD/MIND expedition dual-mode. */
+export const HUB_SKIN = {
+  MIND: 'mind',
+  MOUNTAIN: 'mountain',
+  RPG: 'rpg',
+};
+
+/** Map hub tab id → hub skin family. */
+export const TAB_HUB_SKIN = {
+  player: HUB_SKIN.MIND,
+  party: HUB_SKIN.MIND,
+  mountain: HUB_SKIN.MOUNTAIN,
+  town: HUB_SKIN.RPG,
+  market: HUB_SKIN.RPG,
 };
 
 export const colors = {
@@ -31,6 +47,10 @@ export const colors = {
   mindDanger: '#e05d6f',
   mindGood: '#7fd6a0',
   mindLoot: '#e0a04d',
+
+  // Mountain hybrid accents
+  mountainGlow: 'rgba(95, 199, 224, 0.35)',
+  mountainWarm: '#c4894a',
 };
 
 export const fonts = {
