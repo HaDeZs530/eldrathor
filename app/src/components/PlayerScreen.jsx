@@ -1,0 +1,147 @@
+import React from 'react';
+import GearPaperdoll from './GearPaperdoll.jsx';
+
+/**
+ * Player tab — Mind-view Veinbinder screen (LOCKED Anthony 2026-09-10).
+ * Top: base stats. Below (scroll): growth / purchasable upgrade placeholders.
+ * // DESIGN-OPEN: economy costs, real Bond/Craft tree contents.
+ */
+export default function PlayerScreen({ worldvein = 0 }) {
+  const stats = [
+    { k: 'Bond Rank', v: 'I' },
+    { k: 'Craft Rank', v: 'I' },
+    { k: 'Vein Sense', v: '12' },
+    { k: 'Will', v: '18' },
+    { k: 'Resonance', v: '9' },
+    { k: 'Stash Cap', v: '24' },
+  ];
+
+  // DESIGN-OPEN: costs & effects — stub rows only; economy not locked.
+  const upgrades = [
+    { id: 'bond-ii', tree: 'Bond', name: 'Deepen the Bond', blurb: 'Party vitality & tempo while projected.', cost: '???' },
+    { id: 'bond-heal', tree: 'Bond', name: 'Shared Pulse', blurb: 'Minor mid-fight vitality echo.', cost: '???' },
+    { id: 'craft-socket', tree: 'Craft', name: 'Socket Insight', blurb: 'Reveal one more gem socket on craft.', cost: '???' },
+    { id: 'craft-merge', tree: 'Craft', name: 'Merge Familiarity', blurb: 'Weapon merge preview clarity.', cost: '???' },
+    { id: 'sense-fog', tree: 'Sense', name: 'Fog Pierce', blurb: 'Expedition fog reveals +1 adjacency.', cost: '???' },
+    { id: 'sense-loot', tree: 'Sense', name: 'Vein Glean', blurb: 'Slight Worldvein find bonus.', cost: '???' },
+  ];
+
+  return (
+    <div style={S.wrap}>
+      <div style={S.hero}>
+        <div style={S.kick}>Mind View · Veinbinder</div>
+        <div className="eld-brand-name" style={S.title}>You</div>
+        <div style={S.sub}>Base presence — growth purchased below</div>
+        <div className="eld-panel" style={S.statGrid}>
+          {stats.map((s) => (
+            <div key={s.k} style={S.statCell}>
+              <div style={S.statK}>{s.k}</div>
+              <div style={S.statV}>{s.v}</div>
+            </div>
+          ))}
+        </div>
+        <div style={S.veinRow}>
+          <span style={S.veinLbl}>Banked Worldvein</span>
+          <span style={S.veinNum}>{worldvein.toLocaleString()} ❖</span>
+        </div>
+      </div>
+
+      <GearPaperdoll
+        accent="#5fc7e0"
+        classGlyph="◎"
+        classLabel="Veinbinder"
+        weaponLabel="Bond"
+        compact
+      />
+
+      <div style={S.secHead}>Growth</div>
+      <div style={S.note}>
+        {/* DESIGN-OPEN: economy not locked — costs shown as ??? until Anthony locks sinks. */}
+        Purchasable upgrades (placeholders). Costs DESIGN-OPEN.
+      </div>
+      <div style={S.list}>
+        {upgrades.map((u) => (
+          <div key={u.id} className="eld-card" style={S.upRow}>
+            <div style={S.upTop}>
+              <span style={S.treeTag}>{u.tree}</span>
+              <span style={S.cost}>{u.cost} ❖</span>
+            </div>
+            <div style={S.upName}>{u.name}</div>
+            <div style={S.upBlurb}>{u.blurb}</div>
+            <button type="button" className="eld-btn" disabled style={S.buyBtn}>
+              Purchase (locked)
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+const S = {
+  wrap: {
+    flex: 1,
+    minHeight: 0,
+    overflowY: 'auto',
+    padding: '12px 14px 16px',
+    textAlign: 'left',
+  },
+  hero: { marginBottom: 14 },
+  kick: {
+    fontSize: 9,
+    letterSpacing: '0.24em',
+    textTransform: 'uppercase',
+    color: 'var(--eld-muted, #5f8494)',
+    fontFamily: 'var(--eld-font-display, Cinzel, Georgia, serif)',
+  },
+  title: { fontSize: 20, fontWeight: 700, marginTop: 4, color: 'var(--eld-text, #e6f2f7)' },
+  sub: { fontSize: 12, color: 'var(--eld-muted, #5f8494)', fontStyle: 'italic', margin: '4px 0 10px' },
+  statGrid: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: 8,
+    padding: 12,
+  },
+  statCell: {
+    background: 'rgba(0,0,0,0.22)',
+    borderRadius: 8,
+    padding: '8px 10px',
+    border: '1px solid var(--eld-border, #1c3a44)',
+  },
+  statK: { fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--eld-muted, #5f8494)' },
+  statV: { fontSize: 16, fontWeight: 700, marginTop: 4, color: 'var(--eld-accent, #5fc7e0)' },
+  veinRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 10,
+    padding: '8px 4px',
+  },
+  veinLbl: { fontSize: 11, color: 'var(--eld-muted, #5f8494)', letterSpacing: '0.08em', textTransform: 'uppercase' },
+  veinNum: { fontSize: 14, fontWeight: 700, color: '#5fc7e0' },
+  secHead: {
+    fontSize: 12,
+    fontWeight: 700,
+    letterSpacing: '0.12em',
+    textTransform: 'uppercase',
+    fontFamily: 'var(--eld-font-display, Cinzel, Georgia, serif)',
+    marginBottom: 4,
+  },
+  note: { fontSize: 11, color: 'var(--eld-muted, #5f8494)', fontStyle: 'italic', marginBottom: 10 },
+  list: { display: 'flex', flexDirection: 'column', gap: 10 },
+  upRow: { padding: 12 },
+  upTop: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
+  treeTag: {
+    fontSize: 9,
+    letterSpacing: '0.14em',
+    textTransform: 'uppercase',
+    color: '#5fc7e0',
+    border: '1px solid #1c4a54',
+    borderRadius: 4,
+    padding: '2px 6px',
+  },
+  cost: { fontSize: 12, color: 'var(--eld-muted, #5f8494)', fontVariantNumeric: 'tabular-nums' },
+  upName: { fontSize: 14, fontWeight: 700 },
+  upBlurb: { fontSize: 12, color: 'var(--eld-muted, #7f97a3)', marginTop: 4, lineHeight: 1.4 },
+  buyBtn: { marginTop: 10, width: '100%', padding: '10px 8px', opacity: 0.55, cursor: 'not-allowed' },
+};
