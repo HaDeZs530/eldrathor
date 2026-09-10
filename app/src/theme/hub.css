@@ -1,0 +1,348 @@
+/* Hub navigation skins — mind | mountain | rpg. Crossfade chrome (~380ms). §3b */
+
+.eld-root {
+  --hub-transition: background-color 380ms ease, border-color 380ms ease, color 380ms ease,
+    box-shadow 380ms ease, background 380ms ease, text-shadow 380ms ease, filter 380ms ease;
+}
+
+.eld-root .eld-frame,
+.eld-root .eld-header,
+.eld-root .eld-tabbar,
+.eld-root .eld-tabbar-btn,
+.eld-root .eld-tabbar-label,
+.eld-root .eld-chip,
+.eld-root .eld-panel,
+.eld-root .eld-card,
+.eld-root .eld-btn {
+  transition: var(--hub-transition);
+}
+
+/* --- mind hub skin (Player / Party) --- */
+.eld-root.hub-mind {
+  --eld-bg: #060d11;
+  --eld-bg-mid: #0a151a;
+  --eld-panel: #0d1c22;
+  --eld-border: #1c3a44;
+  --eld-text: #cfe0e8;
+  --eld-muted: #5f8494;
+  --eld-accent: #5fc7e0;
+  --eld-accent-glow: rgba(95, 199, 224, 0.45);
+  --eld-tabbar-bg: rgba(6, 13, 17, 0.96);
+  --eld-tabbar-border: #1c3a44;
+  --eld-tab-active: #5fc7e0;
+  --eld-tab-inactive: #5f8494;
+  --eld-font-display: Cinzel, Marcellus, Georgia, serif;
+  --eld-font-body: 'Cormorant Garamond', Georgia, serif;
+  --eld-radius: 10px;
+  image-rendering: auto;
+}
+
+.eld-root.hub-mind:not(.mode-mind) .eld-frame {
+  background:
+    radial-gradient(800px 420px at 50% -8%, #123039 0%, #0a151a 45%, #060d11 100%);
+  border: 1px solid #1c3a44;
+  box-shadow:
+    0 0 0 1px rgba(95, 199, 224, 0.12),
+    0 0 40px rgba(95, 199, 224, 0.12),
+    inset 0 0 60px rgba(18, 48, 57, 0.35);
+}
+
+.eld-root.hub-mind:not(.mode-mind) .eld-header {
+  background: transparent;
+  border-bottom: 1px solid #1a3038;
+  font-family: var(--eld-font-display);
+}
+
+.eld-root.hub-mind:not(.mode-mind) .eld-brand-name {
+  font-size: 18px;
+  letter-spacing: 0.28em;
+  color: #e6f2f7;
+  text-shadow: 0 0 16px rgba(95, 199, 224, 0.35);
+}
+
+.eld-root.hub-mind:not(.mode-mind) .eld-panel,
+.eld-root.hub-mind:not(.mode-mind) .eld-card {
+  background: #0d1c22;
+  border: 1px solid #16303a;
+  border-radius: 10px;
+  box-shadow: 0 0 18px rgba(95, 199, 224, 0.08);
+}
+
+.eld-root.hub-mind:not(.mode-mind) .eld-btn {
+  background: #0e2830;
+  color: #5fc7e0;
+  border: 1px solid #1c4a54;
+  border-radius: 8px;
+  box-shadow: 0 0 12px rgba(95, 199, 224, 0.2);
+  font-family: var(--eld-font-display);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+}
+
+.eld-root.hub-mind:not(.mode-mind) .eld-btn-ghost {
+  background: transparent;
+  color: #7fbfd0;
+  border: 1px solid #1c3a44;
+  box-shadow: none;
+}
+
+/* --- mountain hybrid hub skin --- */
+.eld-root.hub-mountain {
+  --eld-bg: #0c1418;
+  --eld-bg-mid: #1a221c;
+  --eld-panel: #1c2830;
+  --eld-border: #3a5a68;
+  --eld-text: #e4efe8;
+  --eld-muted: #8aa09a;
+  --eld-accent: #7ec8d8;
+  --eld-accent-glow: rgba(196, 137, 74, 0.35);
+  --eld-tabbar-bg: rgba(12, 20, 24, 0.97);
+  --eld-tabbar-border: #3a5a68;
+  --eld-tab-active: #e0a04d;
+  --eld-tab-inactive: #7a9098;
+  --eld-font-display: Cinzel, Marcellus, Georgia, serif;
+  --eld-font-body: system-ui, 'Segoe UI', sans-serif;
+  --eld-radius: 8px;
+  image-rendering: auto;
+}
+
+.eld-root.hub-mountain:not(.mode-mind) .eld-frame {
+  background:
+    linear-gradient(180deg, #1a3038 0%, #142028 35%, #1a1810 70%, #2a1f14 100%);
+  border: 2px solid #3a5a68;
+  box-shadow:
+    0 0 28px rgba(95, 199, 224, 0.18),
+    0 0 40px rgba(224, 160, 77, 0.08),
+    inset 0 0 50px rgba(18, 48, 57, 0.25);
+}
+
+.eld-root.hub-mountain:not(.mode-mind) .eld-header {
+  background: linear-gradient(180deg, #16303a 0%, #1a221c 100%);
+  border-bottom: 2px solid #3a5a68;
+  font-family: var(--eld-font-display);
+}
+
+.eld-root.hub-mountain:not(.mode-mind) .eld-brand-name {
+  font-size: 16px;
+  letter-spacing: 0.22em;
+  color: #e8f0f4;
+  text-shadow: 0 0 12px rgba(95, 199, 224, 0.3), 1px 1px 0 rgba(26, 18, 10, 0.5);
+}
+
+.eld-root.hub-mountain:not(.mode-mind) .eld-panel,
+.eld-root.hub-mountain:not(.mode-mind) .eld-card {
+  background: linear-gradient(160deg, #152830 0%, #2a2418 100%);
+  border: 1px solid #4a6a78;
+  border-radius: 8px;
+  box-shadow: 0 0 16px rgba(95, 199, 224, 0.1), 3px 3px 0 rgba(26, 18, 10, 0.35);
+}
+
+.eld-root.hub-mountain:not(.mode-mind) .eld-btn {
+  background: linear-gradient(180deg, #2a4050 0%, #3d2a18 100%);
+  color: #e0c090;
+  border: 1px solid #5fc7e0;
+  border-radius: 6px;
+  box-shadow: 0 0 10px rgba(95, 199, 224, 0.2);
+  font-family: var(--eld-font-display);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+}
+
+.eld-root.hub-mountain:not(.mode-mind) .eld-btn-ghost {
+  background: transparent;
+  color: #cfe0e8;
+  border: 1px solid #4a6a78;
+  box-shadow: none;
+}
+
+/* --- rpg / warm world hub skin (Town / Market) --- */
+.eld-root.hub-rpg {
+  --eld-bg: #2a1f14;
+  --eld-bg-mid: #3d2a18;
+  --eld-panel: #4a321c;
+  --eld-border: #8b5a2b;
+  --eld-text: #f0e0c0;
+  --eld-muted: #c4a070;
+  --eld-accent: #e0a04d;
+  --eld-accent-glow: rgba(224, 160, 77, 0.4);
+  --eld-tabbar-bg: rgba(42, 31, 20, 0.97);
+  --eld-tabbar-border: #8b5a2b;
+  --eld-tab-active: #f5d080;
+  --eld-tab-inactive: #a08060;
+  --eld-font-display: 'Press Start 2P', 'Courier New', monospace;
+  --eld-font-body: system-ui, 'Segoe UI', sans-serif;
+  --eld-radius: 0px;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.eld-root.hub-rpg:not(.mode-mind) .eld-frame {
+  background:
+    linear-gradient(180deg, #5a3d20 0%, #2a1f14 40%, #1a120a 100%);
+  border: 4px solid #8b5a2b;
+  box-shadow: 8px 8px 0 #1a120a, inset 0 0 0 2px #c4a07044;
+}
+
+.eld-root.hub-rpg:not(.mode-mind) .eld-header {
+  background: #3d2a18;
+  border-bottom: 4px solid #8b5a2b;
+  font-family: var(--eld-font-display);
+}
+
+.eld-root.hub-rpg:not(.mode-mind) .eld-brand-name {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: #f5d080;
+  text-shadow: 2px 2px 0 #1a120a;
+}
+
+.eld-root.hub-rpg:not(.mode-mind) .eld-panel,
+.eld-root.hub-rpg:not(.mode-mind) .eld-card {
+  background: #3d2a18;
+  border: 3px solid #8b5a2b;
+  border-radius: 0;
+  box-shadow: 3px 3px 0 #1a120a;
+}
+
+.eld-root.hub-rpg:not(.mode-mind) .eld-btn {
+  background: #e0a04d;
+  color: #1a120a;
+  border: 3px solid #1a120a;
+  border-radius: 0;
+  box-shadow: 3px 3px 0 #1a120a;
+  font-family: var(--eld-font-display);
+  font-size: 8px;
+  letter-spacing: 0.04em;
+}
+
+.eld-root.hub-rpg:not(.mode-mind) .eld-btn-ghost {
+  background: transparent;
+  color: #f0e0c0;
+  border: 3px solid #8b5a2b;
+  box-shadow: none;
+}
+
+.eld-root.hub-rpg:not(.mode-mind) .eld-chip {
+  border-radius: 0;
+  border-width: 2px;
+}
+
+/* Tab bar chrome */
+.eld-tabbar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  width: 100%;
+  flex-shrink: 0;
+  padding: 6px 4px calc(8px + env(safe-area-inset-bottom, 0px));
+  background: var(--eld-tabbar-bg, rgba(6, 13, 17, 0.96));
+  border-top: 1px solid var(--eld-tabbar-border, #1c3a44);
+  box-sizing: border-box;
+  z-index: 20;
+}
+
+.eld-root.hub-rpg .eld-tabbar {
+  border-top-width: 3px;
+}
+
+.eld-tabbar-btn {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-width: 0;
+  padding: 6px 2px 4px;
+  margin: 0;
+  border: none;
+  background: transparent;
+  color: var(--eld-tab-inactive, #5f8494);
+  cursor: pointer;
+  font-family: var(--eld-font-body, system-ui, sans-serif);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.eld-tabbar-btn.is-active {
+  color: var(--eld-tab-active, #5fc7e0);
+}
+
+.eld-tabbar-icon {
+  font-size: 18px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 28px;
+}
+
+.eld-tabbar-btn.is-center .eld-tabbar-icon {
+  width: 48px;
+  height: 40px;
+  font-size: 26px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 40%, rgba(95, 199, 224, 0.35), rgba(224, 160, 77, 0.15) 55%, transparent 70%);
+  box-shadow: 0 0 16px rgba(95, 199, 224, 0.35), 0 0 8px rgba(224, 160, 77, 0.2);
+  transform: translateY(-6px);
+}
+
+.eld-tabbar-btn.is-center.is-active .eld-tabbar-icon {
+  box-shadow: 0 0 22px rgba(95, 199, 224, 0.55), 0 0 12px rgba(224, 160, 77, 0.35);
+}
+
+.eld-tabbar-label {
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.eld-root.hub-rpg .eld-tabbar-label {
+  font-family: var(--eld-font-display);
+  font-size: 6px;
+  letter-spacing: 0.02em;
+}
+
+.eld-placeholder {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 18px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.eld-placeholder h2 {
+  margin: 0;
+  font-family: var(--eld-font-display);
+  font-size: 16px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--eld-accent);
+}
+
+.eld-placeholder p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--eld-muted);
+  line-height: 1.45;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .eld-root .eld-frame,
+  .eld-root .eld-header,
+  .eld-root .eld-tabbar,
+  .eld-root .eld-tabbar-btn,
+  .eld-root .eld-tabbar-label,
+  .eld-root .eld-chip,
+  .eld-root .eld-panel,
+  .eld-root .eld-card,
+  .eld-root .eld-btn {
+    transition: none !important;
+  }
+}

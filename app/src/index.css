@@ -20,5 +20,5 @@ html, body {
   width: 100%;
   color: var(--eld-text, #cfe0e8);
   font-family: var(--eld-font-body, system-ui, sans-serif);
-  transition: filter 0.25s ease;
+  transition: filter 0.25s ease, color 380ms ease, background-color 380ms ease;
 }

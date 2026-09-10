@@ -1,14 +1,14 @@
 import React from 'react';
 import { ARCHETYPES, WEAPONS, WORLDS, TIER_COLOR } from '../data.js';
 
-export function Header({ worldvein, mode, colors }) {
+export function Header({ worldvein, mode, colors, hubLabel }) {
   return (
     <div className="eld-header" style={S.header}>
       <div style={S.brand}>
         <span style={{ color: mode === 'MIND' ? colors.mythros : colors.worldAmber, fontSize: 18 }}>❖</span>
         <div>
           <div className="eld-brand-name">ELDRATHOR</div>
-          <div style={S.brandSub}>{mode === 'MIND' ? 'Mind View' : 'Veinharbor'}</div>
+          <div style={S.brandSub}>{hubLabel || (mode === 'MIND' ? 'Mind View' : 'Veinharbor')}</div>
         </div>
       </div>
       <div className="eld-chip" style={S.vein}>
@@ -20,13 +20,21 @@ export function Header({ worldvein, mode, colors }) {
   );
 }
 
-export function Harbor({ party, unlocked, enterWorld, stash, setScreen }) {
+/** Town hub — harbor functions + stash. World/expedition entry lives on Mountain tab. */
+export function Harbor({ party, stash, setTab }) {
+  const townFunctions = [
+    { id: 'crafter', label: 'Crafter', sub: 'Forge armor and sockets' },
+    { id: 'gathering', label: 'Gathering', sub: 'AFK material slots' },
+    { id: 'idle', label: 'Idle Slots', sub: 'Party training berths' },
+    { id: 'recruit', label: 'Recruit', sub: 'Find bonded Adventurers' },
+  ];
+
   return (
     <div style={S.body}>
       <SectionTitle
         t="Your Party"
         action={
-          <button type="button" className="eld-btn eld-btn-ghost" onClick={() => setScreen('party')}>
+          <button type="button" className="eld-btn eld-btn-ghost" onClick={() => setTab('party')}>
             Manage
           </button>
         }
@@ -48,6 +56,23 @@ export function Harbor({ party, unlocked, enterWorld, stash, setScreen }) {
         ))}
       </div>
 
+      <SectionTitle t="Town Functions" sub="Tap a bar — screens stubbed for now" />
+      <div style={S.worldList}>
+        {townFunctions.map((fn) => (
+          <div key={fn.id} className="eld-card" style={S.fnBar}>
+            <div style={S.worldName}>{fn.label}</div>
+            <div style={S.worldMeta}>{fn.sub} · DESIGN-OPEN</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Mountain tab — world select / expedition entry (hybrid chrome). */
+export function MountainSelect({ unlocked, enterWorld }) {
+  return (
+    <div style={S.body}>
       <SectionTitle t="The Mountain" sub="Choose an expedition — enter Mind View" />
       <div style={S.worldList}>
         {WORLDS.map((w) => {
@@ -93,16 +118,13 @@ function PartyCard({ m }) {
   );
 }
 
-export function PartyEditor({ party, setParty, back }) {
+export function PartyEditor({ party, setParty }) {
   function update(i, field, val) {
     setParty((p) => p.map((m, j) => (j === i ? { ...m, [field]: val } : m)));
   }
   return (
     <div style={S.body}>
-      <SectionTitle
-        t="Manage Party"
-        action={<button type="button" className="eld-btn eld-btn-ghost" onClick={back}>Done</button>}
-      />
+      <SectionTitle t="Manage Party" />
       <div style={S.editGrid}>
         {party.map((m, i) => {
           const a = ARCHETYPES[m.archetype];
@@ -131,6 +153,18 @@ export function PartyEditor({ party, setParty, back }) {
   );
 }
 
+export function PlaceholderPanel({ title, blurb }) {
+  return (
+    <div className="eld-placeholder">
+      <h2>{title}</h2>
+      <p>{blurb}</p>
+      <div className="eld-panel" style={{ padding: 12, fontSize: 12, color: 'var(--eld-muted)' }}>
+        Placeholder — full screen not built yet.
+      </div>
+    </div>
+  );
+}
+
 function SectionTitle({ t, sub, action }) {
   return (
     <div style={S.secTitle}>
@@ -150,7 +184,7 @@ const S = {
   vein: { display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(0,0,0,0.25)', border: '1px solid var(--eld-border, #1c3a44)', padding: '6px 10px' },
   veinNum: { fontSize: 15, fontWeight: 700, fontVariantNumeric: 'tabular-nums' },
   veinLbl: { fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--eld-muted, #5f8494)' },
-  body: { flex: 1, overflowY: 'auto', padding: '14px 14px 20px', textAlign: 'left' },
+  body: { flex: 1, overflowY: 'auto', padding: '14px 14px 12px', textAlign: 'left' },
   secTitle: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 10, marginTop: 8 },
   secText: { fontSize: 13, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', fontFamily: 'var(--eld-font-display, inherit)' },
   secSub: { fontSize: 11, color: 'var(--eld-muted, #5f8494)', marginTop: 2 },
@@ -166,9 +200,10 @@ const S = {
   empty: { color: 'var(--eld-muted, #456570)', fontSize: 12, fontStyle: 'italic', padding: '6px 0' },
   worldList: { display: 'flex', flexDirection: 'column', gap: 8 },
   worldCard: { textAlign: 'left', borderLeft: '3px solid', padding: '12px 14px', color: 'inherit', width: '100%', fontFamily: 'inherit' },
+  fnBar: { textAlign: 'left', padding: '12px 14px', opacity: 0.85 },
   worldClock: { fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--eld-muted, #5f8494)' },
   worldName: { fontSize: 15, fontWeight: 700, margin: '3px 0 6px' },
-  worldMeta: { display: 'flex', gap: 10, alignItems: 'center', fontSize: 11, color: 'var(--eld-muted, #7f97a3)' },
+  worldMeta: { display: 'flex', gap: 10, alignItems: 'center', fontSize: 11, color: 'var(--eld-muted, #7f97a3)', flexWrap: 'wrap' },
   courtTag: { color: '#d67d4d', border: '1px solid #4a2f1e', borderRadius: 4, padding: '1px 6px', fontSize: 10 },
   lockTag: { color: '#e05d6f', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase' },
   editGrid: { display: 'flex', flexDirection: 'column', gap: 12 },

@@ -25,7 +25,7 @@ Eldrathor: a UI-based iOS RPG (Vite + React now; Capacitor iOS wrap later). The 
 - Mode switch when entering/leaving Mind View must feel intentional.
 - Fantasy, not sci-fi: Cinzel/Marcellus-class display fonts on Mind View; jewel tones; carved/ornamented / aura frames. No monospace/HUD fonts, no neon circuit aesthetics.
 - Reference mockups: `mockups/town_mockup_v3.html` (warm pole), `mockups/worldmap_mockup.html` (cold pole).
-- Nav: 5-tab bar (Town · Party · [World glowing center orb] · Market · Binder), constant dark blue on every screen.
+- Nav: persistent 5-tab bottom bar left→right — **Player · Party · Mountain (CENTER, emphasized) · Town · Market**. Hub chrome theme families: Player/Party → mind-view; Mountain → hybrid; Town/Market → warm RPG. Switching families must **crossfade/transition** (~300–450ms), never pop. Market is its own tab. Tab bar is hub chrome — hide during expedition/combat full mind-view. See `docs/Eldrathor_TabBar_Lock.md` + design doc §3b.
 - Full detail: design doc §3c.
 
 ## Who may implement
@@ -36,11 +36,11 @@ Eldrathor: a UI-based iOS RPG (Vite + React now; Capacitor iOS wrap later). The 
 - App lives in `app/` (Vite + React, JavaScript). Keep it runnable with `npm run dev` at all times.
 - Mobile-portrait-first (390×844 target). No browser storage APIs in artifacts/components that must run in claude.ai.
 - Prefer simple readable React state over frameworks/libraries; no new dependencies without a stated reason.
-- Theme modules: `app/src/theme/` (WORLD | MIND). Map modules: `app/src/map/` (territory graph, not rows).
+- Theme modules: `app/src/theme/` (WORLD | MIND expedition dual-mode + hub skins mind|mountain|rpg). Map modules: `app/src/map/` (territory graph, not rows).
 - The old prototype's row-based pyramid map is SUPERSEDED — the territory model (design doc §8c) is the spec: pannable organic node web, fog of war, hidden node types, respawns + named variants, roaming rares warding the boss, extraction = fresh map.
 
 ## Current priorities (from the handoff doc)
-1. Rebuild the expedition map to the territory model (§8c) + scaffold dual UI kits (WORLD / MIND).
+1. Bottom tab bar + hub skins (Player·Party·Mountain·Town·Market) — then continue territory map dual UI kits.
 2. Combat screen v2: battle stage + visibly-firing special buttons + scrolling feed + swingy resolver + speed toggle (MIND theme).
 3. Playtest & tune (fight lengths, respawn cadence, named rate, map size).
 4. Growth spend screens: weapon merging, gem trees, Veinbinder Bond/Craft trees (WORLD theme).
