@@ -11,6 +11,7 @@
 2. `docs/Eldrathor_DualMode_Art_Lock.md` — dual graphical modes.
 3. `docs/Eldrathor_TabBar_Lock.md` — 5-tab nav + theme crossfades (**UPDATED:** TabBar stays visible in expeditions/fights).
 4. **This file** — chronological locks + “what shipped” that may not yet be fully rewritten into the design doc.
+5. `docs/DESIGN_OPEN_AFK_Farm_Craft.md` — AFK→materials→craft design-understanding brief (NOT locked).
 
 ---
 
@@ -41,12 +42,12 @@ Order: **Town | Market | Mountain | Party | Player**.
 
 ### Gear paperdoll (LOCKED UI shape; acquisition DESIGN-OPEN)
 - Layout: central silhouette + surrounding gear/gem slots on Adventurer detail (+ Player).
-- **Acquisition path not locked yet** — see DESIGN-OPEN AFK section below. Do not hard-code “gear from expedition loot only” until Boss confirms after design review.
+- **Acquisition path not locked yet** — see `docs/DESIGN_OPEN_AFK_Farm_Craft.md`. Do not hard-code “gear from expedition loot only” until Boss confirms after design review.
 
 ---
 
 ## DESIGN-OPEN — AFK farm → materials → craft (Anthony 2026-09-10 note; NOT locked yet)
-Anthony flagged we missed **AFK farm mode**: intent is gear comes from **AFK groups farming crafting materials → craft items** (not primarily from expedition drops for armor; weapons still drop per design). Full design understanding needed before locking acquisition UI. **Do not change gear locks in code until Boss confirms after design review.** Keep gear/paperdoll slots as flexible placeholders. Expedition loot stubs may remain until this lands.
+Anthony flagged we missed **AFK farm mode**: intent is gear comes from **AFK groups farming crafting materials → craft items** (not primarily from expedition drops for armor; weapons still drop per design). Full design understanding draft: **`docs/DESIGN_OPEN_AFK_Farm_Craft.md`**. **Do not change gear locks in code until Boss confirms after design review.** Keep gear/paperdoll slots as flexible placeholders. Expedition loot stubs may remain until this lands.
 
 ## Still TODO / DESIGN-OPEN (high signal)
 - Difficulty system (Hard/Brutal + modifiers) — placeholder only shipped  
@@ -58,7 +59,7 @@ Anthony flagged we missed **AFK farm mode**: intent is gear comes from **AFK gro
 - Design doc §3b rewrite to match TabBar lock; clean `docs/_restore_b64/` leftovers  
 - Art asset pipeline (hands-off; dual kits)  
 - Capacitor iOS later  
-- **AFK farm mode + materials → craft pipeline** (design review first; then UI locks)
+- **AFK farm mode + materials → craft pipeline** (design review first; then UI locks) — see DESIGN_OPEN brief
 
 §9 of the design doc lists intentional open design systems (gem tree contents, world enemy rosters, etc.) — those are not “missing file,” they are undesigned content.
 
@@ -97,8 +98,8 @@ Anthony flagged we missed **AFK farm mode**: intent is gear comes from **AFK gro
 11. PR #3: IslandWorldMap (6 nodes incl. Vaelyx summit) → Difficulty placeholder → Mind-view TerritoryMap → FightScreen (visible) → LootResults; run stage machine persisted across tabs.
 12. **LOCKED:** Player/Party Mind-view hub layouts (stats top + upgrade stubs; party-of-3 + roster + create + member detail). Included in PR #3.
 13. **LOCKED addendum:** Adventurer detail (and Player) include Eternal Hero–style gear paperdoll — central silhouette + surrounding gear/gem slots; dressable art later.
-14. Anthony note (DESIGN-OPEN, not locked): AFK farm mode — AFK groups farm crafting materials → craft items for gear. Full design review before changing acquisition UI/locks.
+14. Anthony note (DESIGN-OPEN, not locked): AFK farm mode — AFK groups farm crafting materials → craft items for gear. Full design review before changing acquisition UI/locks. Brief: `docs/DESIGN_OPEN_AFK_Farm_Craft.md`.
 
 ---
 
-*Last updated: 2026-09-10 by Boss (Grok Bot) — island PR + AFK/craft DESIGN-OPEN note (gear acquisition not relocked).*
+*Last updated: 2026-09-10 by Boss (Grok Bot) — island PR + AFK/craft DESIGN-OPEN brief (gear acquisition not relocked).*
