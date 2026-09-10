@@ -1,6 +1,6 @@
 # ELDRATHOR — Game Design Document
 
-*Master design record, current through July 2026. Split into **LOCKED** (decided), **OPEN/FLAGGED** (still to resolve), and **PARKED** (shelved for later). Later sections supersede earlier ones where noted; §9 lists everything still open.*
+*Master design record, current through September 10, 2026. Split into **LOCKED** (decided), **OPEN/FLAGGED** (still to resolve), and **PARKED** (shelved for later). Later sections supersede earlier ones where noted; §9 lists everything still open.*
 
 ---
 
@@ -92,7 +92,13 @@ Each tap drills one level deeper; each completion pops one level back.
 - **Transition town→expedition = "reaching out through the Vein"** — signature moment: sunlight shifts to blue energy as you connect. A magical act, not just a screen change.
 - Temperature tells the player instantly: *am I here (warm/real) or projecting (cold/Vein)?*
 
-**Fantasy re-skin note** (for the cold/arcane-tech screens so they read fantasy not sci-fi): no techy fonts (no Chakra Petch/monospace) — use classic-fantasy display faces (Cinzel/Marcellus/Cormorant) + warm serif/humanist body; deepen electric neon toward richer crystal/sapphire blue + jewel tones (ruby/emerald/amethyst not neon); soften geometric HUD borders toward carved/ornamented frames; map nodes = glowing crystal shards/runes not clean diamonds; connecting lines = organic energy veins not dashed circuit traces.
+**DUAL GRAPHICAL MODES (LOCKED — Anthony + Boss, 2026-09-10):** not pixel *or* painterly — **both**, mapped to the warm/cold rule.
+- **WORLD mode** (town / planning / hub — Veinbinder physically in Veinharbor): **fun MICRO-PIXEL**, warm/sunlit. Chunky pixel-kit UI (hard edges, image-rendering crispness, warm ambers/wood). Warm reality = the pixel kit.
+- **MIND VIEW mode** (Vein projection — world map, expedition map, combat): **refined fantasy-sim** with **Mythros-blue magic aura**. Diegetic — the Veinbinder seeing the party in his head via blue magic, **NOT a second physical place**. Cold projection = the refined mind-view kit (Cinzel/fantasy display, soft aura frames, sapphire glow).
+- **Mode switch** when entering/leaving Mind View must feel intentional — the signature "reaching out through the Vein" moment (sunlight → blue energy), not a silent theme flip.
+- Asset pipeline stays hands-off for now; scaffold dual themes in code and rebuild the map first.
+
+**Fantasy re-skin note** (for the cold/Mind View screens so they read fantasy not sci-fi): no techy fonts (no Chakra Petch/monospace) — use classic-fantasy display faces (Cinzel/Marcellus/Cormorant) + warm serif/humanist body in World mode; deepen electric neon toward richer crystal/sapphire blue + jewel tones (ruby/emerald/amethyst not neon); soften geometric HUD borders toward carved/ornamented frames; map nodes = glowing crystal shards/runes not clean diamonds; connecting lines = organic energy veins not dashed circuit traces.
 
 **Workflow note:** Claude Design burns tokens on iteration — each screen's feel/content/layout is fully specified in the doc/chat FIRST, then handed to Claude Design as one complete build-brief per screen (build once correctly vs. many expensive iterations).
 
@@ -455,7 +461,7 @@ The game is split into two distinct activities, each with its own mode. This del
 
 ---
 
-## 9. OUTSTANDING / FLAGGED ITEMS (current as of July 2026)
+## 9. OUTSTANDING / FLAGGED ITEMS (current as of September 10, 2026)
 
 ### High priority (spine-level, still open)
 1. **Class gem talent tree contents** — actual spine/branch/capstone nodes per gem (Tank/DPS/Controller/Healer). Framework locked; contents undesigned. The biggest open system.
@@ -475,7 +481,7 @@ The game is split into two distinct activities, each with its own mode. This del
 11. **Seasonal / long-term retention content** beyond end-World farming.
 12. **Player gear-trade market** (§7e) — deferred; keep data model market-ready.
 13. **Build/tech** — HTML5/JS (Vite React) → Capacitor iOS wrap; Apple Developer acct + Mac + Xcode at publish.
-14. **Art production** — pixel-art vs painterly direction UNDECIDED (PixelLab connected & working; test targeted assets — esp. a glowing Mythros crystal — before committing). Per-World palettes, UI chrome, harbor painting (spec: ~2400×2048, ¾ elevated view, warm town / cold mountain), mountain map asset.
+14. **Art production** — ~~pixel-art vs painterly UNDECIDED~~ → **RESOLVED (2026-09-10): dual-mode, not either/or.** WORLD = fun micro-pixel (warm reality); MIND VIEW = refined fantasy-sim + Mythros-blue aura (cold Vein projection). See §3c. Remaining production work: Per-World palettes, UI chrome, harbor painting (spec: ~2400×2048, ¾ elevated view, warm town / cold mountain), mountain map asset, hands-off asset pipeline later. PixelLab still useful for WORLD-mode assets (PC-only).
 
 ---
 

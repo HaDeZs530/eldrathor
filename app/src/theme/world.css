@@ -1,0 +1,79 @@
+/* WORLD mode — fun micro-pixel, warm/sunlit Veinharbor reality (§3c) */
+
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+.eld-root.mode-world {
+  --eld-bg: #2a1f14;
+  --eld-bg-mid: #3d2a18;
+  --eld-panel: #4a321c;
+  --eld-border: #8b5a2b;
+  --eld-text: #f0e0c0;
+  --eld-muted: #c4a070;
+  --eld-accent: #e0a04d;
+  --eld-accent-glow: rgba(224, 160, 77, 0.4);
+  --eld-good: #7fbf6a;
+  --eld-danger: #c45c4a;
+  --eld-font-display: 'Press Start 2P', 'Courier New', monospace;
+  --eld-font-body: system-ui, 'Segoe UI', sans-serif;
+  --eld-radius: 0px;
+  --eld-shadow: 4px 4px 0 #1a120a;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.eld-root.mode-world .eld-frame {
+  background:
+    linear-gradient(180deg, #5a3d20 0%, #2a1f14 40%, #1a120a 100%);
+  border: 4px solid #8b5a2b;
+  box-shadow: 8px 8px 0 #1a120a, inset 0 0 0 2px #c4a07044;
+}
+
+.eld-root.mode-world .eld-header {
+  background: #3d2a18;
+  border-bottom: 4px solid #8b5a2b;
+  font-family: var(--eld-font-display);
+}
+
+.eld-root.mode-world .eld-brand-name {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: #f5d080;
+  text-shadow: 2px 2px 0 #1a120a;
+}
+
+.eld-root.mode-world .eld-panel,
+.eld-root.mode-world .eld-card {
+  background: #3d2a18;
+  border: 3px solid #8b5a2b;
+  border-radius: 0;
+  box-shadow: 3px 3px 0 #1a120a;
+}
+
+.eld-root.mode-world .eld-btn {
+  background: #e0a04d;
+  color: #1a120a;
+  border: 3px solid #1a120a;
+  border-radius: 0;
+  box-shadow: 3px 3px 0 #1a120a;
+  font-family: var(--eld-font-display);
+  font-size: 8px;
+  letter-spacing: 0.04em;
+  image-rendering: pixelated;
+}
+
+.eld-root.mode-world .eld-btn:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 #1a120a;
+}
+
+.eld-root.mode-world .eld-btn-ghost {
+  background: transparent;
+  color: #f0e0c0;
+  border: 3px solid #8b5a2b;
+  box-shadow: none;
+}
+
+.eld-root.mode-world .eld-chip {
+  border-radius: 0;
+  border-width: 2px;
+}

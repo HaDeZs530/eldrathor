@@ -1,0 +1,52 @@
+import { ARCHETYPES, WEAPONS, rand, pick } from './data.js';
+
+/** Auto-resolve fight (retained from prototype). */
+export function resolveFight(party, node) {
+  const tierMult = 1 + (node.tier - 1) * 0.6;
+  const typeMult = node.type === 'boss' ? 6 : node.type === 'rare' ? 2.4 : node.type === 'crystal' ? 1.5 : 1;
+  const enemyHP = Math.round(rand(90, 130) * tierMult * typeMult);
+  const enemyDPS = rand(6, 10) * tierMult * (node.type === 'boss' ? 1.6 : node.type === 'rare' ? 1.2 : 1);
+
+  let partyDPS = 0;
+  party.forEach((m) => {
+    const a = ARCHETYPES[m.archetype];
+    const w = WEAPONS[m.weapon];
+    partyDPS += ((a.atk + m.level * 2) * w.dmg) / w.tempo;
+  });
+  if (party.some((m) => m.archetype === 'Resonator')) partyDPS *= 1.08;
+
+  let partyHP = party.reduce((s, m) => s + (ARCHETYPES[m.archetype].hp + m.level * 12), 0);
+  const partyMaxHP = partyHP;
+  const partyMit =
+    party.reduce((s, m) => s + WEAPONS[m.weapon].mit, 0) / party.length +
+    party.reduce((s, m) => s + ARCHETYPES[m.archetype].def, 0) / party.length / 100;
+  const hasHealer = party.some((m) => m.archetype === 'Warden');
+
+  let eHP = enemyHP;
+  let pHP = partyHP;
+  let t = 0;
+  while (eHP > 0 && pHP > 0 && t < 400) {
+    eHP -= partyDPS * 0.1;
+    pHP -= enemyDPS * 0.1 * (1 - Math.min(0.6, partyMit));
+    if (hasHealer) pHP = Math.min(partyMaxHP, pHP + partyMaxHP * 0.006);
+    t++;
+  }
+  return { win: eHP <= 0, hpPct: Math.max(0, pHP / partyMaxHP), duration: (t * 0.1).toFixed(1) };
+}
+
+export function rollLoot(node) {
+  const base = node.type === 'boss' ? 5 : node.type === 'rare' ? 3 : node.type === 'crystal' ? 2 : 1;
+  const worldvein = Math.round(rand(4, 9) * base * node.tier);
+  let gear = null;
+  const gearChance = node.type === 'boss' ? 1 : node.type === 'rare' ? 0.6 : node.type === 'crystal' ? 0.25 : 0.12;
+  if (Math.random() < gearChance) {
+    const tiers = ['Common', 'Fine', 'Rare', 'Epic', 'Legendary'];
+    const ti =
+      node.type === 'boss'
+        ? Math.min(4, node.tier)
+        : Math.min(node.tier - 1 + (Math.random() < 0.3 ? 1 : 0), 4);
+    const qtier = tiers[Math.max(0, ti)];
+    gear = { name: `${qtier} ${pick(['Blade', 'Guard', 'Vestment', 'Charm', 'Crown'])}`, tier: qtier, rating: Math.round(rand(1, 100)) };
+  }
+  return { worldvein, gear, healCrystal: Math.random() < 0.14 };
+}
