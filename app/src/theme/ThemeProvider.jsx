@@ -17,20 +17,28 @@ export function ThemeProvider({ children }) {
   const [transitioning, setTransitioning] = useState(false);
 
   const enterMindView = useCallback(() => {
-    setTransitioning(true);
-    // Brief intentional pulse so the mode switch reads as "reaching through the Vein"
-    window.setTimeout(() => {
-      setCurrentMode(MODE.MIND);
-      window.setTimeout(() => setTransitioning(false), 280);
-    }, 120);
+    setCurrentMode((prev) => {
+      if (prev === MODE.MIND) return prev;
+      setTransitioning(true);
+      // Brief intentional pulse so the mode switch reads as "reaching through the Vein"
+      window.setTimeout(() => {
+        setCurrentMode(MODE.MIND);
+        window.setTimeout(() => setTransitioning(false), 280);
+      }, 120);
+      return prev;
+    });
   }, []);
 
   const exitMindView = useCallback(() => {
-    setTransitioning(true);
-    window.setTimeout(() => {
-      setCurrentMode(MODE.WORLD);
-      window.setTimeout(() => setTransitioning(false), 280);
-    }, 120);
+    setCurrentMode((prev) => {
+      if (prev === MODE.WORLD) return prev;
+      setTransitioning(true);
+      window.setTimeout(() => {
+        setCurrentMode(MODE.WORLD);
+        window.setTimeout(() => setTransitioning(false), 280);
+      }, 120);
+      return prev;
+    });
   }, []);
 
   const setHubSkin = useCallback((skin) => {
