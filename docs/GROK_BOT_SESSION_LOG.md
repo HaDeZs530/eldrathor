@@ -39,6 +39,12 @@
 ### Island world map UX
 - Landscape art OK on portrait via **pan + zoom**; start on south harbor. Prefer pan over hard crop.
 
+### Node advance / engage (PARTIAL — playtest 2026-09-11)
+- Node tap must **not** auto-start combat.
+- Open a **confirmation** screen: at least **Fight** and **Flee** (labels OPEN).
+- **Flee** risks a roll: clean escape vs **ambush** (harder when party is low HP / encounter is tougher).
+- Exact odds, ambush fight rules, UI copy, and extra options still **OPEN** — Anthony playtesting more before full lock.
+
 ### Bottom TabBar (5 tabs) — order LOCKED
 **Player | Party | Mountain | Town | AFK-tab (Seam working label)**  
 - **AFK-tab** replaces root **Market** (name OPEN).  
@@ -46,7 +52,7 @@
 - TabBar visible during expeditions/fights; AFK true idle (persistence DESIGN-OPEN). Mountain restores run stage.
 
 ### Island → run flow
-Island map → difficulty placeholder → **hybrid parchment** node map → fight (Mind-view) → loot; stage machine persists across tabs.
+Island map → difficulty placeholder → **hybrid parchment** node map → **engage confirm** → fight (Mind-view) → loot; stage machine persists across tabs.
 
 ### Player / Party (Mind-view)
 Stats top + upgrades below; Eternal Hero paperdoll; Party = bonded 3 + roster + create + detail.
@@ -77,6 +83,7 @@ Crafter + Upgrade/smith + Market sub. No +1-tier craft gate. Excess armor → Wo
 - Peninsula town parchment stamp language (confirm ruined outpost or alternate)  
 - Re-export `island-world.png` as real PNG (currently JPEG bytes)  
 - Island camera memory between Mountain visits; fog reveal VFX  
+- Engage confirm: flee/ambush numbers, copy, extra options (more playtest incoming)  
 - Combat v2; growth trees; Capacitor later  
 
 ---
@@ -86,6 +93,7 @@ Crafter + Upgrade/smith + Market sub. No +1-tier craft gate. Excess armor → Wo
 - **2026-09-11:** Shipped base UI (Seam AFK + Town functions) — see prior PR notes / PR #7 era.
 - **2026-09-11 (coordination):** Locked Boss=plan/Claude=code. Added `AGENT_COORDINATION.md`, `Eldrathor_NodeMap_Art_Lock.md`, Claude briefs. PR #8 / #9 (island asset).
 - **2026-09-11 (PR #10 — Claude Code):** Pannable/zoomable island world map + hybrid parchment fog-of-war node map; forge/castle interiors; theme ladder island → parchment → Mind fight. Brief follow-ups listed (eslint cleanup, PNG re-export, peninsula confirm, camera memory, fog VFX). PR #11 docs note.
+- **2026-09-11 (playtest):** Phone via Vite `--host` + LAN/Tailscale. Partial lock: node tap → Fight/Flee confirm; flee vs ambush roll when risky. More notes pending.
 
 ---
 
