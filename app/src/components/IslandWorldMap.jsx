@@ -30,6 +30,11 @@ function capturePointer(el, pointerId) {
 
 const HARBOR = ISLAND_PINS[0];
 const pinWorld = (pin) => (pin.worldId ? WORLDS.find((w) => w.id === pin.worldId) : null);
+// Anthony (2026-09-11): the harbor pin shows a TOWN icon, not a number; the route nodes
+// count from 1 after it. Display-only — the lock's table keeps harbor as row 1.
+// DESIGN-OPEN: 9 nodes + harbor (today) vs 10 + harbor — add a row to ISLAND_PINS if so.
+const pinBadge = (pin) => (pin.worldId ? String(pin.n - 1) : '⌂');
+const pinA11y = (pin) => (pin.worldId ? `Node ${pin.n - 1}: ${pin.label}` : `${pin.label} (town)`);
 
 const clampZ = (z) => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z));
 
@@ -206,7 +211,7 @@ export default function IslandWorldMap({ unlocked, onSelectWorld, onHarbor }) {
         <div style={S.kick}>The climb begins</div>
         <div className="eld-brand-name" style={S.title}>The Mountain</div>
         <div style={S.prog}>
-          {held} of {total} worlds held · route 1→10 · tap a pin to choose difficulty
+          {held} of {total} worlds held · harbor → nodes 1–9 → summit · tap a pin
         </div>
       </div>
 
@@ -271,7 +276,7 @@ export default function IslandWorldMap({ unlocked, onSelectWorld, onHarbor }) {
                 data-hotspot={String(pin.n)}
                 className={cls}
                 style={{ left: `${pin.x}%`, top: `${pin.y}%`, transformOrigin: '50% 12px', transform: `translate(-50%, -12px) scale(${k})` }}
-                aria-label={`${pin.n}. ${pin.label}${locked ? ' (locked)' : ''}`}
+                aria-label={`${pinA11y(pin)}${locked ? ' (locked)' : ''}`}
                 aria-disabled={locked || undefined}
                 // Pointer taps are handled on pointerup (viewport captures the pointer);
                 // onClick only serves keyboard activation (detail === 0).
@@ -279,7 +284,7 @@ export default function IslandWorldMap({ unlocked, onSelectWorld, onHarbor }) {
                   if (e.detail === 0) activateHotspot(String(pin.n));
                 }}
               >
-                <span className="eld-hotspot-pin" aria-hidden="true">{pin.n}</span>
+                <span className="eld-hotspot-pin" aria-hidden="true">{pinBadge(pin)}</span>
                 <span className="eld-hotspot-lbl">
                   {pin.label}
                   <span className="eld-hotspot-sub">{sub}</span>

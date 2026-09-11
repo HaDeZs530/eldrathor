@@ -33,7 +33,8 @@ Flee/ambush confirm; combat v2; final world names; regenerating island art.
 - **Pins:** `app/src/map/islandPath.js` holds the LOCKED 10-pin table, bend points and the 4→5 stub endpoints verbatim from `Eldrathor_Island_Path_Lock.md`. `IslandWorldMap.jsx` renders them as numbered warm-RPG pins (1–10); the old 7-hotspot table is gone.
 - **Spline:** `catmullRomPath()` converts pins + bend points into cubic beziers (tension 0.85). Two open curves: [1 → 4 → stub A (38,12)] and [stub B (62,16) → 5 → 10]. Nothing is drawn between the stubs, so no line crosses the castle. Rendered as two SVG paths inside the pannable layer (dark underlay + cream dots via `stroke-dasharray: 0 11`, round caps) so it scales with pan/zoom. No PNG overlays.
 - **Pin → run data (DESIGN-OPEN placeholder):** pins map onto the existing 6 WORLDS by geography (1 = Town, 2 → W1, 3 → W2, 4/5/6 → W3, 7/8 → W4, 9 → W5, 10 → W6) so difficulty → node map and boss-unlock progression are unchanged. Locked/held/open on a pin follows its mapped world. Table in `app/public/maps/README.md`. Final names and worlds-vs-sub-areas gating remain open.
-- **Camera:** starts on pin 1 (harbor) at zoom 1.4; the ⚓ button recentres there.
+- **Pin numbering (Anthony, chat 2026-09-11):** harbor pin shows a **town icon** (⌂) instead of "1"; route nodes display **1–9** after it. Display-only; the lock's 10-row table is unchanged. Anthony undecided between 9 nodes + harbor (current) and 10 + harbor — **DESIGN-OPEN**, one extra `ISLAND_PINS` row if 10.
+- **Camera:** starts on the harbor pin at zoom 1.4; the ⚓ button recentres there.
 - **Verified** (375×812 emulation): spline neat on phone, stub gap behind castle, pins 1–10 tappable (locked inert, pin 2 → Difficulty, pin 1 → Town), pan/zoom + tab persistence unchanged, `npm run build` + eslint clean on touched files.
 - **Not done / for Boss:** engage confirm + flee/ambush (separate brief); phone `--host` playtest is Anthony's.
 
