@@ -62,6 +62,35 @@ Notes:
 
 ---
 
+## D. Phone playtest (Vite on the LAN + QR code)
+
+Runs the app on your PC and opens it on your phone's browser. No install on the phone.
+
+**Every time:**
+```
+cd eldrathor/app
+npm run dev:phone
+```
+It starts Vite with `--host` on port 5173, prints one URL per network address, and draws a **QR code** for the home-network address. Point the phone camera at the QR (or type the URL). `Ctrl+C` stops it.
+
+**Variations**
+| Situation | Command |
+|---|---|
+| Phone is on the same Wi-Fi as the PC | `npm run dev:phone` |
+| Phone is away from home (Tailscale on both devices) | `npm run dev:phone -- --tailscale` |
+| Pick an address by hand | `npm run dev:phone -- --host 192.168.0.101` |
+| Port 5173 is busy | `PHONE_PORT=5180 npm run dev:phone` (PowerShell: `$env:PHONE_PORT=5180; npm run dev:phone`) |
+
+**Checklist when the phone can't load it**
+1. Same network? Guest Wi-Fi and some hotel/office networks block device-to-device traffic. Tailscale sidesteps this.
+2. Windows Firewall: the first run pops a "Node.js" prompt — allow it on **Private** networks. If you dismissed it: Settings → Windows Security → Firewall → Allow an app → Node.js → Private.
+3. The URL must be `http://`, not `https://`, and include the port.
+4. Playtesting a branch that isn't merged yet: `git checkout <branch>` first, then run the script.
+
+Testing a PR before merge: `git fetch && git checkout feat/<branch>` → `npm run dev:phone` → playtest → `git checkout main`.
+
+---
+
 ## C. Golden rules (see also CLAUDE.md → "Git workflow")
 
 - **Pull before you start.** Another machine or a mobile session may be ahead.
