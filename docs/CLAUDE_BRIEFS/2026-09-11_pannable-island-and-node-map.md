@@ -1,6 +1,6 @@
 # BRIEF — Pannable island map + hybrid parchment node map
 
-**Status:** READY for Claude  
+**Status:** DONE (merged PR #10, 2026-09-11)  
 **Date:** 2026-09-11  
 **Author:** Boss (Grok Bot)  
 **Repo:** `HaDeZs530/eldrathor`  
@@ -43,12 +43,12 @@
 - Final Midjourney asset polish, Capacitor, combat v2, AFK rates, inventing peninsula lore.
 
 ## Success criteria
-- [ ] Phone portrait: drag pans island; zoom works; harbor visible at start
-- [ ] Hotspot opens difficulty → node map
-- [ ] Node map reads parchment + fog; forge path feels interior
-- [ ] Fight still Mind-view; themes crossfade
-- [ ] Tab switch mid-run restores stage
-- [ ] `npm run dev` works; PR has summary + test plan
+- [x] Phone portrait: drag pans island; zoom works; harbor visible at start
+- [x] Hotspot opens difficulty → node map
+- [x] Node map reads parchment + fog; forge path feels interior
+- [x] Fight still Mind-view; themes crossfade
+- [x] Tab switch mid-run restores stage
+- [x] `npm run dev` works; PR has summary + test plan
 
 ## Asset note
 **Landed:** `app/public/maps/island-world.png` (+ `app/public/maps/README.md`). Wire `/maps/island-world.png` in Vite public URL.
