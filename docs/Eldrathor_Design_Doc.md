@@ -53,6 +53,7 @@ The problem: a UI game has no physical space, so "distance climbed / far from ho
 ---
 
 ## 3b. UI NAVIGATION & SCREEN STRUCTURE (LOCKED)
+> **Superseded in part (Sept 2026):** the tab bar is now **Player · Party · Mountain · Town · Seam** with Market under Town — see `docs/Eldrathor_TabBar_Lock.md` and `docs/Eldrathor_AFK_Town_Lock.md`. The drill-down flow and combat-screen layout below still hold.
 
 **Bottom tab bar (persistent, mobile-standard):**
 - **Town** — Veinharbor hub
@@ -241,6 +242,7 @@ Three swappable layers per character:
 - **BALANCE APPROACH (locked principle):** never balance combos directly. Balance each archetype/gem/weapon **individually**; let combinations be emergent.
 
 ### 6d. Class Gems — the role toolkit layer (LOCKED)
+> **Built contents (July 2026, committed 2026-09-11):** the full 40-point trees for all four gems live in `docs/Eldrathor_ClassGemTrees_Lock.md`; the nine-stat vocabulary they reference lives in `docs/Eldrathor_BaseStats_Lock.md`; archetype seed numbers are in `docs/Eldrathor_Archetype_Seeds_DRAFT.md` (under review).
 - **4 class gems** (the core roles): **Tank, DPS, Controller, Healer.** (No support/Resonator-mirror class — that role stays archetype-only via Resonator.) **DPS covers melee/ranged/magic — the WEAPON decides delivery** (all damage is Mythros; no separate mage).
 - **Bonus flavor classes** (e.g. Summoner) = optional ADDITIONS to this list later, not core. (Court-art gems sidelined for now — see below.)
 - **Gems mirror the archetype's PERSONAL innate, NOT the group innate (LOCKED):**
@@ -464,7 +466,7 @@ The game is split into two distinct activities, each with its own mode. This del
 ## 9. OUTSTANDING / FLAGGED ITEMS (current as of September 10, 2026)
 
 ### High priority (spine-level, still open)
-1. **Class gem talent tree contents** — actual spine/branch/capstone nodes per gem (Tank/DPS/Controller/Healer). Framework locked; contents undesigned. The biggest open system.
+1. ~~Class gem talent tree contents~~ — **RESOLVED July 2026** (committed 2026-09-11): see `docs/Eldrathor_ClassGemTrees_Lock.md` + `docs/Eldrathor_BaseStats_Lock.md`. Remaining: node magnitudes / row thresholds (prototype tuning) and the archetype seed table review (`Eldrathor_Archetype_Seeds_DRAFT.md`).
 2. **World content detail** — per-World enemy rosters, specific boss designs/identities (the 7 court members + Vaelyx + Worlds 1–3 bosses), gear/level bands per World.
 3. **Veinbinder tree node contents** — The Bond + The Craft structures locked (§6f); actual nodes/costs open (balancing work).
 4. **Combat screen detail design** — eye-candy layout locked in direction (§8c); the concrete screen (button placement, special-fire visuals, feed format) needs design.
