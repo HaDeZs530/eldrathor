@@ -3,8 +3,8 @@ import { useTheme } from './theme/ThemeProvider.jsx';
 import { frame, colors, nodeTypeMeta } from './theme/tokens.js';
 import { genTerritory, revealNeighbors } from './map/genTerritory.js';
 import TerritoryMap from './map/TerritoryMap.jsx';
-import { ARCHETYPES, DEFAULT_PARTY } from './data.js';
-import { resolveFight, rollLoot, fleeChance, rollFlee } from './combat.js';
+import { ARCHETYPES, DEFAULT_PARTY, pick } from './data.js';
+import { resolveFight, rollLoot, fleeChance, rollFlee, FLEE_SUCCESS_MESSAGES } from './combat.js';
 import { Header } from './components/HarborViews.jsx';
 import PlayerScreen from './components/PlayerScreen.jsx';
 import PartyScreen from './components/PartyScreen.jsx';
@@ -181,8 +181,9 @@ export default function Eldrathor() {
     const pct = Math.round(chance * 100);
     if (escaped) {
       clearFightTimers();
-      pushLog(`↩ Fled successfully from the ${label} (${pct}% odds). The party holds position.`, 'good');
-      doFlash('Fled successfully', colors.mindGood);
+      const msg = pick(FLEE_SUCCESS_MESSAGES);
+      pushLog(`↩ ${msg} Slipped away from the ${label} (${pct}% odds). The party holds position.`, 'good');
+      doFlash(msg, colors.mindGood);
       setFightNode(null); setFightPhase('resolving'); setFightResult(null); setFightElapsed(0); setPendingLoot(null);
       setBusy(false); setRunStage('expedition');
       return;

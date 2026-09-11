@@ -70,3 +70,13 @@ export function rollFlee(node, partyHP) {
   const chance = fleeChance(node, partyHP);
   return { chance, escaped: Math.random() < chance };
 }
+
+/** Flee-success flash / log copy — one is picked at random. Anthony (2026-09-11): ~5,
+ *  mix of straight and funny. Edit freely; Boss may lock final copy. */
+export const FLEE_SUCCESS_MESSAGES = [
+  'Fled successfully!',
+  'Successful escape!',
+  'Avoided danger!',
+  'Bravely ran away!',
+  'Nope. Not today.',
+];
