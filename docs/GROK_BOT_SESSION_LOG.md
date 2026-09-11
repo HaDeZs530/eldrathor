@@ -74,16 +74,18 @@ Crafter + Upgrade/smith + Market sub. No +1-tier craft gate. Excess armor → Wo
 - Hunt/Forage name; mat names; rates/slots/recipes; Idle catch-up curve numbers  
 - Process panel art theme; AFK persistence/offline when app closed  
 - Exact Market vendor stock UI under Town  
-- Peninsula town parchment stamp language  
-- Drop approved `island-world.png` into repo for Claude brief  
-- Territory/combat polish; growth trees; Capacitor later  
+- Peninsula town parchment stamp language (confirm ruined outpost or alternate)  
+- Re-export `island-world.png` as real PNG (currently JPEG bytes)  
+- Island camera memory between Mountain visits; fog reveal VFX  
+- Combat v2; growth trees; Capacitor later  
 
 ---
 
 ## Chronology
 - **2026-09-11:** AFK/Town lock merged in PR #4 (mid-write — Idle/Train missed). Follow-up adds Idle/Train. Doc: `Eldrathor_AFK_Town_Lock.md`.
 - **2026-09-11:** Shipped base UI (Seam AFK + Town functions) — see prior PR notes / PR #7 era.
-- **2026-09-11 (coordination):** Locked Boss=plan/Claude=code. Added `AGENT_COORDINATION.md`, `Eldrathor_NodeMap_Art_Lock.md`, `CLAUDE_BRIEFS/2026-09-11_pannable-island-and-node-map.md`. Island pan/zoom + parchment node map = next Claude build.
+- **2026-09-11 (coordination):** Locked Boss=plan/Claude=code. Added `AGENT_COORDINATION.md`, `Eldrathor_NodeMap_Art_Lock.md`, Claude briefs. PR #8 / #9 (island asset).
+- **2026-09-11 (PR #10 — Claude Code):** Pannable/zoomable island world map + hybrid parchment fog-of-war node map; forge/castle interiors; theme ladder island → parchment → Mind fight. Brief follow-ups listed (eslint cleanup, PNG re-export, peninsula confirm, camera memory, fog VFX). PR #11 docs note.
 
 ---
 
