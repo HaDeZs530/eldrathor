@@ -8,6 +8,7 @@ Eldrathor: a UI-based iOS RPG (Vite + React now; Capacitor iOS wrap later). The 
 2. `docs/Eldrathor_Handoff_Doc.md` — project state, architecture, priorities.
 3. `docs/Worldvein_Lore.md` — world canon.
 4. `docs/GROK_BOT_SESSION_LOG.md` — agents must read this for Boss/Grok locks & chronology (transferable handoff).
+5. `docs/Eldrathor_AFK_Town_Lock.md` — LOCKED 2026-09-11 AFK Gather/Process + Town Crafter/Upgrade economy.
 §9 of the design doc lists what's intentionally OPEN. Don't fill open design gaps with inventions — implement placeholders and flag them.
 
 ## Hard rules (from the design doc's NEVER list)
