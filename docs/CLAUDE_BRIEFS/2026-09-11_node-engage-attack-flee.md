@@ -3,7 +3,7 @@
 **Status:** IMPLEMENTED (placeholder odds) — awaiting Boss lock of numbers + copy  
 **Date:** 2026-09-11  
 **Author:** Claude Code, recording Anthony's direction given in chat (Boss did not write this one — noted here so the session log can catch up)  
-**Source lock:** `docs/GROK_BOT_SESSION_LOG.md` → "Node advance / engage (PARTIAL — playtest 2026-09-11)"
+**Source lock:** `docs/SESSION_LOG.md` → "Node advance / engage (PARTIAL — playtest 2026-09-11)"
 
 ## Anthony's direction (verbatim intent)
 - Node tap transfers to the **fight page** (Mind-view).

@@ -1,3 +1,16 @@
+# Eldrathor — Session Log
+
+**Purpose:** Transferable memory so any agent can pick up without re-deriving locks from chat. Update when locks change or milestones land.
+
+**Repo:** `HaDeZs530/eldrathor` · Prototype: Vite + React under `app/`
+
+**Agent split (LOCKED 2026-09-11, evening — supersedes the Boss/Claude split below):** **Claude Design Chat** = design authority, locks, briefs, this log. **Claude Code** = all coding. **Grok Bot** = art / image candidates + ad-hoc. See `docs/AGENT_COORDINATION.md`.
+
+**Chronology addition:**
+- **2026-09-11 (late):** Role change locked by Anthony. Design authority moves from Grok Bot ("Boss") to the Claude Design Chat (claude.ai Project). File renamed from `SESSION_LOG.md`; everything below is preserved verbatim as history and its locks remain in force.
+
+---
+
 # Grok Bot / Boss — Session Log (Eldrathor)
 
 **Purpose:** Transferable memory so Claude (or any other agent) can pick up without re-deriving locks from chat. Update this file when locks change or major milestones land.
@@ -80,3 +93,4 @@
 ---
 
 *Last updated: 2026-09-11 evening by Boss (Grok Bot).*
+- **2026-09-11 (late):** Role-change docs pushed directly to main by Claude Design Chat (`CLAUDE.md`, `AGENT_COORDINATION.md`, `CLAUDE_HOME_HANDOFF.md`, briefs README, log rename). Next: Claude Code runs the playtest-ux-polish brief; Design Chat audits Difficulty screen / 10-pin path / Attack-Flee vs design doc.

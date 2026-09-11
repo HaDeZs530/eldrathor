@@ -9,7 +9,7 @@
 Ship the playtest UX batch Anthony locked (names that are still OPEN stay as working labels).
 
 ## Read first
-- `CLAUDE.md`, `docs/GROK_BOT_SESSION_LOG.md`, `docs/Eldrathor_AFK_Town_Lock.md`
+- `CLAUDE.md`, `docs/SESSION_LOG.md`, `docs/Eldrathor_AFK_Town_Lock.md`
 - `IslandWorldMap`, difficulty/confirm UI, Party create flow, `AfkScreen` (Gather / Process / Idle)
 
 ## Requirements

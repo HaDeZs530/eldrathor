@@ -1,6 +1,6 @@
 # Eldrathor — AFK + Town Systems Lock
 
-*LOCKED direction — Anthony + Boss, 2026-09-11 (Idle/Train catch-up added same day). Supersedes earlier conflicting notes (Market as own tab; armor +1-tier craft gate; AFK “Craft” sub-tab for gear; “AFK never grants character XP”). Transferable for Claude / any agent. See also `docs/GROK_BOT_SESSION_LOG.md`.*
+*LOCKED direction — Anthony + Boss, 2026-09-11 (Idle/Train catch-up added same day). Supersedes earlier conflicting notes (Market as own tab; armor +1-tier craft gate; AFK “Craft” sub-tab for gear; “AFK never grants character XP”). Transferable for Claude / any agent. See also `docs/SESSION_LOG.md`.*
 
 **Currency:** **Worldvein** (UI name). Mythros = lore crystal/energy, not a second currency.
 

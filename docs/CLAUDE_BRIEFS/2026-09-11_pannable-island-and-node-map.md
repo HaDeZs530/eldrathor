@@ -17,7 +17,7 @@
 - `docs/Eldrathor_NodeMap_Art_Lock.md`
 - `docs/Eldrathor_DualMode_Art_Lock.md`
 - `docs/Eldrathor_TabBar_Lock.md`
-- `docs/GROK_BOT_SESSION_LOG.md`
+- `docs/SESSION_LOG.md`
 - Existing: `IslandWorldMap`, `TerritoryMap`, `App.jsx` stage machine, theme tokens
 
 ## Requirements

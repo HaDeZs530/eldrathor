@@ -28,7 +28,7 @@ Switching between families must **crossfade/transition** background, border, and
 
 - **Hub skins** (`mind` | `mountain` | `rpg`) = bottom-bar / hub navigation chrome.
 - **Expedition dual-mode** (`WORLD` | `MIND`) still applies when entering/leaving Mind View for territory map / combat (§3c).
-- Bottom tab bar is **hub chrome**: stays **VISIBLE during expeditions AND fights** (LOCKED Anthony 2026-09-10) so players can visit Town/AFK/Party/Player while waiting for fights to resolve. Returning to Mountain restores the exact run stage (island / difficulty / expedition / active fight / loot). See `docs/GROK_BOT_SESSION_LOG.md`.
+- Bottom tab bar is **hub chrome**: stays **VISIBLE during expeditions AND fights** (LOCKED Anthony 2026-09-10) so players can visit Town/AFK/Party/Player while waiting for fights to resolve. Returning to Mountain restores the exact run stage (island / difficulty / expedition / active fight / loot). See `docs/SESSION_LOG.md`.
 
 ## Code map
 
