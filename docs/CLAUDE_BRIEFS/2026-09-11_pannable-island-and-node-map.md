@@ -59,3 +59,11 @@
 - **Theme ladder:** `AppRoot.jsx` — only `fight`/`loot` stages enter Mind-view now; the node map stays WORLD mode + `hub-mountain` (hybrid). Existing ThemeProvider crossfade covers the switch.
 - **Not touched:** economy, generator behaviour (`genTerritory.js`), combat, AFK.
 - **Flagged:** `island-world.png` is JPEG bytes with a .png name (renders fine).
+- **Merged:** PR #10 (2026-09-11). Verified in a 375×812 viewport: pan/zoom, harbor start, pin → difficulty → node map, fight crossfade to Mind-view and back, tab-switch stage persistence, forge/castle interiors. DONE note left for Boss.
+
+### Follow-ups noticed by Claude Code (NOT done — candidates for a future brief)
+- `app/` has 17 pre-existing eslint errors (unused `React` default imports under the automatic JSX runtime; `react-refresh/only-export-components` on files that export constants next to components, e.g. `TabBar.jsx`). Mechanical cleanup, no design impact.
+- `app/public/maps/island-world.png` should be re-exported as a real PNG (or renamed `.jpg` + path updated) when the final asset lands.
+- Island map polish candidates: double-tap to zoom; remember camera between visits (state currently resets when the Mountain tab remounts the map).
+- Node map polish candidates: follow-camera after each fight (sheet re-centres on mount today, which covers it, but no glide); fog reveal VFX (DESIGN-OPEN in the art lock); per-world entrance/exit compass bias from design doc §8c is still a generator TODO.
+- Peninsula town (W2) stamps are a placeholder ruined-outpost set — needs Anthony's confirm per the art lock.
