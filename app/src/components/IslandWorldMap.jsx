@@ -1,12 +1,14 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { WORLDS } from '../data.js';
+import { ISLAND_PINS, islandRoutePaths } from '../map/islandPath.js';
 import '../map/islandMap.css';
 
 /**
  * Mountain tab root — the island world map.
- * Lock: docs/Eldrathor_NodeMap_Art_Lock.md — WARM RPG micro-pixel landscape art,
- * pan + pinch/wheel zoom on a portrait phone (no hard 9:16 crop), camera starts on
- * the south harbor. Hotspots → DifficultyScreen → node map.
+ * Locks: docs/Eldrathor_NodeMap_Art_Lock.md (warm RPG micro-pixel art, pan + pinch/wheel
+ * zoom on portrait, camera starts on the harbor) and docs/Eldrathor_Island_Path_Lock.md
+ * (10 numbered pins 1→10 clockwise + a dotted spline route drawn in code; 4→5 hidden
+ * behind the castle). Pin → DifficultyScreen → node map.
  */
 
 const MAP_SRC = '/maps/island-world.png';
@@ -26,22 +28,8 @@ function capturePointer(el, pointerId) {
   }
 }
 
-/**
- * Hotspots as % of the island art (approximate — DESIGN-OPEN: precise hotspot %).
- * Clockwise intent from the south harbor: harbor → forest W1 → peninsula town W2 →
- * cliffs W3 → forge W4 → castle W5 → summit / Vaelyx. Table mirrored in
- * app/public/maps/README.md.
- */
-const ISLAND_HOTSPOTS = [
-  { id: 'harbor', worldId: null, label: 'Veinharbor', sub: 'Town', x: 49, y: 85, glyph: '⚓' },
-  { id: 'w1', worldId: 1, x: 29, y: 62, glyph: '♣' },
-  { id: 'w2', worldId: 2, x: 20, y: 35, glyph: '⌂' },
-  { id: 'w3', worldId: 3, x: 83, y: 47, glyph: '▲' },
-  { id: 'w4', worldId: 4, x: 42, y: 44, glyph: '⚒' },
-  { id: 'w5', worldId: 5, x: 51, y: 10, glyph: '♜', labelAbove: true },
-  { id: 'w6', worldId: 6, x: 51, y: 22, glyph: '❖' },
-];
-const HARBOR = ISLAND_HOTSPOTS[0];
+const HARBOR = ISLAND_PINS[0];
+const pinWorld = (pin) => (pin.worldId ? WORLDS.find((w) => w.id === pin.worldId) : null);
 
 const clampZ = (z) => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z));
 
@@ -80,6 +68,7 @@ export default function IslandWorldMap({ unlocked, onSelectWorld, onHarbor }) {
 
   const view = cam ? clampCam(cam) : camAtPct(HARBOR.x, HARBOR.y, ZOOM_START);
   const scale = base * view.z;
+  const routePaths = useMemo(() => islandRoutePaths(img.w, img.h), [img]);
 
   // Measure viewport (ResizeObserver fires once on observe, so no sync setState here).
   useEffect(() => {
@@ -124,14 +113,14 @@ export default function IslandWorldMap({ unlocked, onSelectWorld, onHarbor }) {
   }
 
   function activateHotspot(id) {
-    const h = ISLAND_HOTSPOTS.find((x) => x.id === id);
-    if (!h) return;
-    if (h.id === 'harbor') {
-      onHarbor?.();
+    const pin = ISLAND_PINS.find((p) => String(p.n) === id);
+    if (!pin) return;
+    const w = pinWorld(pin);
+    if (!w) {
+      onHarbor?.(); // pin 1 = Veinharbor → Town tab
       return;
     }
-    const w = WORLDS.find((x) => x.id === h.worldId);
-    if (!w || w.id > unlocked) return;
+    if (w.id > unlocked) return; // locked pins are inert
     onSelectWorld(w);
   }
 
@@ -217,7 +206,7 @@ export default function IslandWorldMap({ unlocked, onSelectWorld, onHarbor }) {
         <div style={S.kick}>The climb begins</div>
         <div className="eld-brand-name" style={S.title}>The Mountain</div>
         <div style={S.prog}>
-          {held} of {total} held · tap a pin to choose difficulty
+          {held} of {total} worlds held · route 1→10 · tap a pin to choose difficulty
         </div>
       </div>
 
@@ -246,48 +235,53 @@ export default function IslandWorldMap({ unlocked, onSelectWorld, onHarbor }) {
             }}
           />
 
-          {ISLAND_HOTSPOTS.map((h) => {
-            const w = h.worldId ? WORLDS.find((x) => x.id === h.worldId) : null;
+          {/* Dotted route 1→10 drawn in code (two open splines; nothing behind the castle). */}
+          <svg className="eld-island-route" width={img.w} height={img.h} viewBox={`0 0 ${img.w} ${img.h}`} aria-hidden="true">
+            {routePaths.map((d, i) => (
+              <g key={i}>
+                <path d={d} className="eld-island-route-under" />
+                <path d={d} className="eld-island-route-over" />
+              </g>
+            ))}
+          </svg>
+
+          {ISLAND_PINS.map((pin) => {
+            const w = pinWorld(pin);
             const locked = w ? w.id > unlocked : false;
             const heldW = w ? w.id < unlocked : false;
             const open = w ? w.id === unlocked : false;
-            const label = w ? w.shortName || w.name : h.label;
             const sub = w
-              ? `${w.summit ? 'Summit' : `World ${w.id}`}${locked ? ' · locked' : heldW ? ' · held' : ' · open'}`
-              : h.sub;
+              ? `${w.shortName || w.name}${locked ? ' · locked' : heldW ? ' · held' : ' · open'}`
+              : 'Town';
             const cls = [
               'eld-hotspot',
-              h.id === 'harbor' && 'is-harbor',
+              !w && 'is-harbor',
               w?.summit && 'is-summit',
               locked && 'is-locked',
               heldW && 'is-held',
               open && 'is-open',
-              h.labelAbove && 'label-above',
             ]
               .filter(Boolean)
               .join(' ');
             const k = 1 / scale;
-            const style = h.labelAbove
-              ? { left: `${h.x}%`, top: `${h.y}%`, transformOrigin: '50% calc(100% - 12px)', transform: `translate(-50%, calc(-100% + 12px)) scale(${k})` }
-              : { left: `${h.x}%`, top: `${h.y}%`, transformOrigin: '50% 12px', transform: `translate(-50%, -12px) scale(${k})` };
             return (
               <button
-                key={h.id}
+                key={pin.n}
                 type="button"
-                data-hotspot={h.id}
+                data-hotspot={String(pin.n)}
                 className={cls}
-                style={style}
-                aria-label={`${label}${locked ? ' (locked)' : ''}`}
+                style={{ left: `${pin.x}%`, top: `${pin.y}%`, transformOrigin: '50% 12px', transform: `translate(-50%, -12px) scale(${k})` }}
+                aria-label={`${pin.n}. ${pin.label}${locked ? ' (locked)' : ''}`}
                 aria-disabled={locked || undefined}
                 // Pointer taps are handled on pointerup (viewport captures the pointer);
                 // onClick only serves keyboard activation (detail === 0).
                 onClick={(e) => {
-                  if (e.detail === 0) activateHotspot(h.id);
+                  if (e.detail === 0) activateHotspot(String(pin.n));
                 }}
               >
-                <span className="eld-hotspot-pin" aria-hidden="true">{locked ? '✕' : h.glyph}</span>
+                <span className="eld-hotspot-pin" aria-hidden="true">{pin.n}</span>
                 <span className="eld-hotspot-lbl">
-                  {label}
+                  {pin.label}
                   <span className="eld-hotspot-sub">{sub}</span>
                 </span>
               </button>

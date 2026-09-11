@@ -178,3 +178,32 @@
   pointer-events: none;
   z-index: 5;
 }
+
+/* Dotted route 1→10 — drawn in code, scales with the map layer */
+.eld-island-route {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+  overflow: visible;
+  z-index: 2;
+}
+
+.eld-island-route-under,
+.eld-island-route-over {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 0 11;
+}
+
+.eld-island-route-under {
+  stroke: #1a120a;
+  stroke-width: 7;
+  opacity: 0.85;
+}
+
+.eld-island-route-over {
+  stroke: #f5d080;
+  stroke-width: 3.6;
+}
