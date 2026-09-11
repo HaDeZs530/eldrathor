@@ -1,6 +1,6 @@
 # Eldrathor — AFK + Town Systems Lock
 
-*LOCKED direction — Anthony + Boss, 2026-09-11. Supersedes earlier conflicting notes (Market as own tab; armor +1-tier craft gate; AFK “Craft” sub-tab for gear). Transferable for Claude / any agent. See also `docs/GROK_BOT_SESSION_LOG.md`.*
+*LOCKED direction — Anthony + Boss, 2026-09-11 (Idle/Train catch-up added same day). Supersedes earlier conflicting notes (Market as own tab; armor +1-tier craft gate; AFK “Craft” sub-tab for gear; “AFK never grants character XP”). Transferable for Claude / any agent. See also `docs/GROK_BOT_SESSION_LOG.md`.*
 
 **Currency:** **Worldvein** (UI name). Mythros = lore crystal/energy, not a second currency.
 
@@ -27,67 +27,72 @@ Left → right:
 
 Runs in background **even when the phone/app is closed** (true idle), and stays available while mid-fight / on other tabs.
 
-### Sub-areas
-| Sub | UI feel | Role |
-|-----|---------|------|
-| **Gather** | Mind-view (Vein bond / remote labor) | Park Adventurers on a **gather area**; Melvor-style repeating timer until stopped |
-| **Process** | AFK infusion (theme OPEN; not Town craft) | Park specialists; spend **Worldvein** to turn **raw → infused crafting mats** with quality/rarity |
+### Jobs (one per parked character)
+| Job | UI feel | Gains | Does not gain |
+|-----|---------|-------|----------------|
+| **Gather** | Mind-view (Vein bond) | Gather **skill XP** + raw mats (+ tiny Worldvein drip optional) | Character combat XP |
+| **Process** | AFK infusion (theme OPEN) | Process **skill XP** + infused quality mats (costs Worldvein) | Character combat XP |
+| **Idle / Train** | Mind-view or calm hub (OPEN) | **Character XP** (level catch-up) | Mats / process output |
 
-**Specialization:** characters can lean Gather or Process; each gains **that skill’s XP** from use.  
-**Not gained in AFK:** character combat XP / player level — those stay on **Mountain fighting**.
+**Specialization:** gatherers, processors, and trainees are all valid bench roles.  
+**Why Idle/Train exists:** roster alts (gather/process specialists, new recruits) must catch up without (a) feeding level-1s into endgame bosses or (b) babysitting easy Mountain maps for hours for one character.
+
+### Idle / Train rules (LOCKED intent)
+- Park a bench Adventurer → they earn **normal character XP** over time.
+- **Catch-up biased:** XP rate is stronger while below the level of your highest (or fielded) Adventurers; slows as they approach the roster top.
+- Soft-caps near the top so Idle cannot fully replace Mountain for main progression.
+- **Mountain remains best** for character XP **plus** loot, Worldvein, and gems.
+- Idle does **not** produce gather mats or processed mats.
 
 ### Gather
-- **Areas** gated by mountain progression: unlocking a world/area unlocks that tier’s gather sites (e.g. logging for that tier). Higher areas → better raw mats + more skill XP.
-- Three material families: **wood / metal / cloth·leather** (Vein-touched names TBD). Cloth·leather lean: woodland **Hunt**-style circuit (name OPEN: Hunt / Forage / …).
-- Every tick **always pays** skill XP + raw mats (no “failed gather”). Optional small Worldvein drip (keep small so AFK cannot replace mountain).
-- Multiple slots may run at once; only limit = slot count. No extra penalties.
+- **Areas** gated by mountain progression: unlocking a world/area unlocks that tier’s gather sites. Higher areas → better raw mats + more gather skill XP.
+- Three material families: **wood / metal / cloth·leather** (Vein-touched names TBD). Cloth·leather lean: woodland **Hunt**-style circuit (name OPEN).
+- Every tick **always pays** skill XP + raw mats (no “failed gather”).
+- Multiple slots may run at once; only limit = slot count.
 
 ### Process
 - Input: raw mats of a tier → output: **magically infused** crafting materials of that tier, in **qualities** (including rare/mythic).
 - Example intent: process many logs → mostly commons + a few **mythics**.
-- Costs **Worldvein** (Mythros energy in fiction).
-- Crit / rare outcomes = better quality infused mats (jackpot on process, not on gather failure).
+- Costs **Worldvein**. Crit / rare = better quality infused mats.
 
 ---
 
 ## Town (warm RPG)
 
-Harbor function list / NPCs include at least:
-- **Crafter NPC** — craft **armor** (and gear crafts) from **infused** mats; recipes need **X of a given quality**.
-- **Upgrade / smith NPC** — weapon merge/empower, related upgrades (skills/gear empowerment).
+- **Crafter NPC** — craft **armor** from **infused** mats; recipes need **X of a given quality**.
+- **Upgrade / smith NPC** — weapon merge/empower, related upgrades.
 - **Market** — vendor / sell (sub-tab or row under Town).
-- Other bars as designed (Recruit, etc.) can land later.
 
-**Armor craft gating:** **no +1-tier craft lock.** Players may pursue high-tier AFK + craft if they choose; growth is tuned elsewhere (rates, costs, combat), not by blocking craft knowledge per “current world +1.”
+**Armor craft gating:** **no +1-tier craft lock.** Players may pursue high-tier AFK + craft if they choose; growth tuned via rates/costs/combat.
 
-**Intentional power read:** medium-quality / modest rating armor should be enough to fight at that mountain tier; mythic mats → higher-end armor ratings as **extra / endgame chase**, not a brick wall.
+**Power read:** medium-quality / modest rating armor should clear that mountain tier; mythic mats → higher-end ratings as **extra / endgame chase**.
 
-**Worldvein sink/source:** craft and process spend Worldvein; **unwanted / excess armor can be broken down / sold back into Worldvein** (craft a lot, recycle extras). Mountain remains the **primary** Worldvein earn.
+**Worldvein:** process + upgrades spend it; excess armor scrap/sell → Worldvein; Mountain = primary earn; AFK drip stays small.
 
 ---
 
 ## Loop (canonical)
 
-1. Fight on **Mountain** → Worldvein + weapon drops + character XP.  
+1. Fight on **Mountain** → Worldvein + weapon drops + character XP (best XP+loot).  
 2. Unlock worlds → unlock matching **Gather areas**.  
-3. AFK **Gather** raw mats (skill XP).  
-4. AFK **Process** (Worldvein) → infused quality mats (mythic chase).  
-5. **Town Crafter** → armor from those mats; **Upgrade NPC** → weapons.  
-6. Scrap/sell excess armor → Worldvein; repeat.
+3. AFK **Gather** / **Process** / **Idle·Train** as needed (skill XP, mats, or alt catch-up).  
+4. **Town Crafter** → armor; **Upgrade NPC** → weapons.  
+5. Scrap/sell excess armor → Worldvein; repeat.
 
 ---
 
 ## Explicitly superseded
 - Market as 5th root tab.  
-- AFK sub-tab named “Craft” that crafts finished gear (gear craft is Town).  
-- Armor craft “only +1 tier above current area” / boss craft-knowledge gates (removed for now).  
-- AFK as the source of **character** XP (Idle-for-character-XP from older doc is **not** in this lock; revisit only if Anthony restores it).
+- AFK “Craft” that crafts finished gear (gear craft is Town).  
+- Armor “+1 tier only” / boss craft-knowledge gates (removed).  
+- “AFK never grants character XP” (replaced by **Idle/Train** catch-up job).
 
 ## Still OPEN
 - AFK tab display name  
 - Hunt/Forage skill display name + Vein-touched mat names  
 - Slot counts, timers, process rates, crit tables, recipe numbers  
-- Process panel art theme (Mind vs hybrid)  
+- Idle/Train UI theme + exact catch-up curve numbers  
+- Process panel art theme  
 - Exact Market UI under Town  
 
 *Last updated: 2026-09-11 — Boss (Grok Bot).*
