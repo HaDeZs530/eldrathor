@@ -10,9 +10,9 @@
 4. Open PRs; don't invent LOCKED design — use `// DESIGN-OPEN:` for gaps.
 
 ## Active briefs (priority)
-1. ~~`2026-09-11_agent-roles-update.md`~~ — DONE (pushed by Design Chat)
-2. **`docs/CLAUDE_BRIEFS/2026-09-11_playtest-ux-polish.md`** — pan-only mountain, Explore CTA, character create, AFK copy, Process pick+amounts, Train label.
-3. **`docs/CLAUDE_BRIEFS/2026-09-11_island-dotted-path-10-nodes.md`** — if not already on main. Check `IslandWorldMap` before rebuilding.
+1. **`docs/CLAUDE_BRIEFS/2026-09-11_loop-cleanup-and-stat-spine.md`** ← do this first (removes flee, Difficulty→Rally, weapon-only drops, stat seeds in data).
+2. **`docs/CLAUDE_BRIEFS/2026-09-11_playtest-ux-polish.md`** — skip its item 2 (Rally/Explore is now covered by brief 1) — pan-only mountain, Explore CTA, character create, AFK copy, Process pick+amounts, Train label.
+3. **`docs/CLAUDE_BRIEFS/2026-09-11_island-dotted-path-10-nodes.md`** — 10 pins as path art, 6 tappable (see brief 1 §3). Check `IslandWorldMap` before rebuilding.
 
 ## Recently DONE (don't redo)
 - PR #10 — pannable island + parchment node map
@@ -23,8 +23,8 @@
 ## Still OPEN (Anthony deciding / later)
 - AFK **root tab** final name (working label **Seam** — do not rename until locked)
 - Rally / Prepare-the-bond screen title
-- Flee odds numbers; peninsula stamps; combat v2; growth trees
-- `docs/AUDIT_2026-09-11_code-vs-locks.md` — A-items await Anthony's ruling; do not pre-empt them. B-items will arrive as a brief.
+- Peninsula stamps; combat v2 (Design Chat writing the spec now); gem tree screen
+- Audit rulings landed (A1 cut flee, A2 Rally screen, A3 6-of-10 tappable) — all in brief 1.
 
 ## Playtest
 Phone: `cd app && npm run dev -- --host` → LAN URL. Mountain should pan; zoom off after polish brief.

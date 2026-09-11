@@ -1,6 +1,7 @@
 # Audit — shipped code vs. locked design (2026-09-11)
 
 **Author:** Claude Design Chat. **Scope:** `app/src` on `main` @ 5a4107b vs `Eldrathor_Design_Doc.md` + lock docs.  
+**Rulings (Anthony, 2026-09-11):** A1 cut flee · A2 convert to Rally screen · A3 10 pins visual, 6 tappable · seeds approved for build. All in `CLAUDE_BRIEFS/2026-09-11_loop-cleanup-and-stat-spine.md`.  
 **Purpose:** list every place the prototype diverges from LOCKED design so Anthony can rule on each. Nothing here is a lock — each item is DECIDE or FIX.
 
 ## A. DECIDE — Anthony's call (design conflicts)
