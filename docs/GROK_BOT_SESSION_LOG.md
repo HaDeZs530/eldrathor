@@ -6,95 +6,77 @@
 
 **Agent split (LOCKED 2026-09-11):** Boss = planning / management / image gen / briefs / session log. **Claude = all coding.** See `docs/AGENT_COORDINATION.md` + `docs/CLAUDE_BRIEFS/`.
 
+**Home handoff:** `docs/CLAUDE_HOME_HANDOFF.md`
+
 ---
 
 ## Source of truth
 1. `docs/Eldrathor_Design_Doc.md` — game design (older bits may lag; prefer locks below when they conflict).
 2. `docs/Eldrathor_DualMode_Art_Lock.md` — dual graphical modes.
 3. `docs/Eldrathor_NodeMap_Art_Lock.md` — island / node-map theme ladder + parchment biomes.
-4. `docs/Eldrathor_TabBar_Lock.md` — nav chrome (5th tab = AFK/Seam).
-5. **`docs/Eldrathor_AFK_Town_Lock.md`** — **LOCKED 2026-09-11** AFK Gather/Process/Idle·Train + Town Crafter/Upgrade/Market.
-6. `docs/AGENT_COORDINATION.md` + `docs/CLAUDE_BRIEFS/` — roles + active Claude tasks.
-7. **This file** — chronology + cross-cutting locks.
+4. `docs/Eldrathor_Island_Path_Lock.md` — 10-pin clockwise path + spline rules.
+5. `docs/Eldrathor_TabBar_Lock.md` — nav chrome (5th tab = AFK/Seam).
+6. **`docs/Eldrathor_AFK_Town_Lock.md`** — AFK Gather/Process/Idle·Train + Town Crafter/Upgrade/Market.
+7. `docs/AGENT_COORDINATION.md` + `docs/CLAUDE_BRIEFS/` + `docs/CLAUDE_HOME_HANDOFF.md`.
+8. **This file** — chronology + cross-cutting locks.
 
 ---
 
 ## LOCKED (do not reverse without Anthony)
 
 ### Agent roles
-- Boss (Grok Bot): plan, manage, lock design/art, generate image candidates, write Claude briefs, keep this log, help with GitHub review/merge on phone.
-- Claude: implement all `app/` code from briefs. Do not invent LOCKED design.
+- Boss (Grok Bot): plan, manage, lock design/art, image candidates, Claude briefs, session log, phone GitHub help.
+- Claude: implement all `app/` code from briefs.
 
 ### Dual graphical modes + Mountain ladder
-- **World / warm RPG:** Town (and island world map).
-- **Mind-view:** Player, Party, combat, loot, **AFK Gather** (and likely Idle/Train).
-- **Mountain hub chrome:** hybrid.
-- **Location/node travel map:** **hybrid** + parchment fog-of-war route feel (not full Mind-view).
-- **Process theme:** OPEN (mind or slight forge glow for now).
-- Crossfade on theme change; never snap.
-
-### Node-map biomes (parchment)
-- Forest → trees; cliffs → cliffs; Mythros forge/temple → **interior rooms/hallways with walls**; peninsula town → OPEN (ruined coastal outpost candidate).
+- Island world map → warm RPG.
+- Location/node travel map → hybrid + parchment fog-of-war.
+- Fight/loot → full Mind-view.
+- Crossfade; never snap.
 
 ### Island world map UX
-- Landscape art OK on portrait via **pan + zoom**; start on south harbor. Prefer pan over hard crop.
+- **Pan only** (playtest 2026-09-11) — **zoom disabled**.
+- Start on south harbor.
+- Path: **10 pins**, dotted **spline in code** (`Eldrathor_Island_Path_Lock.md`); **4→5** mid segment **hidden behind castle**.
 
-### Node advance / engage (PARTIAL — playtest 2026-09-11)
-- Node tap must **not** auto-start combat.
-- Open a **confirmation** screen: at least **Fight** and **Flee** (labels OPEN).
-- **Flee** risks a roll: clean escape vs **ambush** (harder when party is low HP / encounter is tougher).
-- Exact odds, ambush fight rules, UI copy, and extra options still **OPEN** — Anthony playtesting more before full lock.
+### Node engage (PR #16)
+- Node tap → engage on fight screen: **Attack** / **Flee** (not auto-combat).
+- Flee: roll clean escape vs **ambush**; odds still DESIGN-OPEN placeholders.
 
-### Bottom TabBar (5 tabs) — order LOCKED
-**Player | Party | Mountain | Town | AFK-tab (Seam working label)**  
-- **AFK-tab** replaces root **Market** (name OPEN).  
-- **Market** = **Town sub-section**.  
-- TabBar visible during expeditions/fights; AFK true idle (persistence DESIGN-OPEN). Mountain restores run stage.
+### Difficulty / embark CTA
+- Prefer button label **Explore** (not Confirm). Soft lock 2026-09-11.
 
-### Island → run flow
-Island map → difficulty placeholder → **hybrid parchment** node map → **engage confirm** → fight (Mind-view) → loot; stage machine persists across tabs.
+### Character create
+- Creating a character requires **name + class** screen (brief READY).
 
-### Player / Party (Mind-view)
-Stats top + upgrades below; Eternal Hero paperdoll; Party = bonded 3 + roster + create + detail.
+### Bottom TabBar
+**Player | Party | Mountain | Town | Seam (working label)** — Seam final name **OPEN** (Anthony holding). Market under Town. Tab bar visible during runs.
 
-### Gear acquisition
-- **Weapons** = mountain **drops** (+ Town Upgrade merge/empower).  
-- **Armor** = Town **Crafter** from **AFK-processed** mats.
+### AFK
+- Jobs: Gather / Process / Idle·Train (sub-tab label → **Train** in polish brief).
+- Process UX: **pick item to process** + show **mat amounts** consumed (+ Worldvein).
+- More helper copy on AFK panels (polish brief).
 
-### AFK jobs (LOCKED)
-Per parked character, pick one:
-1. **Gather** — skill XP + raw mats (areas unlock with worlds).  
-2. **Process** — skill XP + infused quality mats (Worldvein cost; mythic chase).  
-3. **Idle / Train** — **character XP catch-up** (no mats); faster while behind roster top; soft-caps near top; Mountain remains best for XP+loot.
-
-### Town
-Crafter + Upgrade/smith + Market sub. No +1-tier craft gate. Excess armor → Worldvein.
-
-### Currency
-**Worldvein** on UI. Mythros = lore energy.
+### Gear / currency
+- Weapons drop; armor crafted from processed mats. Worldvein UI currency.
 
 ---
 
 ## Still TODO / DESIGN-OPEN
-- AFK tab **final display name** (Seam is working label only)
-- Hunt/Forage name; mat names; rates/slots/recipes; Idle catch-up curve numbers  
-- Process panel art theme; AFK persistence/offline when app closed  
-- Exact Market vendor stock UI under Town  
-- Peninsula town parchment stamp language (confirm ruined outpost or alternate)  
-- Re-export `island-world.png` as real PNG (currently JPEG bytes)  
-- Island camera memory between Mountain visits; fog reveal VFX  
-- Engage confirm: flee/ambush numbers, copy, extra options (more playtest incoming)  
-- Combat v2; growth trees; Capacitor later  
+- Seam **final** tab name
+- “Prepare the bond” / Rally final title
+- Hunt/Forage names; rates/recipes; flee odds
+- Peninsula stamps; fog VFX; real PNG for island art
+- Combat v2; growth trees; Capacitor; AFK offline persistence
 
 ---
 
 ## Chronology
-- **2026-09-11:** AFK/Town lock merged in PR #4 (mid-write — Idle/Train missed). Follow-up adds Idle/Train. Doc: `Eldrathor_AFK_Town_Lock.md`.
-- **2026-09-11:** Shipped base UI (Seam AFK + Town functions) — see prior PR notes / PR #7 era.
-- **2026-09-11 (coordination):** Locked Boss=plan/Claude=code. Added `AGENT_COORDINATION.md`, `Eldrathor_NodeMap_Art_Lock.md`, Claude briefs. PR #8 / #9 (island asset).
-- **2026-09-11 (PR #10 — Claude Code):** Pannable/zoomable island world map + hybrid parchment fog-of-war node map; forge/castle interiors; theme ladder island → parchment → Mind fight. Brief follow-ups listed (eslint cleanup, PNG re-export, peninsula confirm, camera memory, fog VFX). PR #11 docs note.
-- **2026-09-11 (playtest):** Phone via Vite `--host` + LAN/Tailscale. Partial lock: node tap → Fight/Flee confirm; flee vs ambush roll when risky. More notes pending.
+- **2026-09-11:** AFK/Town locks + Seam UI (PR #7 era); Boss=plan/Claude=code coordination.
+- **2026-09-11:** PR #10 parchment node map + pannable island; PR #13 path lock (spline brief); phone `--host` playtest.
+- **2026-09-11:** PR #16 Attack/Flee engage + ambush roll.
+- **2026-09-11 evening:** Playtest UX batch brief + `CLAUDE_HOME_HANDOFF.md` for Anthony’s home Claude session (pan-only, Explore, character create, Train label, Process pick+amounts, more AFK copy; Seam name held).
 
 ---
 
-*Last updated: 2026-09-11 by Boss (Grok Bot).*
+*Last updated: 2026-09-11 evening by Boss (Grok Bot).*
