@@ -11,10 +11,13 @@ export default function FightScreen({
   node,
   party,
   partyHP,
-  phase, // 'resolving' | 'done'
+  phase, // 'engage' | 'ambush' | 'resolving' | 'done'
   result, // { win, hpPct, duration, feed[] } when done / partial
   elapsedMs,
   resolveMs,
+  fleeChance, // 0..1 while engaging (DESIGN-OPEN whether the player sees the number)
+  onAttack,
+  onFlee,
 }) {
   const meta = nodeTypeMeta[node?.type] || nodeTypeMeta.normal;
   const enemyLabel =
@@ -31,20 +34,24 @@ export default function FightScreen({
   }, [phase]);
 
   const feed = result?.feed || [];
-  const showEnemyHp = phase === 'resolving' ? Math.max(0.08, 1 - progress * 0.95) : result?.win ? 0 : 0.35;
-  const showPartyHp =
-    phase === 'resolving'
+  const engaging = phase === 'engage' || phase === 'ambush';
+  const showEnemyHp = engaging ? 1 : phase === 'resolving' ? Math.max(0.08, 1 - progress * 0.95) : result?.win ? 0 : 0.35;
+  const showPartyHp = engaging
+    ? partyHP
+    : phase === 'resolving'
       ? Math.max(0.15, partyHP - progress * (1 - (result?.hpPct ?? partyHP)) * 0.7)
       : result?.hpPct ?? partyHP;
+  const statusText =
+    phase === 'engage' ? ' · attack or flee?' : phase === 'ambush' ? ' · AMBUSH' : phase === 'resolving' ? ' · resolving…' : result?.win ? ' · victory' : ' · defeat';
 
   return (
     <div style={S.wrap}>
       <div style={S.head}>
-        <div style={S.kick}>Mind View · Combat</div>
+        <div style={S.kick}>Mind View · {phase === 'engage' ? 'Engage' : 'Combat'}</div>
         <div className="eld-brand-name" style={S.title}>{enemyLabel}</div>
         <div style={S.sub}>
           {world?.name} · {meta.label}
-          {phase === 'resolving' ? ` · resolving…` : result?.win ? ' · victory' : ' · defeat'}
+          {statusText}
         </div>
       </div>
 
@@ -76,11 +83,13 @@ export default function FightScreen({
           <div style={S.vsTimer}>
             {phase === 'resolving'
               ? `${(elapsedMs / 1000).toFixed(1)}s`
-              : result
+              : phase === 'done' && result
                 ? `${result.duration}s`
                 : '—'}
           </div>
-          <div style={S.vsHint}>{phase === 'resolving' ? 'Auto-resolving' : 'Resolved'}</div>
+          <div style={S.vsHint}>
+            {phase === 'engage' ? 'Standoff' : phase === 'ambush' ? 'Ambush!' : phase === 'resolving' ? 'Auto-resolving' : 'Resolved'}
+          </div>
         </div>
 
         <div style={S.sideCol}>
@@ -99,12 +108,42 @@ export default function FightScreen({
             </div>
           </div>
           <div style={S.pulseHint}>
-            {phase === 'resolving' ? 'Veil thins…' : result?.win ? 'Foe falls.' : 'Party breaks.'}
+            {phase === 'engage'
+              ? 'It has not noticed you yet.'
+              : phase === 'ambush'
+                ? 'It cuts off the retreat.'
+                : phase === 'resolving'
+                  ? 'Veil thins…'
+                  : result?.win
+                    ? 'Foe falls.'
+                    : 'Party breaks.'}
           </div>
         </div>
       </div>
 
+      {phase === 'engage' && (
+        <div style={S.actions}>
+          <button type="button" className="eld-btn" style={S.actionBtn} onClick={onAttack}>
+            Attack
+          </button>
+          <button type="button" className="eld-btn eld-btn-ghost" style={S.actionBtn} onClick={onFlee}>
+            Flee
+            {typeof fleeChance === 'number' && (
+              <span style={S.actionSub}>{Math.round(fleeChance * 100)}% clean escape</span>
+            )}
+          </button>
+        </div>
+      )}
+      {phase === 'ambush' && (
+        <div style={S.ambushBanner} role="status">
+          AMBUSH — the {enemyLabel} cuts off the retreat. Combat begins…
+        </div>
+      )}
+
       <div className="eld-panel" style={S.feedBox}>
+        {feed.length === 0 && phase === 'engage' && (
+          <div style={S.feedLine}>The party pauses at the edge of the node. Strike first, or slip away?</div>
+        )}
         {feed.length === 0 && phase === 'resolving' && (
           <div style={S.feedLine}>The bond tightens. Blades find rhythm…</div>
         )}
@@ -200,4 +239,28 @@ const S = {
     gap: 4,
   },
   feedLine: { fontSize: 11, lineHeight: 1.4, color: '#9fb2bd' },
+  actions: { display: 'flex', gap: 10, flexShrink: 0 },
+  actionBtn: {
+    flex: 1,
+    padding: '12px 10px',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 3,
+    cursor: 'pointer',
+  },
+  actionSub: { fontSize: 9, letterSpacing: '0.04em', textTransform: 'none', opacity: 0.8, fontFamily: 'var(--eld-font-body, system-ui, sans-serif)' },
+  ambushBanner: {
+    flexShrink: 0,
+    padding: '10px 12px',
+    border: '1px solid #e05d6f',
+    borderRadius: 8,
+    color: '#e05d6f',
+    background: 'rgba(224,93,111,0.12)',
+    fontFamily: 'var(--eld-font-display, Cinzel, Georgia, serif)',
+    fontSize: 12,
+    letterSpacing: '0.06em',
+    textAlign: 'center',
+    animation: 'fadein 0.3s ease',
+  },
 };
