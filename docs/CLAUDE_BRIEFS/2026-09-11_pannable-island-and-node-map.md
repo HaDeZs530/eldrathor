@@ -23,7 +23,7 @@
 ## Requirements
 
 ### A) Island world map (warm RPG)
-- Add island art under e.g. `app/public/maps/island-world.png` (Anthony/Boss will drop the PNG if missing — use a clear placeholder path + README note until asset lands).
+- Use **`app/public/maps/island-world.png`** (already in repo — landscape micro-pixel; harbor south, castle summit, blue crystal, no dragon).
 - Portrait-friendly viewport: **pan + pinch/wheel zoom** of the **full landscape** image. Do **not** hard-crop to 9:16.
 - Initial camera: lower/south harbor.
 - Overlay ~5–7 tappable world hotspots (approximate % OK; document them). Clockwise intent: harbor/Veinharbor, forest W1, peninsula town W2, cliffs W3, Mythros forge W4, castle W5, summit/Vaelyx.
@@ -51,4 +51,4 @@
 - [ ] `npm run dev` works; PR has summary + test plan
 
 ## Asset note
-Boss has a candidate island PNG (castle summit, blue crystal, no dragon). If not in-repo yet, implement pan/zoom against a placeholder and list “drop `island-world.png`” in the PR.
+**Landed:** `app/public/maps/island-world.png` (+ `app/public/maps/README.md`). Wire `/maps/island-world.png` in Vite public URL.
