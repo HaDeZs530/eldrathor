@@ -13,7 +13,7 @@
 - Ambush → something noting the ambush, then combat starts.
 
 ## What was built (branch `feat/engage-attack-flee`)
-- `AppRoot.jsx`: node tap → `engageNode()` sets `runStage='fight'`, `fightPhase='engage'` (no auto-combat). `commitFight({ambush})` runs the existing auto-resolver. `attemptFlee()` rolls; success → `runStage='expedition'` + log `↩ Fled cleanly…` + flash "Clean escape"; failure → `fightPhase='ambush'` banner for ~1.1 s, then `commitFight({ambush:true})` with an `AMBUSH —` feed line.
+- `AppRoot.jsx`: node tap → `engageNode()` sets `runStage='fight'`, `fightPhase='engage'` (no auto-combat). `commitFight({ambush})` runs the existing auto-resolver. `attemptFlee()` rolls; success → `runStage='expedition'` + flash and log line using a random pick from `FLEE_SUCCESS_MESSAGES` in `combat.js` (Anthony: ~5 messages, some funny — currently "Fled successfully!", "Successful escape!", "Avoided danger!", "Bravely ran away!", "Nope. Not today."); failure → `fightPhase='ambush'` banner for ~1.1 s, then `commitFight({ambush:true})` with an `AMBUSH —` feed line.
 - `FightScreen.jsx`: phases `engage | ambush | resolving | done`. In `engage`: Attack (primary) + Flee (ghost, shows "% clean escape") under the party/foe panel; foe HP bar full; hint "It has not noticed you yet." In `ambush`: red banner. Header label reads **Engage** until combat starts.
 - `combat.js`: `fleeChance(node, partyHP)` and `rollFlee()`.
 - Entering a node still reveals its type (design doc: hidden until entered) — that is what the party sees when deciding.
@@ -34,7 +34,7 @@ chance = clamp(0.10 … 0.95,
 ## Success criteria
 - [x] Tap node → Engage screen, no auto-combat
 - [x] Attack → resolving → Spoils → Continue → route map
-- [x] Flee success → route map + "Fled successfully" log + flash
+- [x] Flee success → route map + random success message (flash + log)
 - [x] Flee failure → AMBUSH banner → combat → Spoils
 - [x] `npm run build` OK; eslint clean on touched files (pre-existing unused-React warnings aside)
 - [ ] Anthony phone playtest; Boss locks odds/copy and updates the session log
