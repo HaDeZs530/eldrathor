@@ -12,13 +12,17 @@ export const HUB_SKIN = {
   RPG: 'rpg',
 };
 
-/** Map hub tab id → hub skin family. */
+/**
+ * Map hub tab id → hub skin family.
+ * AFK/Seam uses mind (Gather/Idle). Process theme DESIGN-OPEN — slight forge glow via CSS class.
+ * Market is no longer a root tab (under Town).
+ */
 export const TAB_HUB_SKIN = {
   player: HUB_SKIN.MIND,
   party: HUB_SKIN.MIND,
   mountain: HUB_SKIN.MOUNTAIN,
   town: HUB_SKIN.RPG,
-  market: HUB_SKIN.RPG,
+  afk: HUB_SKIN.MIND,
 };
 
 export const colors = {
@@ -51,6 +55,9 @@ export const colors = {
   // Mountain hybrid accents
   mountainGlow: 'rgba(95, 199, 224, 0.35)',
   mountainWarm: '#c4894a',
+
+  // Process forge hint (DESIGN-OPEN theme)
+  forgeGlow: 'rgba(224, 120, 60, 0.35)',
 };
 
 export const fonts = {
@@ -72,3 +79,19 @@ export const nodeTypeMeta = {
   crystal: { label: 'Vein Crystal', glyph: '❖', color: '#5fc7e0' },
   boss: { label: 'Boss', glyph: '☠', color: '#e05d6f' },
 };
+
+/** Infused mat quality ladder (Process RNG). */
+export const MAT_QUALITY = {
+  Common: { color: '#9fb2bd', weight: 55 },
+  Fine: { color: '#7fd6a0', weight: 25 },
+  Rare: { color: '#6fb7d6', weight: 12 },
+  Epic: { color: '#b58fe0', weight: 6 },
+  Mythic: { color: '#e0a04d', weight: 2 },
+};
+
+export const GATHER_FAMILIES = [
+  { id: 'wood', label: 'Wood', glyph: '🌲' },
+  { id: 'metal', label: 'Metal', glyph: '⛏' },
+  // DESIGN-OPEN: Hunt/Forage display name
+  { id: 'hunt', label: 'Hunt', glyph: '🦌' },
+];

@@ -13,6 +13,14 @@ Not pixel *or* painterly — **both**, mapped to the warm/cold rule.
 
 Warm/cold master rule remains: warm reality ↔ WORLD pixel kit; cold projection ↔ MIND refined kit.
 
+## Hub skins vs dual-mode (AFK/Town — 2026-09-11)
+
+Aligned with `docs/Eldrathor_AFK_Town_Lock.md` / TabBar lock:
+- **Town** (incl. Crafter / Upgrade / Market sub) → warm WORLD / `hub-rpg`.
+- **AFK Gather + Idle/Train** → Mind-view / `hub-mind`.
+- **AFK Process** → theme OPEN; prototype uses mind chrome + slight forge glow.
+- Root Market tab removed; Market is under Town only.
+
 ## §9 item 14 — Art production RESOLVED
 
 ~~pixel-art vs painterly UNDECIDED~~ → **RESOLVED (2026-09-10): dual-mode, not either/or.** WORLD = fun micro-pixel (warm reality); MIND VIEW = refined fantasy-sim + Mythros-blue aura (cold Vein projection). Remaining production: Per-World palettes, UI chrome, harbor painting (~2400×2048), mountain map asset, hands-off asset pipeline later. PixelLab still useful for WORLD-mode assets (PC-only).
