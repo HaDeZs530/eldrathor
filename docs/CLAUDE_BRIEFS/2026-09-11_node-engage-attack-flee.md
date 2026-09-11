@@ -34,7 +34,7 @@ chance = clamp(0.10 … 0.95,
 ## Success criteria
 - [x] Tap node → Engage screen, no auto-combat
 - [x] Attack → resolving → Spoils → Continue → route map
-- [x] Flee success → route map + "Fled cleanly" log + flash
+- [x] Flee success → route map + "Fled successfully" log + flash
 - [x] Flee failure → AMBUSH banner → combat → Spoils
 - [x] `npm run build` OK; eslint clean on touched files (pre-existing unused-React warnings aside)
 - [ ] Anthony phone playtest; Boss locks odds/copy and updates the session log

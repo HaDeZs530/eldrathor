@@ -181,8 +181,8 @@ export default function Eldrathor() {
     const pct = Math.round(chance * 100);
     if (escaped) {
       clearFightTimers();
-      pushLog(`↩ Fled cleanly from the ${label} (${pct}% odds). The party holds position.`, 'good');
-      doFlash('Clean escape', colors.mindGood);
+      pushLog(`↩ Fled successfully from the ${label} (${pct}% odds). The party holds position.`, 'good');
+      doFlash('Fled successfully', colors.mindGood);
       setFightNode(null); setFightPhase('resolving'); setFightResult(null); setFightElapsed(0); setPendingLoot(null);
       setBusy(false); setRunStage('expedition');
       return;
