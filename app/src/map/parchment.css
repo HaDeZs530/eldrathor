@@ -1,0 +1,148 @@
+/* Location / node travel map — HYBRID chrome + parchment fog-of-war route surface.
+   Lock: docs/Eldrathor_NodeMap_Art_Lock.md. Not full Mind-view; fights are. */
+
+.eld-route-viewport {
+  position: relative;
+  flex: 1 1 340px;
+  min-height: 300px;
+  overflow: hidden;
+  touch-action: none;
+  cursor: grab;
+  border-radius: 8px;
+  border: 1px solid #5a4630;
+  background: #17120c; /* desk under the sheet */
+  box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.55), 0 0 16px var(--eld-accent-glow, rgba(95, 199, 224, 0.2));
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.eld-route-viewport:active {
+  cursor: grabbing;
+}
+
+.eld-parchment-sheet {
+  position: absolute;
+  left: 0;
+  top: 0;
+  will-change: transform;
+  background:
+    radial-gradient(ellipse at 50% 38%, rgba(255, 243, 208, 0.45), transparent 68%),
+    repeating-linear-gradient(0deg, rgba(90, 60, 30, 0.04) 0 2px, transparent 2px 5px),
+    repeating-linear-gradient(90deg, rgba(90, 60, 30, 0.035) 0 3px, transparent 3px 7px),
+    linear-gradient(160deg, #e7d4a6 0%, #dbc38f 45%, #ccb07c 100%);
+  box-shadow: inset 0 0 110px rgba(90, 60, 25, 0.5), 0 4px 18px rgba(0, 0, 0, 0.6);
+  outline: 2px solid #8a6a3a;
+  outline-offset: -2px;
+}
+
+.eld-parchment-sheet.is-anim {
+  transition: transform 380ms ease;
+}
+
+.eld-parchment-svg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Ink node markers */
+.eld-pnode {
+  position: absolute;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 2.5px solid var(--ink, #4a3620);
+  background: #f3e6c2;
+  color: var(--ink, #4a3620);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 0;
+  font-family: var(--eld-font-display, Cinzel, Georgia, serif);
+  box-shadow: 1px 2px 0 rgba(60, 40, 20, 0.35);
+  transition: transform 0.15s, box-shadow 0.15s, opacity 0.3s;
+  cursor: default;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.eld-pnode.is-room {
+  border-radius: 6px;
+}
+
+.eld-pnode-glyph {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.eld-pnode-lbl {
+  font-size: 7px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.eld-pnode.is-reach {
+  cursor: pointer;
+  animation: eld-ink-pulse 1.6s ease-in-out infinite;
+}
+
+.eld-pnode.is-here {
+  border-color: #8a2626;
+  color: #4a3620;
+  box-shadow: 0 0 0 3px rgba(138, 38, 38, 0.28), 1px 2px 0 rgba(60, 40, 20, 0.35);
+  transform: scale(1.08);
+}
+
+/* wax-seal party marker */
+.eld-pnode.is-here::after {
+  content: '';
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #d25a5a, #7a1c1c);
+  border: 1.5px solid #3a1010;
+  box-shadow: 1px 1px 0 rgba(60, 40, 20, 0.4);
+}
+
+.eld-pnode.is-cleared {
+  opacity: 0.55;
+  background: transparent;
+  border-style: dashed;
+}
+
+.eld-pnode.is-cleared.is-reach {
+  opacity: 0.8;
+}
+
+@keyframes eld-ink-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(74, 54, 32, 0.4), 1px 2px 0 rgba(60, 40, 20, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(74, 54, 32, 0), 1px 2px 0 rgba(60, 40, 20, 0.35);
+  }
+}
+
+.eld-route-hint {
+  position: absolute;
+  bottom: 6px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  pointer-events: none;
+}
+
+.eld-route-hint span {
+  display: inline-block;
+  font-size: 10px;
+  color: #4a3620;
+  background: rgba(243, 230, 194, 0.85);
+  border: 1px solid rgba(74, 54, 32, 0.4);
+  border-radius: 4px;
+  padding: 2px 8px;
+}

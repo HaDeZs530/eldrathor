@@ -28,7 +28,8 @@ const HUB_LABELS = {
   afk: 'The Seam', // DESIGN-OPEN: final AFK tab name
 };
 
-const MIND_STAGES = new Set(['expedition', 'fight', 'loot']);
+// Theme ladder (NodeMap art lock): island = warm RPG, node map = hybrid parchment, fight/loot = Mind-view.
+const MIND_STAGES = new Set(['fight', 'loot']);
 const FIGHT_RESOLVE_MS = 2200;
 
 export default function Eldrathor() {
@@ -122,8 +123,8 @@ export default function Eldrathor() {
     const w = selectedWorld; if (!w) return;
     const t = genTerritory(w); t.nodes.forEach((n) => { n.tier = w.tier; });
     setWorld(w); setTerritory(t); setCurrentId(t.entranceId);
-    setLog([{ t: `You reach through the Vein… ${w.name} unfolds in mind-view.`, k: 'sys' }]);
-    setPartyHP(1); setRunVein(0); setRunStage('expedition'); enterMindView();
+    setLog([{ t: `You unroll the route map. ${w.name} lies unexplored beyond the entry.`, k: 'sys' }]);
+    setPartyHP(1); setRunVein(0); setRunStage('expedition');
   }
   const finishFightToLoot = useCallback(() => {
     const ft = fightTimers.current; const res = ft.result; const loot = ft.loot;
@@ -198,7 +199,7 @@ export default function Eldrathor() {
   function onToggleIdle() {
     setAfk((a) => { if (!a.idle.charKey) return a; const starting = !a.idle.running; return { ...a, idle: { ...a.idle, running: starting, progress: starting ? a.idle.progress : 0 } }; });
   }
-  const mountainHubLabel = runStage === 'island' ? 'The Mountain' : runStage === 'difficulty' ? 'Difficulty' : runStage === 'expedition' ? 'Mind View' : runStage === 'fight' ? 'Combat' : runStage === 'loot' ? 'Spoils' : HUB_LABELS.mountain;
+  const mountainHubLabel = runStage === 'island' ? 'The Mountain' : runStage === 'difficulty' ? 'Difficulty' : runStage === 'expedition' ? 'Route Map' : runStage === 'fight' ? 'Combat' : runStage === 'loot' ? 'Spoils' : HUB_LABELS.mountain;
   return (
     <div style={S.root}>
       <style>{BASE_CSS}</style>
@@ -209,7 +210,7 @@ export default function Eldrathor() {
         {tab === 'party' && <PartyScreen party={party} setParty={setParty} roster={roster} setRoster={setRoster} />}
         {tab === 'player' && <PlayerScreen worldvein={worldvein} />}
         {tab === 'afk' && <AfkScreen unlocked={unlocked} party={party} roster={roster} inventory={inventory} afk={afk} worldvein={worldvein} onUpdateGatherSlot={onUpdateGatherSlot} onToggleGather={onToggleGather} onUpdateProcess={onUpdateProcess} onToggleProcess={onToggleProcess} onUpdateIdle={onUpdateIdle} onToggleIdle={onToggleIdle} />}
-        {tab === 'mountain' && runStage === 'island' && <IslandWorldMap unlocked={unlocked} onSelectWorld={onSelectWorld} />}
+        {tab === 'mountain' && runStage === 'island' && <IslandWorldMap unlocked={unlocked} onSelectWorld={onSelectWorld} onHarbor={() => selectTab('town')} />}
         {tab === 'mountain' && runStage === 'difficulty' && selectedWorld && <DifficultyScreen world={selectedWorld} onConfirm={onDifficultyConfirm} onBack={onDifficultyBack} />}
         {tab === 'mountain' && runStage === 'expedition' && world && territory && <TerritoryMap world={world} territory={territory} currentId={currentId} busy={busy} partyHP={partyHP} runVein={runVein} party={party} archetypes={ARCHETYPES} log={log} logRef={logRef} onVisit={visitNode} onExtract={extract} />}
         {tab === 'mountain' && runStage === 'fight' && fightNode && <FightScreen world={world} node={fightNode} party={party} partyHP={partyHP} phase={fightPhase} result={fightResult} elapsedMs={fightElapsed} resolveMs={FIGHT_RESOLVE_MS} />}

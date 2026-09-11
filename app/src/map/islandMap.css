@@ -1,0 +1,180 @@
+/* Island world map — WARM RPG micro-pixel stage inside the Mountain hub (hybrid chrome).
+   Lock: docs/Eldrathor_NodeMap_Art_Lock.md — pan + zoom landscape art on portrait. */
+
+.eld-island-viewport {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  touch-action: none;
+  cursor: grab;
+  margin: 0 8px 8px;
+  border: 3px solid #8b5a2b;
+  box-shadow: 3px 3px 0 #1a120a, inset 0 0 0 1px rgba(196, 160, 112, 0.35);
+  background: #0b2340; /* sea, shows only while the image loads */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.eld-island-viewport:active {
+  cursor: grabbing;
+}
+
+.eld-island-layer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+
+.eld-island-img {
+  display: block;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.eld-island-img.is-crisp {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+/* Hotspot pins — counter-scaled so they stay a constant screen size */
+.eld-hotspot {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: 'Press Start 2P', 'Courier New', monospace;
+  -webkit-tap-highlight-color: transparent;
+  z-index: 3;
+}
+
+.eld-hotspot.label-above {
+  flex-direction: column-reverse;
+}
+
+.eld-hotspot-pin {
+  width: 24px;
+  height: 24px;
+  border: 3px solid #1a120a;
+  background: #e0a04d;
+  box-shadow: 2px 2px 0 #1a120a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  line-height: 1;
+  color: #1a120a;
+  font-family: system-ui, sans-serif;
+}
+
+.eld-hotspot-lbl {
+  font-size: 7px;
+  letter-spacing: 0.04em;
+  color: #f5d080;
+  background: rgba(26, 18, 10, 0.72);
+  border: 2px solid #1a120a;
+  padding: 3px 5px;
+  white-space: nowrap;
+  text-shadow: 1px 1px 0 #1a120a;
+}
+
+.eld-hotspot-sub {
+  font-size: 5px;
+  color: #c4a070;
+  display: block;
+  margin-top: 3px;
+  letter-spacing: 0.02em;
+}
+
+.eld-hotspot.is-open .eld-hotspot-pin {
+  animation: eld-pin-bob 1.1s steps(2) infinite;
+  box-shadow: 2px 2px 0 #1a120a, 0 0 12px #f5d080;
+}
+
+.eld-hotspot.is-held .eld-hotspot-pin {
+  background: #7fbf6a;
+}
+
+.eld-hotspot.is-locked {
+  cursor: not-allowed;
+  opacity: 0.75;
+}
+
+.eld-hotspot.is-locked .eld-hotspot-pin {
+  background: #7c7468;
+  color: #2a2420;
+}
+
+.eld-hotspot.is-locked .eld-hotspot-lbl {
+  color: #c4a070;
+}
+
+.eld-hotspot.is-harbor .eld-hotspot-pin {
+  background: #5fc7e0;
+}
+
+.eld-hotspot.is-summit .eld-hotspot-pin {
+  background: #e0687a;
+}
+
+@keyframes eld-pin-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+/* zoom controls + hint */
+.eld-island-ctl {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 5;
+}
+
+.eld-island-ctl button {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #1a120a;
+  background: #e0a04d;
+  color: #1a120a;
+  font-family: 'Press Start 2P', 'Courier New', monospace;
+  font-size: 11px;
+  box-shadow: 2px 2px 0 #1a120a;
+  cursor: pointer;
+  padding: 0;
+}
+
+.eld-island-ctl button:active {
+  transform: translate(2px, 2px);
+  box-shadow: 0 0 0 #1a120a;
+}
+
+.eld-island-hint {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  font-family: 'Press Start 2P', 'Courier New', monospace;
+  font-size: 6px;
+  line-height: 1.6;
+  color: #f0e0c0;
+  background: rgba(26, 18, 10, 0.7);
+  border: 2px solid #1a120a;
+  padding: 3px 6px;
+  pointer-events: none;
+  z-index: 5;
+}

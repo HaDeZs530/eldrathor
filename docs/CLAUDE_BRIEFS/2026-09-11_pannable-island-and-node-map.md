@@ -52,3 +52,10 @@
 
 ## Asset note
 **Landed:** `app/public/maps/island-world.png` (+ `app/public/maps/README.md`). Wire `/maps/island-world.png` in Vite public URL.
+
+## Claude implementation notes (2026-09-11, branch `feat/pannable-island-node-map`)
+- **Island:** `IslandWorldMap.jsx` — full landscape art in a pan/pinch/wheel-zoom viewport (zoom 1.0 = island fits height, start 1.4 centred on Veinharbor, max 3.5). 7 hotspots as % of the art — table in `app/public/maps/README.md`. Harbor pin opens the Town tab; world pins → DifficultyScreen → node map. Locked worlds show a ✕ pin (tap ignored).
+- **Node map:** `map/TerritoryMap.jsx` + `map/biomeStamps.jsx` + `map/parchment.css` — hybrid mountain chrome around a parchment sheet with an SVG fog-of-war mask (revealed nodes punch soft holes; unexplored = blank parchment + mist). Outdoor biomes scatter seeded ink stamps (forest=pines/oaks, cliffs=ridges, summit=shards, peninsula=broken pier + collapsed roof **DESIGN-OPEN**). Forge/castle render as **interior**: each revealed node is a walled room, edges are walled hallways that run off into the fog; castle adds crenellations, forge adds a brazier mark.
+- **Theme ladder:** `AppRoot.jsx` — only `fight`/`loot` stages enter Mind-view now; the node map stays WORLD mode + `hub-mountain` (hybrid). Existing ThemeProvider crossfade covers the switch.
+- **Not touched:** economy, generator behaviour (`genTerritory.js`), combat, AFK.
+- **Flagged:** `island-world.png` is JPEG bytes with a .png name (renders fine).
