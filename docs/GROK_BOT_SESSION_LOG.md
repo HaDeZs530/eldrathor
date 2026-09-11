@@ -7,10 +7,10 @@
 ---
 
 ## Source of truth
-1. `docs/Eldrathor_Design_Doc.md` — game design (older §3b / economy bits may lag; prefer locks below when they conflict).
+1. `docs/Eldrathor_Design_Doc.md` — game design (older bits may lag; prefer locks below when they conflict).
 2. `docs/Eldrathor_DualMode_Art_Lock.md` — dual graphical modes.
 3. `docs/Eldrathor_TabBar_Lock.md` — nav chrome (may lag; see AFK/Town lock for Market→AFK tab swap).
-4. **`docs/Eldrathor_AFK_Town_Lock.md`** — **LOCKED 2026-09-11** AFK Gather/Process + Town Crafter/Upgrade/Market + economy loop.
+4. **`docs/Eldrathor_AFK_Town_Lock.md`** — **LOCKED 2026-09-11** AFK Gather/Process/Idle·Train + Town Crafter/Upgrade/Market.
 5. **This file** — chronology + cross-cutting locks.
 
 ---
@@ -18,54 +18,52 @@
 ## LOCKED (do not reverse without Anthony)
 
 ### Dual graphical modes
-- **World / warm RPG:** Town (and physical hub chrome), micro-pixel / RPG coloration.
-- **Mind-view:** Player, Party, expedition, combat, loot, **AFK Gather** — Mythros-blue / refined.
+- **World / warm RPG:** Town (and physical hub chrome).
+- **Mind-view:** Player, Party, expedition, combat, loot, **AFK Gather** (and likely Idle/Train).
 - **Mountain hub:** hybrid.
 - Crossfade on theme change; never snap.
 
 ### Bottom TabBar (5 tabs) — order LOCKED
 **Player | Party | Mountain | Town | AFK-tab**  
 - **AFK-tab** replaces root **Market** (name OPEN: Seam / Echoes / Bound / …).  
-- **Market** = **Town sub-section**, not a root tab.  
-- TabBar stays **VISIBLE** during expeditions/fights; AFK keeps running (true idle, incl. app closed). Returning to Mountain restores run stage.
+- **Market** = **Town sub-section**.  
+- TabBar visible during expeditions/fights; AFK true idle (app closed OK). Mountain restores run stage.
 
 ### Island → run flow (PR #3 shipped)
 Island map → difficulty placeholder → Mind-view expedition → fight → loot; stage machine persists across tabs.
 
 ### Player / Party (Mind-view)
-Stats top + upgrades below; Eternal Hero paperdoll (silhouette + slots); Party = bonded 3 + roster + create + detail.
+Stats top + upgrades below; Eternal Hero paperdoll; Party = bonded 3 + roster + create + detail.
 
-### Gear acquisition (LOCKED 2026-09-11)
-- **Weapons** = mountain **drops** (+ Town Upgrade/smith merge/empower).  
-- **Armor** = Town **Crafter** from **AFK-processed** mats.  
-- AFK does **not** craft finished gear; AFK **Processes** raw → infused quality mats.
+### Gear acquisition
+- **Weapons** = mountain **drops** (+ Town Upgrade merge/empower).  
+- **Armor** = Town **Crafter** from **AFK-processed** mats.
 
-### AFK + Town split (LOCKED 2026-09-11) — see `Eldrathor_AFK_Town_Lock.md`
-- **Gather:** areas unlock with mountain worlds; wood / metal / cloth·leather; Melvor-like timer; always pays XP + raw mats.  
-- **Process:** Worldvein cost; tier raw → infused qualities (mythic chase). Gather skill ≠ Process skill.  
-- **Town:** Crafter + Upgrade/smith + Market sub.  
-- **No** armor “+1 tier only” craft gate — may AFK/craft high tier if desired; tune via rates/costs/combat.  
-- **Character XP** = mountain only. **AFK** = gather/process **skill XP** only.  
-- Excess armor → convert/sell to **Worldvein**. Mountain = primary Worldvein earn.
+### AFK jobs (LOCKED)
+Per parked character, pick one:
+1. **Gather** — skill XP + raw mats (areas unlock with worlds).  
+2. **Process** — skill XP + infused quality mats (Worldvein cost; mythic chase).  
+3. **Idle / Train** — **character XP catch-up** (no mats); faster while behind roster top; soft-caps near top; Mountain remains best for XP+loot.
+
+Fixes: alt specialists / new recruits without easy-map babysitting or level-1 endgame griefing.
+
+### Town
+Crafter + Upgrade/smith + Market sub. No +1-tier craft gate. Excess armor → Worldvein.
 
 ### Currency
-**Worldvein** on UI. Mythros = lore substance/energy, not a second point currency.
+**Worldvein** on UI. Mythros = lore energy.
 
 ---
 
 ## Still TODO / DESIGN-OPEN
-- AFK tab display name; Hunt/Forage name; mat fantasy names; rates/slots/recipes  
-- Wire AFK Gather/Process + Town Crafter/Upgrade/Market screens  
-- Territory map polish (§8c respawns/rares/boss seal)  
-- Combat v2 spectacle  
-- Growth trees (gems / Veinbinder)  
-- Design doc §3b + economy sections rewrite to match locks; remove stale DESIGN_OPEN_AFK brief status  
-- Capacitor iOS later  
+- AFK tab name; Hunt/Forage name; mat names; rates/slots/recipes; Idle catch-up curve numbers  
+- Wire AFK Gather/Process/Idle + Town Crafter/Upgrade/Market screens  
+- Territory map polish; combat v2; growth trees; Capacitor later  
 
 ---
 
-## Chronology (additions)
-- **2026-09-11:** Full AFK/Town design lock after review — Market→AFK tab; Gather+Process; Town Crafter/Upgrade/Market; armor tiers via areas for gather unlock (not craft +1 gate); Worldvein loops; true idle. Doc: `docs/Eldrathor_AFK_Town_Lock.md`.
+## Chronology
+- **2026-09-11:** AFK/Town lock; then **Idle/Train** added for character XP catch-up (Anthony). Doc: `Eldrathor_AFK_Town_Lock.md`.
 
 ---
 
