@@ -7,6 +7,7 @@ Eldrathor: a UI-based iOS RPG (Vite + React now; Capacitor iOS wrap later). The 
 1. `docs/Eldrathor_Design_Doc.md` — the DESIGN source of truth. Sections marked LOCKED are decided. Never contradict a LOCKED section. If a task conflicts with one, STOP and flag the conflict instead of improvising.
 2. `docs/Eldrathor_Handoff_Doc.md` — project state, architecture, priorities.
 3. `docs/Worldvein_Lore.md` — world canon.
+4. `docs/GROK_BOT_SESSION_LOG.md` — agents must read this for Boss/Grok locks & chronology (transferable handoff).
 §9 of the design doc lists what's intentionally OPEN. Don't fill open design gaps with inventions — implement placeholders and flag them.
 
 ## Hard rules (from the design doc's NEVER list)
@@ -25,7 +26,7 @@ Eldrathor: a UI-based iOS RPG (Vite + React now; Capacitor iOS wrap later). The 
 - Mode switch when entering/leaving Mind View must feel intentional.
 - Fantasy, not sci-fi: Cinzel/Marcellus-class display fonts on Mind View; jewel tones; carved/ornamented / aura frames. No monospace/HUD fonts, no neon circuit aesthetics.
 - Reference mockups: `mockups/town_mockup_v3.html` (warm pole), `mockups/worldmap_mockup.html` (cold pole).
-- Nav: persistent 5-tab bottom bar left→right — **Player · Party · Mountain (CENTER, emphasized) · Town · Market**. Hub chrome theme families: Player/Party → mind-view; Mountain → hybrid; Town/Market → warm RPG. Switching families must **crossfade/transition** (~300–450ms), never pop. Market is its own tab. Tab bar is hub chrome — hide during expedition/combat full mind-view. See `docs/Eldrathor_TabBar_Lock.md` + design doc §3b.
+- Nav: persistent 5-tab bottom bar left→right — **Player · Party · Mountain (CENTER, emphasized) · Town · Market**. Hub chrome theme families: Player/Party → mind-view; Mountain → hybrid; Town/Market → warm RPG. Switching families must **crossfade/transition** (~300–450ms), never pop. Market is its own tab. Tab bar is hub chrome — **stay visible during runs** (island→difficulty→expedition→fight→loot); switching tabs must not clear run stage. See `docs/GROK_BOT_SESSION_LOG.md` + `docs/Eldrathor_TabBar_Lock.md` + design doc §3b.
 - Full detail: design doc §3c.
 
 ## Who may implement

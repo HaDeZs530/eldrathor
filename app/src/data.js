@@ -18,11 +18,13 @@ export const WEAPONS = {
 };
 
 export const WORLDS = [
-  { id: 1, name: 'Shoreline Forest', clock: '7–10', tier: 1, boss: 'The Gorewood Stag', accent: '#8fae6b' },
-  { id: 2, name: 'Overrun Peninsula Town', clock: '9–12', tier: 2, boss: 'The Hollow Bellringer', accent: '#b8a05a' },
-  { id: 3, name: 'The Ravine Path', clock: '11–2', tier: 3, boss: 'The Bridgewright', accent: '#6f8fb7' },
-  { id: 4, name: 'The Magical Forge', clock: 'top', tier: 4, boss: 'Forge Warden (Wing)', accent: '#d67d4d', court: true },
-  { id: 5, name: 'The Upper Castle', clock: 'top', tier: 5, boss: 'The Bound Court', accent: '#9d6fd6', court: true },
+  { id: 1, name: 'Shoreline Forest', shortName: 'Shoreline Forest', clock: '7–10', tier: 1, boss: 'The Gorewood Stag', accent: '#8fae6b' },
+  { id: 2, name: 'Overrun Peninsula Town', shortName: 'Peninsula Town', clock: '9–12', tier: 2, boss: 'The Hollow Bellringer', accent: '#b8a05a' },
+  { id: 3, name: 'The Ravine Path', shortName: 'Ravine Path', clock: '11–2', tier: 3, boss: 'The Bridgewright', accent: '#6f8fb7' },
+  { id: 4, name: 'The Magical Forge', shortName: 'The Forge', clock: 'top', tier: 4, boss: 'Forge Warden (Wing)', accent: '#d67d4d', court: true },
+  { id: 5, name: 'The Upper Castle', shortName: 'Upper Castle', clock: 'top', tier: 5, boss: 'The Bound Court', accent: '#9d6fd6', court: true },
+  // Summit node — Vaelyx (fits 5–7 island map nodes). DESIGN-OPEN: full Vaelyx encounter design.
+  { id: 6, name: 'Vaelyx', shortName: 'Vaelyx', clock: 'summit', tier: 6, boss: 'Vaelyx the Bound', accent: '#e0687a', summit: true },
 ];
 
 export const DEFAULT_PARTY = [
