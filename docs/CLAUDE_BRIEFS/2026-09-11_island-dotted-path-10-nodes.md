@@ -1,31 +1,30 @@
-# BRIEF — Island dotted path (10 nodes, organic + hide behind castle)
+# BRIEF — Island dotted path via spline (10 nodes)
 
 **Status:** READY for Claude  
 **Date:** 2026-09-11  
 **Author:** Boss (Grok Bot)
 
 ## Goal
-Pins **1→10** clockwise harbor → crystal with a **dotted path** that follows Anthony’s **red-line** organic routes. Mid **4→5** runs **behind the castle** and must **not be drawn/visible**.
+In `IslandWorldMap`, show pins **1→10** and a **smooth dotted spline path** between them (organic curves). **Hide** the mid **4→5** segment behind the castle (stubs only).
 
 ## Read first
-- `docs/Eldrathor_Island_Path_Lock.md`
-- `app/public/maps/island-path-sketch-anthony.png` (**SoT** — red strokes)
-- `app/public/maps/island-path-refined-preview.png` (v2 preview; faint = hidden)
-- `IslandWorldMap.jsx` + `app/public/maps/README.md`
+- `docs/Eldrathor_Island_Path_Lock.md` — pin table + bend points + 4→5 stub rule
+- `app/public/maps/island-path-sketch-anthony.png` — intent only (red lines)
+- Existing `IslandWorldMap.jsx` / CSS / `app/public/maps/README.md`
 
 ## Requirements
-1. Use the **10-node table** in the Island Path lock.
-2. Dotted path follows **organic** polylines (coast / roads), not straight shortcuts.
-3. **4→5:** only visible stubs near 4 and 5; **omit or occlude** the behind-castle middle.
-4. Prefer matching the red sketch over the older blue dotted sketch.
-5. Keep pan/zoom, warm RPG, difficulty → node map, tab persistence.
-6. Update README hotspot table.
-7. No engage/flee UI in this PR.
+1. Replace ~7 hotspots with the **10-pin table** from the lock.
+2. Draw path in **code** (SVG or canvas): Catmull‑Rom or cubic bezier through pins + suggested bend points. Sample to a **dotted** stroke. **Do not** use Boss preview PNGs as the path graphic.
+3. **4→5:** two stubs only; no visible mid path behind/through castle.
+4. Keep pan/zoom, warm RPG, difficulty → node map, tab persistence, locked-pin UX.
+5. Update `app/public/maps/README.md` with the pin table.
+6. No engage/flee UI in this PR.
 
 ## Success criteria
-- [ ] Organic dotted path on phone; gap/hidden behind castle for 4→5
-- [ ] Pins 1–10 tappable; locked state works
-- [ ] Build + `--host` playtest OK
+- [ ] Smooth dotted spline looks neat on phone (not jagged scribbles)
+- [ ] Gap / no line behind castle for 4→5
+- [ ] Pins 1–10 work; locked state OK
+- [ ] `npm run build` + `--host` playtest OK
 
 ## Out of scope
-Flee/ambush confirm; combat v2; final world names.
+Flee/ambush confirm; combat v2; final world names; regenerating island art.
