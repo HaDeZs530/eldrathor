@@ -24,7 +24,7 @@
 - AFK **root tab** final name (working label **Seam** — do not rename until locked)
 - Rally / Prepare-the-bond screen title
 - Flee odds numbers; peninsula stamps; combat v2; growth trees
-- Design Chat audit of shipped features vs. design doc (Difficulty screen, 10-pin path, Attack/Flee engage) — pending; do not pre-empt.
+- `docs/AUDIT_2026-09-11_code-vs-locks.md` — A-items await Anthony's ruling; do not pre-empt them. B-items will arrive as a brief.
 
 ## Playtest
 Phone: `cd app && npm run dev -- --host` → LAN URL. Mountain should pan; zoom off after polish brief.

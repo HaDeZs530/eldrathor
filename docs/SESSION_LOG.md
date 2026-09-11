@@ -94,3 +94,4 @@
 
 *Last updated: 2026-09-11 evening by Boss (Grok Bot).*
 - **2026-09-11 (late):** Role-change docs pushed directly to main by Claude Design Chat (`CLAUDE.md`, `AGENT_COORDINATION.md`, `CLAUDE_HOME_HANDOFF.md`, briefs README, log rename). Next: Claude Code runs the playtest-ux-polish brief; Design Chat audits Difficulty screen / 10-pin path / Attack-Flee vs design doc.
+- **2026-09-11 (late):** Design Chat audit of code vs locks pushed: `docs/AUDIT_2026-09-11_code-vs-locks.md`. Open rulings: A1 Attack/Flee, A2 Difficulty screen, A3 10 pins vs 6 worlds, A4 boss seal/respawns not yet built.
