@@ -1,41 +1,41 @@
 # Island world path lock (2026-09-11)
 
-> **Status:** LOCKED direction (Anthony sketch). Hotspot % are **v1 refine** from the sketch — Claude may nudge pins onto visible roads/landmarks but must keep order and clockwise intent. Preview: `app/public/maps/island-path-refined-preview.png`. Sketch SoT: `app/public/maps/island-path-sketch-anthony.png`.
+> **Status:** LOCKED direction — follow **Anthony red-line diagram** (`island-path-sketch-anthony.png`) closer than any Boss preview. Preview v2: `island-path-refined-preview.png`.
 
 ## Intent
 - Island map shows a **linear advance path**: **dotted line** between world nodes so the route is obvious.
 - Progression goes **clockwise from Veinharbor (harbor)**, then climbs to the crystal summit.
-- **Node count may exceed** the original 5–7 world plan — **~10 playable areas** is OK for this map.
-- Path must **follow roads / terrain / shoreline**, not cut across open ocean.
-- Special fix: **4 → 5** must hug the **northern land / mountain shelf**, not arc over water (Anthony called this out).
+- **~10 playable nodes** OK (may exceed old 5–7 worlds).
+- Path must be **organic** — follow coast, roads, and terrain (Anthony red strokes), not straight blue shortcuts.
+- **4 → 5** goes **behind the castle / peak**. That mid segment must **not be visible** in-game (occluded by mountain/castle art, or simply omitted). Only short visible stubs near pins 4 and 5.
 
 ## Nodes (order LOCKED)
-Percentages are of the island art width × height (origin top-left), matching `island-world.png` / preview.
+Percentages are of the island art (origin top-left). Nudge onto landmarks if needed; keep order.
 
 | # | x% | y% | Working label | Notes |
 |---|----|----|---------------|-------|
-| 1 | 47.0 | 72.0 | Harbor / Veinharbor | Start; may open Town or act as hub pin |
-| 2 | 30.0 | 59.0 | Shore trail | West of town, into forest |
-| 3 | 19.0 | 36.0 | West cliffs | NW coast / cliff buildings |
-| 4 | 33.0 | 16.0 | NW shore | Far NW tip |
-| 5 | 66.0 | 25.0 | NE lookout | NE side — connected via **land** waypoints |
-| 6 | 75.0 | 52.0 | East coast | Eastern shore / peninsula feel |
-| 7 | 56.0 | 52.0 | East ruins | Inland east clearing/ruins |
-| 8 | 41.0 | 46.0 | Forge gate | Mid-mountain approach / gate |
-| 9 | 44.0 | 18.0 | High walls | Upper castle approach |
-| 10 | 51.0 | 23.0 | Crystal / summit | End / Vaelyx / boss area |
+| 1 | 47.0 | 73.0 | Harbor / Veinharbor | Start |
+| 2 | 28.0 | 62.0 | Shore trail | SW forest edge |
+| 3 | 17.0 | 38.0 | West cliffs | West coast buildings |
+| 4 | 32.0 | 15.0 | NW shore | NW tip |
+| 5 | 68.0 | 24.0 | NE lookout | NE — path from 4 hidden mid-route |
+| 6 | 78.0 | 54.0 | East coast | East shore |
+| 7 | 58.0 | 55.0 | East ruins | Inland east |
+| 8 | 38.0 | 48.0 | Forge gate | Mid-mountain keep/gate |
+| 9 | 42.0 | 28.0 | High walls | Climb above forge |
+| 10 | 51.0 | 22.0 | Crystal / summit | End |
 
-### Land waypoints (path only, not pins) — 4 → 5
-Use for the dotted polyline only: `(38,14) → (45,12) → (53,13) → (60,18)` then node 5. Adjust slightly to visible shore/ridge if needed.
+### Path polyline notes
+- Prefer organic curves matching the **red** strokes on the sketch (coast-hugging 2→3→4, inland curve 6→7→8, climb 8→9→10).
+- **4→5:** visible near 4 (e.g. toward ~38,12) and near 5 (e.g. from ~62,16); **do not draw** the behind-castle middle.
 
-## UI requirements (for Claude brief)
-- Draw **dotted path** along the polyline (nodes + 4→5 waypoints).
-- Pins 1–10 tappable; locked nodes show locked state.
-- Keep **pan + zoom**; path/pins scale with the map.
-- Does **not** replace engage-confirm / flee (separate playtest lock).
+## UI requirements (for Claude)
+- Dotted path along organic polyline; hide behind-castle segment.
+- Pins 1–10 tappable; locked state retained.
+- Pan + zoom; path/pins scale with map.
+- Engage confirm / flee is a **separate** brief.
 
 ## DESIGN-OPEN
 - Final display names for nodes 2–9
-- Which nodes are “worlds” vs sub-areas for AFK unlock gating
-- Exact pin snap to roads after art polish
-- Whether harbor (#1) starts unlocked-only vs also a Town shortcut
+- Worlds vs sub-areas for AFK unlock gating
+- Exact occlusion method (draw under castle layer vs omit segment)
