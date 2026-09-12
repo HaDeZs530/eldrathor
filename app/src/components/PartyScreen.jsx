@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ARCHETYPES, WEAPONS } from '../data.js';
+import { ARCHETYPES, WEAPONS, STATS, STAT_LABELS, ARCHETYPE_SEEDS } from '../data.js';
 import GearPaperdoll from './GearPaperdoll.jsx';
 
 const CLASS_GLYPH = {
@@ -167,6 +167,20 @@ function MemberDetail({ member, onBack, onChange, onPromoteToParty }) {
         ))}
       </div>
 
+      <div style={S.secHead}>Base seeds</div>
+      <div style={S.note}>Base seeds — gems multiply these.</div>
+      <div className="eld-panel" style={S.seedList}>
+        {STATS.map((k) => {
+          const v = ARCHETYPE_SEEDS[member.archetype]?.[k] ?? 10;
+          return (
+            <div key={k} style={S.seedRow}>
+              <span style={S.seedK}>{STAT_LABELS[k]}</span>
+              <span style={{ ...S.seedV, color: v > 10 ? 'var(--eld-accent, #5fc7e0)' : 'inherit' }}>{v}</span>
+            </div>
+          );
+        })}
+      </div>
+
       <GearPaperdoll
         accent={a.color}
         classGlyph={CLASS_GLYPH[member.archetype] || '♟'}
@@ -296,6 +310,10 @@ const S = {
   },
   statK: { fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--eld-muted)' },
   statV: { fontSize: 14, fontWeight: 700, marginTop: 4, color: 'var(--eld-accent, #5fc7e0)' },
+  seedList: { padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 12 },
+  seedRow: { display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '3px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' },
+  seedK: { color: 'var(--eld-muted)' },
+  seedV: { fontWeight: 700, fontVariantNumeric: 'tabular-nums' },
   editBlock: { marginBottom: 12 },
   editLbl: {
     fontSize: 10,

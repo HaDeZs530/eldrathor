@@ -1,5 +1,7 @@
 import { ARCHETYPES, WEAPONS, rand, pick } from './data.js';
 
+const WEAPON_TYPES = Object.keys(WEAPONS);
+
 /** Auto-resolve fight (retained from prototype). */
 export function resolveFight(party, node) {
   const tierMult = 1 + (node.tier - 1) * 0.6;
@@ -46,27 +48,9 @@ export function rollLoot(node) {
         ? Math.min(4, node.tier)
         : Math.min(node.tier - 1 + (Math.random() < 0.3 ? 1 : 0), 4);
     const qtier = tiers[Math.max(0, ti)];
-    gear = { name: `${qtier} ${pick(['Blade', 'Guard', 'Vestment', 'Charm', 'Crown'])}`, tier: qtier, rating: Math.round(rand(1, 100)) };
+    // Weapons DROP, armor never does (§7c LOCKED) — names come from the 8 weapon types only.
+    const weaponType = pick(WEAPON_TYPES);
+    gear = { name: `${qtier} ${weaponType}`, tier: qtier, rating: Math.round(rand(1, 100)), weaponType };
   }
   return { worldvein, gear, healCrystal: Math.random() < 0.14 };
-}
-
-/**
- * Flee roll — placeholder numbers. Partial lock (session log 2026-09-11): flee risks a
- * roll, clean escape vs AMBUSH, harder when the party is low on HP or the encounter is
- * tougher. Directed by Anthony (Claude Code chat 2026-09-11): attack/flee buttons on
- * the fight screen; success → back to node map; ambush → note + combat starts.
- * // DESIGN-OPEN: exact odds, ambush fight rules (currently a normal fight), UI copy.
- */
-export function fleeChance(node, partyHP) {
-  const base = 0.7;
-  const hpTerm = (Math.max(0, Math.min(1, partyHP)) - 0.5) * 0.4; // -0.2 … +0.2
-  const typePenalty = node.type === 'boss' ? 0.35 : node.type === 'rare' ? 0.2 : node.type === 'crystal' ? 0.05 : 0;
-  const tierPenalty = Math.max(0, (node.tier || 1) - 1) * 0.03;
-  return Math.max(0.1, Math.min(0.95, base + hpTerm - typePenalty - tierPenalty));
-}
-
-export function rollFlee(node, partyHP) {
-  const chance = fleeChance(node, partyHP);
-  return { chance, escaped: Math.random() < chance };
 }

@@ -1,5 +1,7 @@
 # BRIEF — Node engage: Attack / Flee on the fight screen
 
+> **SUPERSEDED (reversed 2026-09-11)** — audit ruling A1 (Anthony): node tap = auto-engage, no Attack/Flee. Reversed by `2026-09-11_loop-cleanup-and-stat-spine.md`. Kept for history only.
+
 **Status:** IMPLEMENTED (placeholder odds) — awaiting Boss lock of numbers + copy  
 **Date:** 2026-09-11  
 **Author:** Claude Code, recording Anthony's direction given in chat (Boss did not write this one — noted here so the session log can catch up)  

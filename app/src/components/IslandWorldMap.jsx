@@ -6,7 +6,7 @@ import '../map/islandMap.css';
  * Mountain tab root — the island world map.
  * Lock: docs/Eldrathor_NodeMap_Art_Lock.md — WARM RPG micro-pixel landscape art,
  * pan + pinch/wheel zoom on a portrait phone (no hard 9:16 crop), camera starts on
- * the south harbor. Hotspots → DifficultyScreen → node map.
+ * the south harbor. Hotspots → RallyScreen → node map.
  */
 
 const MAP_SRC = '/maps/island-world.png';
@@ -217,7 +217,7 @@ export default function IslandWorldMap({ unlocked, onSelectWorld, onHarbor }) {
         <div style={S.kick}>The climb begins</div>
         <div className="eld-brand-name" style={S.title}>The Mountain</div>
         <div style={S.prog}>
-          {held} of {total} held · tap a pin to choose difficulty
+          {held} of {total} held · tap a pin to rally the bond
         </div>
       </div>
 

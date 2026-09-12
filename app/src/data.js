@@ -1,3 +1,4 @@
+// DESIGN-OPEN: legacy prototype numbers (hp/atk/def); replaced by ARCHETYPE_SEEDS in combat v2.
 export const ARCHETYPES = {
   Bulwark: { role: 'Tank', hp: 220, atk: 10, def: 14, color: '#6fb7d6', blurb: 'Draws focus, endures.' },
   Warden: { role: 'Healer', hp: 150, atk: 9, def: 8, color: '#7fd6a0', blurb: 'Mends the party.' },
@@ -24,8 +25,37 @@ export const WORLDS = [
   { id: 4, name: 'The Magical Forge', shortName: 'The Forge', clock: 'top', tier: 4, boss: 'Forge Warden (Wing)', accent: '#d67d4d', court: true },
   { id: 5, name: 'The Upper Castle', shortName: 'Upper Castle', clock: 'top', tier: 5, boss: 'The Bound Court', accent: '#9d6fd6', court: true },
   // Summit node — Vaelyx (fits 5–7 island map nodes). DESIGN-OPEN: full Vaelyx encounter design.
-  { id: 6, name: 'Vaelyx', shortName: 'Vaelyx', clock: 'summit', tier: 6, boss: 'Vaelyx the Bound', accent: '#e0687a', summit: true },
+  { id: 6, name: 'Vaelyx', shortName: 'Vaelyx', clock: 'summit', tier: 6, boss: 'Vaelyx the Eternal', accent: '#e0687a', summit: true },
 ];
+
+/** The nine base stats every system uses — docs/Eldrathor_BaseStats_Lock.md (LOCKED July 2026). */
+export const STATS = ['hp', 'mana', 'manaRegen', 'power', 'mitigation', 'attackSpeed', 'critChance', 'critDamage', 'healingPower'];
+
+export const STAT_LABELS = {
+  hp: 'HP',
+  mana: 'Mana', // DESIGN-OPEN: placeholder name ("Mythros" candidate)
+  manaRegen: 'Mana Regen',
+  power: 'Power',
+  mitigation: 'Worldvein Mitigation',
+  attackSpeed: 'Attack Speed',
+  critChance: 'Crit Chance',
+  critDamage: 'Crit Damage',
+  healingPower: 'Healing Power',
+};
+
+/**
+ * Archetype base seeds — docs/Eldrathor_Archetype_Seeds_DRAFT.md (approved for build 2026-09-11).
+ * 10 on every stat, 15 on each archetype's two specialty stats. Flat numbers; never change —
+ * growth comes from levels, gear, and gems (class gems multiply these by %).
+ * Resonator is all 10s on purpose (its value is the Attune Vein group innate).
+ */
+export const ARCHETYPE_SEEDS = {
+  Bulwark:   { hp: 15, mana: 10, manaRegen: 10, power: 10, mitigation: 15, attackSpeed: 10, critChance: 10, critDamage: 10, healingPower: 10 },
+  Warden:    { hp: 10, mana: 10, manaRegen: 15, power: 10, mitigation: 10, attackSpeed: 10, critChance: 10, critDamage: 10, healingPower: 15 },
+  Striker:   { hp: 10, mana: 10, manaRegen: 10, power: 15, mitigation: 10, attackSpeed: 15, critChance: 10, critDamage: 10, healingPower: 10 },
+  Adept:     { hp: 10, mana: 15, manaRegen: 10, power: 10, mitigation: 10, attackSpeed: 10, critChance: 15, critDamage: 10, healingPower: 10 },
+  Resonator: { hp: 10, mana: 10, manaRegen: 10, power: 10, mitigation: 10, attackSpeed: 10, critChance: 10, critDamage: 10, healingPower: 10 },
+};
 
 export const DEFAULT_PARTY = [
   { name: 'Kessa', archetype: 'Bulwark', weapon: 'Sword + Shield', level: 3 },

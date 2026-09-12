@@ -4,7 +4,7 @@ import { frame, colors, nodeTypeMeta } from './theme/tokens.js';
 import { genTerritory, revealNeighbors } from './map/genTerritory.js';
 import TerritoryMap from './map/TerritoryMap.jsx';
 import { ARCHETYPES, DEFAULT_PARTY } from './data.js';
-import { resolveFight, rollLoot, fleeChance, rollFlee } from './combat.js';
+import { resolveFight, rollLoot } from './combat.js';
 import { Header } from './components/HarborViews.jsx';
 import PlayerScreen from './components/PlayerScreen.jsx';
 import PartyScreen from './components/PartyScreen.jsx';
@@ -12,7 +12,7 @@ import TownScreen from './components/TownScreen.jsx';
 import AfkScreen from './components/AfkScreen.jsx';
 import TabBar from './components/TabBar.jsx';
 import IslandWorldMap from './components/IslandWorldMap.jsx';
-import DifficultyScreen from './components/DifficultyScreen.jsx';
+import RallyScreen from './components/RallyScreen.jsx';
 import FightScreen from './components/FightScreen.jsx';
 import LootResults from './components/LootResults.jsx';
 import {
@@ -31,14 +31,12 @@ const HUB_LABELS = {
 // Theme ladder (NodeMap art lock): island = warm RPG, node map = hybrid parchment, fight/loot = Mind-view.
 const MIND_STAGES = new Set(['fight', 'loot']);
 const FIGHT_RESOLVE_MS = 2200;
-const AMBUSH_NOTICE_MS = 1100; // how long the AMBUSH banner shows before combat auto-resolves
 
 export default function Eldrathor() {
   const { enterMindView, exitMindView, currentMode, setHubSkinForTab } = useTheme();
   const [tab, setTab] = useState('mountain');
   const [runStage, setRunStage] = useState('island');
   const [selectedWorld, setSelectedWorld] = useState(null);
-  const [difficulty, setDifficulty] = useState('normal');
   const [party, setParty] = useState(DEFAULT_PARTY);
   const [roster, setRoster] = useState([
     { name: 'Nyra', archetype: 'Adept', weapon: 'Staff', level: 1 },
@@ -69,7 +67,7 @@ export default function Eldrathor() {
   const [fightResult, setFightResult] = useState(null);
   const [fightElapsed, setFightElapsed] = useState(0);
   const [pendingLoot, setPendingLoot] = useState(null);
-  const fightTimers = useRef({ tick: null, done: null, ambush: null, startedAt: 0, result: null, loot: null });
+  const fightTimers = useRef({ tick: null, done: null, startedAt: 0, result: null, loot: null });
   const afkRef = useRef(afk);
   const inventoryRef = useRef(inventory);
   const worldveinRef = useRef(worldvein);
@@ -110,18 +108,17 @@ export default function Eldrathor() {
     const ft = fightTimers.current;
     if (ft.tick) window.clearInterval(ft.tick);
     if (ft.done) window.clearTimeout(ft.done);
-    if (ft.ambush) window.clearTimeout(ft.ambush);
-    fightTimers.current = { tick: null, done: null, ambush: null, startedAt: 0, result: null, loot: null };
+    fightTimers.current = { tick: null, done: null, startedAt: 0, result: null, loot: null };
   }
   function resetRunToIsland() {
-    clearFightTimers(); exitMindView(); setRunStage('island'); setSelectedWorld(null); setDifficulty('normal');
+    clearFightTimers(); exitMindView(); setRunStage('island'); setSelectedWorld(null);
     setTerritory(null); setWorld(null); setCurrentId(null); setRunVein(0); setFightNode(null);
     setFightPhase('resolving'); setFightResult(null); setFightElapsed(0); setPendingLoot(null); setBusy(false);
   }
-  function onSelectWorld(w) { setSelectedWorld(w); setRunStage('difficulty'); }
-  function onDifficultyBack() { setSelectedWorld(null); setRunStage('island'); }
-  function onDifficultyConfirm(diff) {
-    setDifficulty(diff);
+  // World pin → Rally screen (audit A2: no difficulty bands — the World is the band).
+  function onSelectWorld(w) { setSelectedWorld(w); setRunStage('rally'); }
+  function onRallyBack() { setSelectedWorld(null); setRunStage('island'); }
+  function onRallyExplore() {
     const w = selectedWorld; if (!w) return;
     const t = genTerritory(w); t.nodes.forEach((n) => { n.tier = w.tier; });
     setWorld(w); setTerritory(t); setCurrentId(t.entranceId);
@@ -135,69 +132,29 @@ export default function Eldrathor() {
     setFightResult({ ...res, feed: buildFightFeed(res, loot, fightTimers.current.nodeLabel) });
     setPendingLoot(loot); setRunStage('loot'); setBusy(false);
   }, []);
-  /**
-   * Node tap → ENGAGE screen (Mind-view fight page with Attack / Flee). Combat never
-   * auto-starts on tap (partial lock, session log 2026-09-11). Entering reveals the
-   * node's type — that is what the party sees before deciding.
-   */
-  function engageNode(n) {
+  function startFight(n) {
     if (busy) return;
     clearFightTimers(); setBusy(true);
     setTerritory((prev) => ({ ...prev, nodes: prev.nodes.map((x) => (x.id === n.id ? { ...x, typeKnown: true } : x)) }));
-    const label = nodeLabelFor(n);
-    pushLog(`→ The party approaches a ${label} node. Attack, or flee?`, 'sys');
+    const label = n.type === 'boss' ? 'Boss' : n.type === 'rare' ? 'Rare' : n.type === 'crystal' ? 'Vein Crystal' : 'Skirmish';
+    pushLog(`→ Entering a ${label} node…`, 'sys'); // node tap = fight begins (audit A1: no engage step)
     const fightNodeFull = { ...n, tier: world.tier };
-    fightTimers.current = { ...fightTimers.current, nodeLabel: label, result: null, loot: null };
-    setFightNode(fightNodeFull); setFightPhase('engage'); setFightResult(null); setFightElapsed(0); setPendingLoot(null);
-    setRunStage('fight'); enterMindView();
-  }
-  /** Attack (or forced by ambush): resolve the fight with the existing auto-resolver. */
-  function commitFight({ ambush = false } = {}) {
-    const n = fightNode; if (!n) return;
-    clearFightTimers(); setBusy(true);
-    const label = nodeLabelFor(n);
-    const res = resolveFight(party, n); const loot = rollLoot(n);
-    setFightPhase('resolving');
-    setFightResult({
-      win: res.win, hpPct: res.hpPct, duration: res.duration,
-      feed: ambush
-        ? [{ t: `AMBUSH — the ${label} cuts off the retreat!`, color: '#e05d6f' }, { t: 'The bond tightens. Blades find rhythm…', color: '#5f8494' }]
-        : [{ t: 'The bond tightens. Blades find rhythm…', color: '#5f8494' }],
-    });
-    setFightElapsed(0); setPendingLoot(null);
+    const res = resolveFight(party, fightNodeFull); const loot = rollLoot(fightNodeFull);
+    setFightNode(fightNodeFull); setFightPhase('resolving');
+    setFightResult({ win: res.win, hpPct: res.hpPct, duration: res.duration, feed: [{ t: 'The bond tightens. Blades find rhythm…', color: '#5f8494' }] });
+    setFightElapsed(0); setPendingLoot(null); setRunStage('fight'); enterMindView();
     const startedAt = Date.now();
-    fightTimers.current = { ...fightTimers.current, startedAt, result: res, loot, nodeLabel: label, ambush };
+    fightTimers.current = { ...fightTimers.current, startedAt, result: res, loot, nodeLabel: label };
     fightTimers.current.tick = window.setInterval(() => setFightElapsed(Date.now() - startedAt), 100);
     fightTimers.current.done = window.setTimeout(() => {
       if (fightTimers.current.tick) window.clearInterval(fightTimers.current.tick);
       fightTimers.current.tick = null; setFightElapsed(FIGHT_RESOLVE_MS); finishFightToLoot();
     }, FIGHT_RESOLVE_MS);
   }
-  /** Flee: roll clean escape vs ambush. // DESIGN-OPEN: odds + ambush rules live in combat.js. */
-  function attemptFlee() {
-    const n = fightNode; if (!n || fightPhase !== 'engage') return;
-    const label = nodeLabelFor(n);
-    const { chance, escaped } = rollFlee(n, partyHP);
-    const pct = Math.round(chance * 100);
-    if (escaped) {
-      clearFightTimers();
-      pushLog(`↩ Fled cleanly from the ${label} (${pct}% odds). The party holds position.`, 'good');
-      doFlash('Clean escape', colors.mindGood);
-      setFightNode(null); setFightPhase('resolving'); setFightResult(null); setFightElapsed(0); setPendingLoot(null);
-      setBusy(false); setRunStage('expedition');
-      return;
-    }
-    pushLog(`✖ Ambushed while fleeing the ${label} (${pct}% odds)! Combat begins.`, 'bad');
-    setFightPhase('ambush');
-    fightTimers.current.ambush = window.setTimeout(() => {
-      fightTimers.current.ambush = null;
-      commitFight({ ambush: true });
-    }, AMBUSH_NOTICE_MS);
-  }
   function visitNode(n, opts = {}) {
     if (busy) return;
     if (opts.repositionOnly) { setCurrentId(n.id); pushLog('Repositioned to a cleared node.', 'sys'); return; }
-    engageNode(n);
+    startFight(n);
   }
   function applyLootAndReturnToExpedition() {
     const res = fightResult; const loot = pendingLoot; const n = fightNode;
@@ -241,7 +198,7 @@ export default function Eldrathor() {
   function onToggleIdle() {
     setAfk((a) => { if (!a.idle.charKey) return a; const starting = !a.idle.running; return { ...a, idle: { ...a.idle, running: starting, progress: starting ? a.idle.progress : 0 } }; });
   }
-  const mountainHubLabel = runStage === 'island' ? 'The Mountain' : runStage === 'difficulty' ? 'Difficulty' : runStage === 'expedition' ? 'Route Map' : runStage === 'fight' ? (fightPhase === 'engage' ? 'Engage' : 'Combat') : runStage === 'loot' ? 'Spoils' : HUB_LABELS.mountain;
+  const mountainHubLabel = runStage === 'island' ? 'The Mountain' : runStage === 'rally' ? 'Rally' : runStage === 'expedition' ? 'Route Map' : runStage === 'fight' ? 'Combat' : runStage === 'loot' ? 'Spoils' : HUB_LABELS.mountain;
   return (
     <div style={S.root}>
       <style>{BASE_CSS}</style>
@@ -253,18 +210,14 @@ export default function Eldrathor() {
         {tab === 'player' && <PlayerScreen worldvein={worldvein} />}
         {tab === 'afk' && <AfkScreen unlocked={unlocked} party={party} roster={roster} inventory={inventory} afk={afk} worldvein={worldvein} onUpdateGatherSlot={onUpdateGatherSlot} onToggleGather={onToggleGather} onUpdateProcess={onUpdateProcess} onToggleProcess={onToggleProcess} onUpdateIdle={onUpdateIdle} onToggleIdle={onToggleIdle} />}
         {tab === 'mountain' && runStage === 'island' && <IslandWorldMap unlocked={unlocked} onSelectWorld={onSelectWorld} onHarbor={() => selectTab('town')} />}
-        {tab === 'mountain' && runStage === 'difficulty' && selectedWorld && <DifficultyScreen world={selectedWorld} onConfirm={onDifficultyConfirm} onBack={onDifficultyBack} />}
+        {tab === 'mountain' && runStage === 'rally' && selectedWorld && <RallyScreen world={selectedWorld} party={party} onExplore={onRallyExplore} onBack={onRallyBack} />}
         {tab === 'mountain' && runStage === 'expedition' && world && territory && <TerritoryMap world={world} territory={territory} currentId={currentId} busy={busy} partyHP={partyHP} runVein={runVein} party={party} archetypes={ARCHETYPES} log={log} logRef={logRef} onVisit={visitNode} onExtract={extract} />}
-        {tab === 'mountain' && runStage === 'fight' && fightNode && <FightScreen world={world} node={fightNode} party={party} partyHP={partyHP} phase={fightPhase} result={fightResult} elapsedMs={fightElapsed} resolveMs={FIGHT_RESOLVE_MS} fleeChance={fightPhase === 'engage' ? fleeChance(fightNode, partyHP) : null} onAttack={() => commitFight()} onFlee={attemptFlee} />}
+        {tab === 'mountain' && runStage === 'fight' && fightNode && <FightScreen world={world} node={fightNode} party={party} partyHP={partyHP} phase={fightPhase} result={fightResult} elapsedMs={fightElapsed} resolveMs={FIGHT_RESOLVE_MS} />}
         {tab === 'mountain' && runStage === 'loot' && <LootResults world={world} nodeLabel={fightNode ? (nodeTypeMeta[fightNode.type]?.label || 'Node') : null} win={fightResult?.win} loot={pendingLoot} duration={fightResult?.duration} onContinue={applyLootAndReturnToExpedition} />}
         <TabBar activeTab={tab} onSelect={selectTab} />
       </div>
     </div>
   );
-}
-
-function nodeLabelFor(n) {
-  return n.type === 'boss' ? 'Boss' : n.type === 'rare' ? 'Rare' : n.type === 'crystal' ? 'Vein Crystal' : 'Skirmish';
 }
 
 function buildFightFeed(res, loot, label) {
