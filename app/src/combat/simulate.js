@@ -48,22 +48,27 @@ export function partyAuras(party) {
 }
 
 /**
- * @param {{party: object[], enemies: object[], seed?: number, startHpFrac?: number[]}} args
+ * @param {{party: object[], enemies: object[], seed?: number, startHpFrac?: number[], runMods?: {dmgMult?:number, mitAdd?:number}}} args
+ *   startHpFrac — per-Adventurer HP fraction carried from the run (≤0 = fallen, sits the fight out)
+ *   runMods     — sanctuary bonuses for the run: damage multiplier, additive mitigation
  * @returns {{events: object[], result: object, stats: object}}
  */
-export function simulateFight({ party, enemies, seed = 1, startHpFrac }) {
+export function simulateFight({ party, enemies, seed = 1, startHpFrac, runMods }) {
   const rng = mulberry32(seed);
+  const modDmg = runMods?.dmgMult || 1;
+  const modMit = runMods?.mitAdd || 0;
   const auras = new Set(partyAuras(party).map((a) => a.id));
   const cadence = auras.has('cadence') ? 1.12 : 1;
 
   const P = party.map((m, i) => {
     const d = deriveStats(m);
     const frac = startHpFrac?.[i] ?? 1;
+    const fallen = frac <= 0;
     return {
       id: `p${i}`, i, name: m.name, archetype: m.archetype, d,
-      hp: Math.max(1, d.maxHp * Math.max(0.01, Math.min(1, frac))),
+      hp: fallen ? 0 : Math.max(1, d.maxHp * Math.min(1, frac)),
       mana: d.maxMana,
-      alive: true,
+      alive: !fallen,
       // DESIGN-OPEN: small opening stagger so the three don't swing on the same tick.
       nextSwing: 300 + i * 150,
       cdReady: 500 + i * 100,
@@ -98,6 +103,7 @@ export function simulateFight({ party, enemies, seed = 1, startHpFrac }) {
 
   ev({ t: 0, type: 'start', auras: [...auras] });
   snap();
+  if (livingP().length === 0) outcome = 'wipe';
 
   while (!outcome && t < MAX_FIGHT_MS) {
     t += TICK_MS;
@@ -193,7 +199,7 @@ export function simulateFight({ party, enemies, seed = 1, startHpFrac }) {
       if (alive.length === 0) break;
       // DESIGN-OPEN: primary target selection — lowest index living enemy (focus fire).
       const primary = alive[0];
-      const mult = (1 + 0.08 * p.stacks) * (t < resonanceUntil ? 1.06 : 1) * (auras.has('sunder') ? 1.12 : 1);
+      const mult = (1 + 0.08 * p.stacks) * (t < resonanceUntil ? 1.06 : 1) * (auras.has('sunder') ? 1.12 : 1) * modDmg;
       const crit = rng() < p.d.critChance;
       const base = p.d.hitDamage * mult * (crit ? p.d.critMult : 1);
       ev({ t, type: 'swing', source: p.id, sourceName: p.name, target: primary.id, targetName: primary.name });
@@ -234,7 +240,7 @@ export function simulateFight({ party, enemies, seed = 1, startHpFrac }) {
       const enraged = e.enraged;
       if (enraged) { dmg *= 2; e.enraged = false; }
       // DESIGN-OPEN: Aegis "+25% mitigation" applied as +0.25 additive (capped 0.9); Resonance +6% likewise.
-      let mit = target.d.mitigation + (t < target.aegisUntil ? 0.25 : 0) + (resonance ? 0.06 : 0);
+      let mit = target.d.mitigation + modMit + (t < target.aegisUntil ? 0.25 : 0) + (resonance ? 0.06 : 0);
       mit = Math.min(0.9, mit);
       let amt = dmg * (1 - mit);
       if (auras.has('guardian')) amt *= 0.9;

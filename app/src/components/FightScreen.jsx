@@ -15,7 +15,7 @@ const FLASH_MS = 320;
 const FEED_TYPES = new Set(['crit', 'kill', 'innate', 'enrage', 'death', 'stun', 'victory', 'wipe']);
 const ENEMY_GLYPH = { boss: '☠', rare: '◈', normal: '✦', crystal: '❖' };
 
-export default function FightScreen({ world, node, party, fight, elapsedMs, speed, onSpeed, onSkip }) {
+export default function FightScreen({ area, node, party, fight, elapsedMs, speed, onSpeed, onSkip }) {
   const { events, result } = fight;
   const meta = nodeTypeMeta[node?.type] || nodeTypeMeta.normal;
   const auras = useMemo(() => partyAuras(party), [party]);
@@ -45,7 +45,7 @@ export default function FightScreen({ world, node, party, fight, elapsedMs, spee
   }, [feed.length]);
 
   const done = elapsedMs >= result.durationMs;
-  const enemyLabel = node?.type === 'boss' ? world?.boss || 'Boss' : meta.label;
+  const enemyLabel = node?.type === 'boss' ? area?.boss || 'Boss' : fight.named ? 'Named foe' : meta.label;
 
   return (
     <div style={S.wrap}>
@@ -53,7 +53,7 @@ export default function FightScreen({ world, node, party, fight, elapsedMs, spee
         <div style={S.kick}>Mind View · Combat</div>
         <div className="eld-brand-name" style={S.title}>{enemyLabel}</div>
         <div style={S.sub}>
-          {world?.name} · {meta.label} · {done ? (result.win ? 'victory' : 'defeat') : `${(elapsedMs / 1000).toFixed(1)}s`}
+          {area?.name} · {meta.label}{fight.ambush ? ' · ambush' : ''} · {done ? (result.win ? 'victory' : 'defeat') : `${(elapsedMs / 1000).toFixed(1)}s`}
           {!done && speed === 2 ? ' · 2×' : ''}
         </div>
       </div>

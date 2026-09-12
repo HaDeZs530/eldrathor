@@ -8,7 +8,7 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "node --test src/combat/simulate.test.js"
+    "test": "node --test src/combat/simulate.test.js src/map/genTerritory.test.js"
   },
   "dependencies": {
     "react": "^19.2.7",

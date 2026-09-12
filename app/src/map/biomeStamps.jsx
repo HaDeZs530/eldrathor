@@ -29,17 +29,27 @@ export const BIOMES = {
   summit: { id: 'summit', label: 'Crystal summit', interior: false },
 };
 
-export function biomeForWorld(world) {
-  switch (world?.id) {
+/**
+ * Biome per area (docs/Eldrathor_Island_Areas_Lock.md). Stamp language is locked for forest /
+ * cliffs / forge interior / castle interior / summit; the rest reuse the closest set.
+ * // DESIGN-OPEN: dedicated stamps for Serpent's Stair (bridges), Ashfall Strand (cinder beach),
+ * Hollow Ward (warded streets) and Drowned Quay (the peninsula ruined-outpost candidate).
+ */
+export function biomeForArea(area) {
+  switch (area?.id) {
     case 1: return BIOMES.forest;
-    case 2: return BIOMES.outpost;
-    case 3: return BIOMES.cliffs;
-    case 4: return BIOMES.forge;
-    case 5: return BIOMES.castle;
-    case 6: return BIOMES.summit;
+    case 2: return BIOMES.cliffs;
+    case 3: return BIOMES.outpost;
+    case 4: return BIOMES.cliffs;
+    case 5: return BIOMES.cliffs;
+    case 6: return BIOMES.castle;
+    case 7: return BIOMES.forge;
+    case 8: return BIOMES.castle;
+    case 9: return BIOMES.summit;
     default: return BIOMES.forest;
   }
 }
+export const biomeForWorld = biomeForArea;
 
 /* ---------- seeded helpers ---------- */
 

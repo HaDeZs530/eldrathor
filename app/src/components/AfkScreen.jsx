@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { WORLDS, ARCHETYPES } from '../data.js';
+import { AREAS, ARCHETYPES } from '../data.js';
 import { GATHER_FAMILIES, MAT_QUALITY } from '../theme/tokens.js';
 import { GATHER_CYCLE_MS, PROCESS_CYCLE_MS, IDLE_CYCLE_MS, PROCESS_VEIN_COST } from '../afkRuntime.js';
 
@@ -15,7 +15,7 @@ export default function AfkScreen({
   onUpdateGatherSlot, onToggleGather, onUpdateProcess, onToggleProcess, onUpdateIdle, onToggleIdle, worldvein,
 }) {
   const [sub, setSub] = useState('gather');
-  const areas = WORLDS.filter((w) => w.id <= unlocked);
+  const areas = AREAS.filter((w) => w.id <= unlocked);
   const bench = [
     ...party.map((m, i) => ({ key: `party:${i}`, source: 'party', index: i, ...m })),
     ...roster.map((m, i) => ({ key: `roster:${i}`, source: 'roster', index: i, ...m })),

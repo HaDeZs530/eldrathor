@@ -8,6 +8,8 @@
 // DESIGN-OPEN: enemy names — placeholder labels until the roster lock lands.
 const TRASH_NAMES = ['Manifestation', 'Vein Husk', 'Shore Drake', 'Hollow Warden', 'Splinter Wraith'];
 const RARE_NAME = 'Rare Manifestation';
+// DESIGN-OPEN: named-variant adjectives — `<Adjective> <Enemy>` until the area roster lock lands.
+const NAMED_ADJECTIVES = ['Grim', 'Hollow', 'Ashen', 'Vein-Scarred', 'Bright-Eyed', 'Old'];
 
 function baseUnit(T) {
   return {
@@ -16,6 +18,16 @@ function baseUnit(T) {
     interval: 1.4,
     mit: 0.05 + 0.03 * T,
   };
+}
+
+/** Apply the depth multiplier (fight/crystal units only) and the named variant (×1.3, prefixed name). */
+function finish(units, { depthMult, named, rng }) {
+  return units.map((u) => {
+    let { hp, dmg, name } = u;
+    if (!u.isBoss && !u.isRare && depthMult !== 1) { hp *= depthMult; dmg *= depthMult; }
+    if (named) { hp *= 1.3; dmg *= 1.3; name = `${NAMED_ADJECTIVES[Math.floor(rng() * NAMED_ADJECTIVES.length)]} ${name}`; }
+    return { ...u, hp, maxHp: hp, dmg, name, named };
+  });
 }
 
 function weightedPick(rng, entries) {
@@ -29,16 +41,20 @@ function weightedPick(rng, entries) {
 }
 
 /**
- * @param {number} worldTier 1–6
+ * @param {number} worldTier area tier 1–9
  * @param {'normal'|'crystal'|'rare'|'boss'} nodeType
  * @param {boolean} rareFlag named/rare variant (×1.3 on top of rare)
- * @param {{rng?:()=>number, bossName?:string}} [opts]
+ * @param {{rng?:()=>number, bossName?:string, depthMult?:number, named?:boolean}} [opts]
+ *   depthMult — route-map depth multiplier (1 + 0.5×depth) applied to fight/crystal units only;
+ *   named — named variant: ×1.3 hp and dmg, `<Adjective> <Enemy>` name.
  * @returns {Array<{id:string,name:string,hp:number,maxHp:number,dmg:number,interval:number,mit:number,isBoss:boolean,isRare:boolean}>}
  */
 export function spawnEnemies(worldTier, nodeType, rareFlag = false, opts = {}) {
   const rng = opts.rng || Math.random;
-  const T = Math.max(1, Math.min(6, worldTier || 1));
+  const T = Math.max(1, Math.min(9, worldTier || 1));
   const b = baseUnit(T);
+  const depthMult = opts.depthMult || 1;
+  const named = !!opts.named;
   const units = [];
   const mk = (name, hp, dmg, interval, mit, extra = {}) => ({
     id: `e${units.length}`,
@@ -56,7 +72,7 @@ export function spawnEnemies(worldTier, nodeType, rareFlag = false, opts = {}) {
   if (nodeType === 'boss') {
     // ×18 hp, ×2.2 dmg, interval 1.6 s, mit +0.1; enrage tick every 15 s handled by the simulator.
     units.push(mk(opts.bossName || 'Boss', b.hp * 18, b.dmg * 2.2, 1.6, b.mit + 0.1, { isBoss: true }));
-    return units;
+    return finish(units, { depthMult, named, rng });
   }
   if (nodeType === 'rare') {
     let hp = b.hp * 6;
@@ -67,7 +83,7 @@ export function spawnEnemies(worldTier, nodeType, rareFlag = false, opts = {}) {
       dmg *= 1.3;
     }
     units.push(mk(rareFlag ? `Named ${RARE_NAME}` : RARE_NAME, hp, dmg, 1.2, b.mit, { isRare: true, named: !!rareFlag }));
-    return units;
+    return finish(units, { depthMult, named, rng });
   }
   if (nodeType === 'crystal') {
     // 2–3 units at ×1.2 hp. DESIGN-OPEN: 2-vs-3 split not given — 50/50 used.
@@ -75,7 +91,7 @@ export function spawnEnemies(worldTier, nodeType, rareFlag = false, opts = {}) {
     for (let i = 0; i < n; i++) {
       units.push(mk(TRASH_NAMES[Math.floor(rng() * TRASH_NAMES.length)], b.hp * 1.2, b.dmg, b.interval, b.mit));
     }
-    return units;
+    return finish(units, { depthMult, named, rng });
   }
   // normal: 1–3 units, weights 30/50/20
   const n = weightedPick(rng, [[1, 30], [2, 50], [3, 20]]);

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { WORLDS } from '../data.js';
+import { ISLAND_PINS } from '../map/islandPath.js';
 import '../map/islandMap.css';
 
 /**
@@ -15,23 +15,12 @@ const MAP_NATURAL = { w: 1280, h: 720 };
 const VIEW_ZOOM = 1.4;
 const TAP_SLOP = 8;
 
-/**
- * Hotspots as % of the island art (approximate — DESIGN-OPEN: precise hotspot %).
- * Clockwise intent from the south harbor: harbor → forest W1 → peninsula town W2 →
- * cliffs W3 → forge W4 → castle W5 → summit / Vaelyx. Table mirrored in
- * app/public/maps/README.md. (Audit A3: the 10-pin path lock becomes path art with these
- * 6 worlds tappable — handled by the island-path brief.)
- */
-const ISLAND_HOTSPOTS = [
-  { id: 'harbor', worldId: null, label: 'Veinharbor', sub: 'Town', x: 49, y: 85, glyph: '⚓' },
-  { id: 'w1', worldId: 1, x: 29, y: 62, glyph: '♣' },
-  { id: 'w2', worldId: 2, x: 20, y: 35, glyph: '⌂' },
-  { id: 'w3', worldId: 3, x: 83, y: 47, glyph: '▲' },
-  { id: 'w4', worldId: 4, x: 42, y: 44, glyph: '⚒' },
-  { id: 'w5', worldId: 5, x: 51, y: 10, glyph: '♜', labelAbove: true },
-  { id: 'w6', worldId: 6, x: 51, y: 22, glyph: '❖' },
-];
-const HARBOR = ISLAND_HOTSPOTS[0];
+/** Pin 1 = Veinharbor (opens Town); pins 2–10 = the nine areas, all tappable once unlocked. */
+const HARBOR = { ...ISLAND_PINS[0], id: 'harbor', glyph: '⚓' };
+const AREA_GLYPH = ['♣', '▲', '⌂', '⩘', '≈', '⌂', '⚒', '♜', '❖'];
+function hotspotsFor(areas) {
+  return [HARBOR, ...areas.map((a, i) => ({ ...(ISLAND_PINS[a.pin - 1] || ISLAND_PINS[i + 1]), id: `a${a.id}`, area: a, glyph: AREA_GLYPH[i] || '✦', labelAbove: a.pin === 10 || a.pin === 9 }))];
+}
 
 /** Keep pointer events flowing to the viewport during a drag; tolerate synthetic pointers. */
 function capturePointer(el, pointerId) {
@@ -42,7 +31,8 @@ function capturePointer(el, pointerId) {
   }
 }
 
-export default function IslandWorldMap({ unlocked, onSelectWorld, onHarbor }) {
+export default function IslandWorldMap({ areas, unlocked, onSelectArea, onHarbor }) {
+  const hotspots = hotspotsFor(areas);
   const vpRef = useRef(null);
   const [vp, setVp] = useState({ w: 0, h: 0 });
   const [img, setImg] = useState(MAP_NATURAL);
@@ -86,15 +76,14 @@ export default function IslandWorldMap({ unlocked, onSelectWorld, onHarbor }) {
   }
 
   function activateHotspot(id) {
-    const h = ISLAND_HOTSPOTS.find((x) => x.id === id);
+    const h = hotspots.find((x) => x.id === id);
     if (!h) return;
     if (h.id === 'harbor') {
       onHarbor?.();
       return;
     }
-    const w = WORLDS.find((x) => x.id === h.worldId);
-    if (!w || w.id > unlocked) return;
-    onSelectWorld(w);
+    if (!h.area || h.area.id > unlocked) return;
+    onSelectArea(h.area);
   }
 
   // Single-pointer pan. A second finger is ignored (no pinch zoom — playtest lock).
@@ -132,8 +121,8 @@ export default function IslandWorldMap({ unlocked, onSelectWorld, onHarbor }) {
     g.target = null;
   }
 
-  const held = WORLDS.filter((w) => w.id < unlocked).length;
-  const total = WORLDS.length;
+  const held = areas.filter((a) => a.id < unlocked).length;
+  const total = areas.length;
 
   return (
     <div style={S.wrap}>
@@ -141,7 +130,7 @@ export default function IslandWorldMap({ unlocked, onSelectWorld, onHarbor }) {
         <div style={S.kick}>The climb begins</div>
         <div className="eld-brand-name" style={S.title}>The Mountain</div>
         <div style={S.prog}>
-          {held} of {total} held · tap a pin to rally the bond
+          {held} of {total} areas held · tap a pin to rally the bond
         </div>
       </div>
 
@@ -170,15 +159,15 @@ export default function IslandWorldMap({ unlocked, onSelectWorld, onHarbor }) {
             }}
           />
 
-          {ISLAND_HOTSPOTS.map((h) => {
-            const w = h.worldId ? WORLDS.find((x) => x.id === h.worldId) : null;
+          {hotspots.map((h) => {
+            const w = h.area || null;
             const locked = w ? w.id > unlocked : false;
             const heldW = w ? w.id < unlocked : false;
             const open = w ? w.id === unlocked : false;
             const label = w ? w.shortName || w.name : h.label;
             const sub = w
-              ? `${w.summit ? 'Summit' : `World ${w.id}`}${locked ? ' · locked' : heldW ? ' · held' : ' · open'}`
-              : h.sub;
+              ? `Tier ${w.tier}${locked ? ' · locked' : heldW ? ' · held' : ' · open'}`
+              : 'Town';
             const cls = [
               'eld-hotspot',
               h.id === 'harbor' && 'is-harbor',

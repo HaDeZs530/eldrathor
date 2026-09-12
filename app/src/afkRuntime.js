@@ -1,4 +1,4 @@
-import { WORLDS } from './data.js';
+import { AREAS } from './data.js';
 import { MAT_QUALITY } from './theme/tokens.js';
 
 export const AFK_TICK_MS = 100; // DESIGN-OPEN: persistence/offline
@@ -51,7 +51,7 @@ export function tickAfk({ state, inventory, worldvein, party, roster, unlocked, 
 
   next.gatherSlots = next.gatherSlots.map((slot) => {
     if (!slot.running || !slot.charKey) return slot;
-    const area = WORLDS.find((w) => w.id === slot.areaId);
+    const area = AREAS.find((w) => w.id === slot.areaId);
     const tier = area?.tier || 1;
     if ((area?.id || 1) > unlocked) return { ...slot, running: false, progress: 0 };
     let progress = slot.progress + dt / GATHER_CYCLE_MS;

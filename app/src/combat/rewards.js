@@ -14,10 +14,13 @@ const VEIN_BASE = { normal: 1, crystal: 2, rare: 3, boss: 5 };
 const GEAR_CHANCE = { normal: 0.12, crystal: 0.25, rare: 0.6, boss: 1 };
 
 /**
- * @param {{worldTier:number,nodeType:string,attuneVein?:boolean,rng?:()=>number}} args
+ * @param {{tier:number,nodeType:string,attuneVein?:boolean,rng?:()=>number,named?:boolean,mapClear?:boolean}} args
+ *   named    — named variant: +1 extra loot roll at +1 tier (RouteMap §5)
+ *   mapClear — boss killed with every node cleared: +50% Worldvein + one guaranteed Rare-tier roll (§6)
+ * @returns {{worldvein:number, attuneBonus:number, mapClearBonus:number, gears:object[], gear:object|null}}
  */
-export function rollRewards({ worldTier, nodeType, attuneVein = false, rng = Math.random }) {
-  const T = Math.max(1, worldTier || 1);
+export function rollRewards({ tier, worldTier, nodeType, attuneVein = false, rng = Math.random, named = false, mapClear = false }) {
+  const T = Math.max(1, tier || worldTier || 1);
   const base = VEIN_BASE[nodeType] || 1;
   let worldvein = Math.round((4 + rng() * 5) * base * T);
   let attuneBonus = 0;
@@ -25,15 +28,24 @@ export function rollRewards({ worldTier, nodeType, attuneVein = false, rng = Mat
     attuneBonus = Math.round(worldvein * 0.2);
     worldvein += attuneBonus;
   }
-
-  let gear = null;
-  if (rng() < (GEAR_CHANCE[nodeType] ?? 0.12)) {
-    // tier = world tier ± 1 (−1 / 0 / +1 evenly), +1 bias with Attune Vein, clamped to the 5 tiers
-    const wobble = Math.floor(rng() * 3) - 1;
-    const idx = Math.max(0, Math.min(LOOT_TIERS.length - 1, T - 1 + wobble + (attuneVein ? 1 : 0)));
-    const tier = LOOT_TIERS[idx];
-    const weaponType = WEAPON_TYPES[Math.floor(rng() * WEAPON_TYPES.length)];
-    gear = { name: `${tier} ${weaponType}`, tier, weaponType, rating: 1 + Math.floor(rng() * 100) };
+  let mapClearBonus = 0;
+  if (mapClear) {
+    mapClearBonus = Math.round(worldvein * 0.5);
+    worldvein += mapClearBonus;
   }
-  return { worldvein, attuneBonus, gear };
+
+  const rollGear = (tierBias, forceTierIdx = null) => {
+    // tier = area tier ± 1 (−1 / 0 / +1 evenly), + bias (Attune Vein +1, named +1), clamped to the 5 tiers
+    const wobble = Math.floor(rng() * 3) - 1;
+    const idx = forceTierIdx ?? Math.max(0, Math.min(LOOT_TIERS.length - 1, T - 1 + wobble + tierBias));
+    const lootTier = LOOT_TIERS[idx];
+    const weaponType = WEAPON_TYPES[Math.floor(rng() * WEAPON_TYPES.length)];
+    return { name: `${lootTier} ${weaponType}`, tier: lootTier, weaponType, rating: 1 + Math.floor(rng() * 100) };
+  };
+  const gears = [];
+  const bias = attuneVein ? 1 : 0;
+  if (rng() < (GEAR_CHANCE[nodeType] ?? 0.12)) gears.push(rollGear(bias));
+  if (named) gears.push(rollGear(bias + 1));
+  if (mapClear) gears.push(rollGear(bias, Math.max(LOOT_TIERS.indexOf('Rare'), Math.min(LOOT_TIERS.length - 1, T - 1 + bias))));
+  return { worldvein, attuneBonus, mapClearBonus, gears, gear: gears[0] || null };
 }
