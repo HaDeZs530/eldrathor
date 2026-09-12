@@ -1,5 +1,6 @@
-/* Location / node travel map — HYBRID chrome + parchment fog-of-war route surface.
-   Lock: docs/Eldrathor_NodeMap_Art_Lock.md. Not full Mind-view; fights are. */
+/* Route map — HYBRID chrome + parchment fog-of-war route surface.
+   Locks: docs/Eldrathor_NodeMap_Art_Lock.md (surface), docs/Eldrathor_RouteMap_v3_Travel_Lock.md §2
+   (node visual states: shapes distinguish state, colour distinguishes type; 44 px hit areas). */
 
 .eld-route-viewport {
   position: relative;
@@ -45,87 +46,210 @@
   pointer-events: none;
 }
 
-/* Ink node markers */
+/* --- edges (v3 §2): cleared↔cleared solid dim teal; to frontier dotted slate; planned path gold --- */
+.eld-edge-cleared {
+  stroke: #3d6b6e;
+  stroke-width: 3;
+  stroke-linecap: round;
+  opacity: 0.9;
+}
+
+.eld-edge-frontier {
+  stroke: #5b6a8a;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-dasharray: 2 8;
+  opacity: 0.85;
+}
+
+.eld-edge-plan {
+  stroke: #e8c46a;
+  stroke-width: 7;
+  stroke-linecap: round;
+  opacity: 0.9;
+  filter: drop-shadow(0 0 5px rgba(232, 196, 106, 0.9));
+  animation: eld-plan-in 300ms ease;
+}
+
+.eld-lit-path {
+  stroke: #8e6bd1;
+  stroke-width: 5;
+  stroke-linecap: round;
+  opacity: 0.7;
+  filter: drop-shadow(0 0 4px rgba(142, 107, 209, 0.8));
+}
+
+/* --- nodes: 44 px hit area, drawn shape inside --- */
 .eld-pnode {
   position: absolute;
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  border: 2.5px solid var(--ink, #4a3620);
-  background: #f3e6c2;
-  color: var(--ink, #4a3620);
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: none;
+  background: transparent;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  padding: 0;
-  font-family: var(--eld-font-display, Cinzel, Georgia, serif);
-  box-shadow: 1px 2px 0 rgba(60, 40, 20, 0.35);
-  transition: transform 0.15s, box-shadow 0.15s, opacity 0.3s;
   cursor: default;
   -webkit-tap-highlight-color: transparent;
+  z-index: 3;
 }
 
-.eld-pnode.is-room {
-  border-radius: 6px;
-}
-
-.eld-pnode-glyph {
-  font-size: 16px;
-  line-height: 1;
-}
-
-.eld-pnode-lbl {
-  font-size: 7px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.eld-pnode.is-reach {
+.eld-pnode.is-reach,
+.eld-pnode.is-walkable,
+.eld-pnode.is-unknown,
+.eld-pnode.is-scouted,
+.eld-pnode.is-boss,
+.eld-pnode.is-rare {
   cursor: pointer;
-  animation: eld-ink-pulse 1.6s ease-in-out infinite;
+}
+
+.eld-pnode-shape {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--eld-font-display, Cinzel, Georgia, serif);
+  line-height: 1;
+  transition: transform 0.15s, box-shadow 0.15s;
+  box-sizing: border-box;
+}
+
+/* Unknown — hollow slate-blue rune circle with a slow inner pulse ("veiled", not "dirt") */
+.eld-pnode.is-unknown .eld-pnode-shape {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid #5b6a8a;
+  color: #5b6a8a;
+  background: rgba(91, 106, 138, 0.08);
+  font-size: var(--mv-label, 15px);
+  animation: eld-veil-pulse 3s ease-in-out infinite;
+}
+
+/* Scouted (uncleared) — type icon in a hollow ring, type colour */
+.eld-pnode.is-scouted .eld-pnode-shape {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 2.5px solid var(--type, #a9b4c7);
+  color: var(--type, #a9b4c7);
+  background: rgba(243, 230, 194, 0.85);
+  font-size: var(--mv-text, 18px);
+}
+
+/* Cleared — small filled dim-teal dot (the trail behind you) */
+.eld-pnode.is-cleared .eld-pnode-shape {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #3d6b6e;
+  color: transparent;
+  font-size: 0;
+}
+
+/* Respawned — cleared dot with an amber halo ("something's back") */
+.eld-pnode.is-respawned .eld-pnode-shape {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #3d6b6e;
+  color: transparent;
+  font-size: 0;
+  box-shadow: 0 0 0 5px rgba(217, 154, 58, 0.35), 0 0 16px 4px rgba(217, 154, 58, 0.7);
+}
+
+/* Named variant — scouted ring with a gold double rim over the type colour */
+.eld-pnode.is-named .eld-pnode-shape {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 2.5px solid var(--type, #a9b4c7);
+  color: var(--type, #a9b4c7);
+  background: rgba(243, 230, 194, 0.85);
+  font-size: var(--mv-text, 18px);
+  box-shadow: 0 0 0 2px #f3e6c2, 0 0 0 4px #e8c46a;
+}
+
+/* Rare — crimson skull (the only red on the map) */
+.eld-pnode.is-rare .eld-pnode-shape {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 2.5px solid #c0392b;
+  color: #c0392b;
+  background: rgba(243, 230, 194, 0.9);
+  font-size: var(--mv-num, 24px);
+  box-shadow: 0 0 12px rgba(192, 57, 43, 0.45);
+}
+
+/* Boss — violet crown; grey chains while sealed, violet pulse once unsealed */
+.eld-pnode.is-boss .eld-pnode-shape {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2.5px solid #8e6bd1;
+  color: #8e6bd1;
+  background: rgba(243, 230, 194, 0.9);
+  font-size: var(--mv-num, 24px);
+  position: relative;
+}
+
+.eld-pnode.is-boss.is-unsealed .eld-pnode-shape {
+  animation: eld-boss-pulse 1.4s ease-in-out infinite;
+}
+
+.eld-pnode-chain {
+  position: absolute;
+  bottom: -9px;
+  right: -9px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1.5px solid #6f6f78;
+  background: #f3e6c2;
+  color: #6f6f78;
+  font-size: var(--mv-label, 15px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Party (current) — gold diamond on a white core with a bright ring; never red */
+.eld-pnode.is-here .eld-pnode-shape {
+  width: 26px;
+  height: 26px;
+  transform: rotate(45deg);
+  border-radius: 4px;
+  background: radial-gradient(circle at 50% 50%, #fffdf5 0%, #fffdf5 28%, #e8c46a 32%, #e8c46a 100%);
+  border: 2px solid #fff8e1;
+  color: transparent;
+  font-size: 0;
+  box-shadow: 0 0 0 4px rgba(232, 196, 106, 0.55), 0 0 18px 4px rgba(232, 196, 106, 0.75);
 }
 
 .eld-pnode.is-here {
-  border-color: #8a2626;
-  color: #4a3620;
-  box-shadow: 0 0 0 3px rgba(138, 38, 38, 0.28), 1px 2px 0 rgba(60, 40, 20, 0.35);
+  z-index: 5;
+  cursor: default;
+}
+
+/* Reachable (next to the party) — slight lift so the immediate choices read */
+.eld-pnode.is-reach .eld-pnode-shape {
   transform: scale(1.08);
 }
 
-/* wax-seal party marker */
-.eld-pnode.is-here::after {
-  content: '';
-  position: absolute;
-  top: -7px;
-  right: -7px;
-  width: 15px;
-  height: 15px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 40% 35%, #d25a5a, #7a1c1c);
-  border: 1.5px solid #3a1010;
-  box-shadow: 1px 1px 0 rgba(60, 40, 20, 0.4);
+@keyframes eld-veil-pulse {
+  0%, 100% { box-shadow: inset 0 0 0 0 rgba(91, 106, 138, 0), 0 0 0 0 rgba(91, 106, 138, 0); }
+  50% { box-shadow: inset 0 0 10px 2px rgba(91, 106, 138, 0.45), 0 0 8px 1px rgba(91, 106, 138, 0.35); }
 }
 
-.eld-pnode.is-cleared {
-  opacity: 0.55;
-  background: transparent;
-  border-style: dashed;
+@keyframes eld-boss-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(142, 107, 209, 0.6); }
+  50% { box-shadow: 0 0 0 12px rgba(142, 107, 209, 0); }
 }
 
-.eld-pnode.is-cleared.is-reach {
-  opacity: 0.8;
-}
-
-@keyframes eld-ink-pulse {
-  0%,
-  100% {
-    box-shadow: 0 0 0 0 rgba(74, 54, 32, 0.4), 1px 2px 0 rgba(60, 40, 20, 0.35);
-  }
-  50% {
-    box-shadow: 0 0 0 8px rgba(74, 54, 32, 0), 1px 2px 0 rgba(60, 40, 20, 0.35);
-  }
+@keyframes eld-plan-in {
+  from { opacity: 0; }
+  to { opacity: 0.9; }
 }
 
 .eld-route-hint {
@@ -139,87 +263,15 @@
 
 .eld-route-hint span {
   display: inline-block;
-  font-size: 10px;
+  font-size: var(--mv-label, 15px);
   color: #4a3620;
   background: rgba(243, 230, 194, 0.85);
   border: 1px solid rgba(74, 54, 32, 0.4);
   border-radius: 4px;
-  padding: 2px 8px;
+  padding: 3px 10px;
 }
 
-/* --- route map v2: unknown runes, rares, seal, respawns, named, sanctuary, scout card --- */
-.eld-pnode.is-unknown {
-  background: #3a3028;
-  color: #cbb98f;
-  border-style: dotted;
-}
-
-.eld-pnode.is-rare {
-  border-color: #8a2626;
-  color: #8a2626;
-  box-shadow: 0 0 0 3px rgba(138, 38, 38, 0.25), 1px 2px 0 rgba(60, 40, 20, 0.35);
-}
-
-.eld-pnode.is-sanctuary {
-  border-color: #2f7a55;
-  color: #2f7a55;
-  background: #eaf3df;
-}
-
-.eld-pnode.is-sealed {
-  border-color: #6b4a10;
-  color: #6b4a10;
-  border-style: double;
-  border-width: 4px;
-}
-
-.eld-pnode.is-unsealed {
-  border-color: #b8860b;
-  color: #6b4a10;
-  animation: eld-boss-pulse 1.4s ease-in-out infinite;
-}
-
-.eld-pnode-chain {
-  position: absolute;
-  bottom: -8px;
-  right: -8px;
-  font-size: 13px;
-  background: #f3e6c2;
-  border: 1.5px solid #6b4a10;
-  border-radius: 50%;
-  width: 20px;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.eld-pnode.is-respawned {
-  opacity: 1;
-  background: #f6ead0;
-  border-style: solid;
-  box-shadow: 0 0 0 3px rgba(224, 160, 77, 0.25), 0 0 14px rgba(224, 160, 77, 0.45), 1px 2px 0 rgba(60, 40, 20, 0.35);
-}
-
-.eld-pnode.is-named {
-  border-color: #c9a227;
-  box-shadow: 0 0 0 3px rgba(201, 162, 39, 0.45), 0 0 16px rgba(201, 162, 39, 0.6), 1px 2px 0 rgba(60, 40, 20, 0.35);
-}
-
-.eld-lit-path {
-  stroke: #e0a04d;
-  stroke-width: 6;
-  stroke-linecap: round;
-  opacity: 0.75;
-  filter: drop-shadow(0 0 4px rgba(224, 160, 77, 0.8));
-}
-
-@keyframes eld-boss-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(224, 160, 77, 0.5), 1px 2px 0 rgba(60, 40, 20, 0.35); }
-  50% { box-shadow: 0 0 0 10px rgba(224, 160, 77, 0), 1px 2px 0 rgba(60, 40, 20, 0.35); }
-}
-
-/* scout card — bottom sheet inside the viewport */
+/* --- cards (scout / ambush / seal / extract) — bottom sheet inside the viewport --- */
 .eld-scout-card {
   position: absolute;
   left: 8px;
@@ -228,6 +280,11 @@
   padding: 12px 14px;
   z-index: 12;
   animation: fadein 0.25s ease;
+}
+
+.eld-scout-card.is-ambush {
+  border-color: #c0392b;
+  box-shadow: 0 0 0 1px rgba(192, 57, 43, 0.5), 0 0 24px rgba(192, 57, 43, 0.35);
 }
 
 .eld-scout-top {
@@ -240,13 +297,13 @@
 
 .eld-scout-type {
   font-family: var(--eld-font-display, Cinzel, Georgia, serif);
-  font-size: var(--mv-text, 16px);
+  font-size: var(--mv-text, 18px);
   font-weight: 700;
 }
 
 .eld-scout-threat {
-  font-size: var(--mv-label, 13px);
-  letter-spacing: 0.12em;
+  font-size: var(--mv-label, 15px);
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   border: 1px solid;
   border-radius: 4px;
@@ -254,12 +311,12 @@
 }
 
 .eld-scout-body {
-  font-size: var(--mv-text, 16px);
+  font-size: var(--mv-text, 18px);
   line-height: 1.4;
 }
 
 .eld-scout-yield {
-  font-size: var(--mv-label, 13px);
+  font-size: var(--mv-label, 15px);
   color: #e0c090;
   margin-top: 4px;
 }
@@ -268,4 +325,10 @@
   display: flex;
   gap: 8px;
   margin-top: 10px;
+}
+
+.eld-scout-actions .eld-btn {
+  flex: 1;
+  min-height: var(--mv-tap, 52px);
+  font-size: var(--mv-label, 15px);
 }

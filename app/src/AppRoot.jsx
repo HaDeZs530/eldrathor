@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTheme } from './theme/ThemeProvider.jsx';
 import { frame, colors, nodeTypeMeta } from './theme/tokens.js';
 import { genTerritory } from './map/genTerritory.js';
-import { rareAt, effectiveType, isSealed, allCleared, scoutNode, clearNode, killRare, tickClock, threatBand } from './map/routeState.js';
+import { rareAt, rareNear, effectiveType, isSealed, allCleared, scoutNode, clearNode, killRare, tickClock, threatBand, travelPath, approachPath, isWalkable, fleeChance } from './map/routeState.js';
 import RouteMapScreen from './map/RouteMapScreen.jsx';
 import { ARCHETYPES, DEFAULT_PARTY, AREAS } from './data.js';
 import { simulateFight, spawnEnemies, rollRewards, deriveStats, mulberry32 } from './combat.js';
@@ -71,6 +71,10 @@ export default function Eldrathor() {
   });
   // --- run state (route map v2) ---
   const [scout, setScout] = useState(null); // ScoutCard data for the tapped node
+  const [ambush, setAmbush] = useState(null); // AmbushCard (v3 §3): { nodeId, prevId, kind, enemies, fleeChance, ... }
+  const [travel, setTravel] = useState(null); // v3 §1 trip in progress: { path, frames, index, after }
+  const [prevId, setPrevId] = useState(null); // node the party came from (flee steps back here)
+  const travelTimer = useRef(null);
   const [runMods, setRunMods] = useState({ dmgMult: 1, mitAdd: 0 }); // sanctuary bonuses, per run
   const [runHpFrac, setRunHpFrac] = useState(null); // per-Adventurer HP carried across fights (0 = fallen)
   const [fightNode, setFightNode] = useState(null);
@@ -116,7 +120,7 @@ export default function Eldrathor() {
     const wantMind = tab === 'mountain' && MIND_STAGES.has(runStage);
     if (wantMind) enterMindView(); else exitMindView();
   }, [tab, runStage, setHubSkinForTab, enterMindView, exitMindView]);
-  useEffect(() => () => clearFightTimers(), []);
+  useEffect(() => () => { clearFightTimers(); if (travelTimer.current) window.clearTimeout(travelTimer.current); }, []);
 
   function selectTab(id) { setTab(id); setHubSkinForTab(id); }
   function pushLog(t, k = 'n') { setLog((l) => [...l, { t, k }]); }
@@ -130,6 +134,7 @@ export default function Eldrathor() {
     clearFightTimers(); exitMindView(); setRunStage('island'); setSelectedArea(null);
     setTerritory(null); setArea(null); setCurrentId(null); setRunVein(0); setFightNode(null);
     setFight(null); setFightElapsed(0); setFightSpeed(1); setRunHpFrac(null); setScout(null);
+    clearTravel(); setTravel(null); setAmbush(null); setPrevId(null);
     setRunMods({ dmgMult: 1, mitAdd: 0 }); setBusy(false);
   }
 
@@ -202,25 +207,150 @@ export default function Eldrathor() {
     else { body = `${count} enem${count === 1 ? 'y' : 'ies'}${n.respawned ? ' — repopulated ground' : ''}${named ? ' — named, ×1.3 stats, +1 loot roll' : ''}.`; }
     return { nodeId: n.id, type: eff, title, body, yieldText, threat, count, enemies, named: !!named, engageDisabled: sealedBoss, engageLabel: eff === 'sanctuary' ? 'Rest' : 'Engage' };
   }
-  function onTapNode(n) {
-    if (busy || !territory) return;
-    const t = territory;
-    if (n.id === currentId) return;
-    // free reposition onto cleared ground
-    if (n.cleared && !n.respawned) { setCurrentId(n.id); setScout(null); pushLog('Repositioned to a cleared node.', 'sys'); return; }
-    // a rare next to the party ambushes — no scout card
-    if (rareAt(t, n.id)) { pushLog('☠ The rare turns on you — no time to scout.', 'rare'); startFight(n, { ambush: true }); return; }
+  // ---------- v3 §1 travel: one tap to anywhere you've cleared ----------
+  function clearTravel() {
+    if (travelTimer.current) { window.clearTimeout(travelTimer.current); travelTimer.current = null; }
+  }
+  /**
+   * Plan a trip eagerly: one frame per hop, each hop ticking the node-action clock.
+   * Halts on arrival at a respawned node, or when a rare stands on / next to the party (§3).
+   */
+  function planTrip(t0, path) {
+    const frames = [];
+    let t = t0;
+    for (let i = 1; i < path.length; i++) {
+      const prev = path[i - 1];
+      const id = path[i];
+      const { territory: next, events } = tickClock(t, { currentId: id, rng: runRng.current });
+      t = next;
+      const logs = events.map((e) => (e.type === 'rareMoved' ? '☠ A rare moves through the fog.' : e.named ? '✦ Something NAMED stirs on cleared ground.' : '✦ Cleared ground stirs — a node repopulates.'));
+      const node = t.nodes.find((n) => n.id === id);
+      let halt = null;
+      if (node.respawned) halt = { kind: 'respawn', nodeId: id, prevId: prev };
+      else { const r = rareNear(t, id); if (r) halt = { kind: 'rare', nodeId: r.nodeId, rareId: r.id, prevId: prev }; }
+      frames.push({ currentId: id, prevId: prev, territory: t, logs, halt });
+      if (halt) break;
+    }
+    return frames;
+  }
+  function applyFrame(f) {
+    setTerritory(f.territory); setCurrentId(f.currentId); setPrevId(f.prevId);
+    for (const l of f.logs) pushLog(l, 'rare');
+  }
+  function finishTrip(frames, after) {
+    setTravel(null); travelTimer.current = null;
+    const last = frames[frames.length - 1];
+    if (after && last) runAfter(last.territory, last.currentId, after);
+  }
+  function stepTrip(frames, i, after) {
+    const f = frames[i];
+    if (!f) { finishTrip(frames, after); return; }
+    applyFrame(f);
+    if (f.halt) { setTravel(null); travelTimer.current = null; openAmbush(f.territory, f.halt); return; }
+    if (i + 1 >= frames.length) { finishTrip(frames, after); return; }
+    setTravel((tr) => (tr ? { ...tr, index: i + 1 } : tr));
+    travelTimer.current = window.setTimeout(() => stepTrip(frames, i + 1, after), 120);
+  }
+  function beginTrip(path, after) {
+    const frames = planTrip(territory, path);
+    if (!frames.length) { if (after) runAfter(territory, currentId, after); return; }
+    setScout(null); setAmbush(null);
+    setTravel({ path, frames, index: 0, after });
+    pushLog(`→ Travelling ${path.length - 1} hop${path.length - 1 === 1 ? '' : 's'}…`, 'sys');
+    // planned path glows for 300 ms, then a hop per ~120 ms (tap again to skip)
+    travelTimer.current = window.setTimeout(() => stepTrip(frames, 0, after), 300);
+  }
+  function skipTrip() {
+    const tr = travel; if (!tr) return;
+    clearTravel();
+    let halted = null;
+    for (const f of tr.frames.slice(tr.index)) { applyFrame(f); if (f.halt) { halted = f; break; } }
+    setTravel(null);
+    if (halted) openAmbush(halted.territory, halted.halt);
+    else finishTrip(tr.frames, tr.after);
+  }
+  /** What to do on arrival: scout the frontier / boss node we were heading for. */
+  function runAfter(t, curId, after) {
+    if (!after || after.type !== 'scout') return;
+    const n = t.nodes.find((x) => x.id === after.nodeId);
+    if (n) doScout(t, curId, n);
+  }
+  function doScout(t, curId, n) {
     if (!n.scouted) {
       // scouting is a node-action: the clock ticks
       let next = scoutNode(t, n.id);
-      next = advanceClock(next, currentId);
+      next = advanceClock(next, curId);
       setTerritory(next);
       const nn = next.nodes.find((x) => x.id === n.id);
-      setScout(buildScout(next, nn));
       pushLog(`👁 Scouted a ${NODE_LABEL[effectiveType(next, nn)] || 'node'} node.`, 'sys');
+      const r = rareNear(next, curId);
+      if (r) { openAmbush(next, { kind: 'rare', nodeId: r.nodeId, rareId: r.id, prevId }); return; }
+      setScout(buildScout(next, nn));
       return;
     }
     setScout(buildScout(t, n));
+  }
+  function onTapNode(n) {
+    if (busy || !territory) return;
+    if (travel) { skipTrip(); return; } // tap again = skip the animation
+    if (!n || n.id === currentId || ambush) return;
+    const t = territory;
+    if (isWalkable(n)) {
+      const path = travelPath(t, currentId, n.id);
+      if (path && path.length > 1) beginTrip(path, null);
+      return;
+    }
+    // frontier rune / scouted node / boss: travel to its nearest cleared neighbour, then scout it
+    const path = approachPath(t, currentId, n.id);
+    if (!path) return;
+    const after = { type: 'scout', nodeId: n.id };
+    if (path.length === 1) runAfter(t, currentId, after);
+    else beginTrip(path, after);
+  }
+
+  // ---------- v3 §3 ambush + flee ----------
+  function openAmbush(t, halt) {
+    const node = t.nodes.find((x) => x.id === halt.nodeId);
+    if (!node) return;
+    const isRare = halt.kind === 'rare';
+    const rng = mulberry32((runSeed.current ^ Math.imul(t.clock + 7, 0x27d4eb2f)) >>> 0);
+    const enemies = enemiesFor(t, node, rng);
+    const chance = fleeChance(party, isRare);
+    const count = enemies.length;
+    setScout(null);
+    setAmbush({
+      nodeId: node.id, prevId: halt.prevId, kind: halt.kind, enemies, fleeChance: chance,
+      type: isRare ? 'rare' : effectiveType(t, node),
+      title: isRare ? 'Rare ambush' : 'Ambush',
+      body: isRare
+        ? `A roaming rare ${rareAt(t, halt.prevId ? node.id : node.id) && node.id !== halt.prevId ? 'closes in' : 'is on you'} — ${enemies[0]?.name || 'a rare'}. Fight it, or try to slip away.`
+        : `${count} enem${count === 1 ? 'y' : 'ies'} on repopulated ground block the way${node.namedRare ? ' — a NAMED one' : ''}.`,
+      yieldText: `Flee: ${Math.round(chance * 100)}% — success steps the party back one node; failure lets them strike first.`,
+    });
+    pushLog(isRare ? '☠ Ambush — a rare is on you!' : '✦ Ambush — repopulated ground!', 'rare');
+  }
+  function onAmbushFight() {
+    const a = ambush; if (!a || !territory) return;
+    const n = territory.nodes.find((x) => x.id === a.nodeId); if (!n) return;
+    setAmbush(null);
+    startFight(n, { enemies: a.enemies, ambush: true });
+  }
+  function onAmbushFlee() {
+    const a = ambush; if (!a || !territory) return;
+    const pct = Math.round(a.fleeChance * 100);
+    if (runRng.current() < a.fleeChance) {
+      setAmbush(null);
+      const back = a.prevId && a.prevId !== currentId ? a.prevId : currentId;
+      setCurrentId(back); setPrevId(null);
+      setTerritory(advanceClock(territory, back)); // costs one node-action; the ambusher stays
+      pushLog(`↩ Fled (${pct}%). The party falls back.`, 'good');
+      doFlash('Fled', colors.mindGood);
+      return;
+    }
+    pushLog(`✖ Flee failed (${pct}%) — they strike first.`, 'bad');
+    const n = territory.nodes.find((x) => x.id === a.nodeId);
+    setAmbush(null);
+    startFight(n, { enemies: a.enemies, ambush: true, enemyFirst: true });
   }
   function onLeave() { setScout(null); }
   function onEngage() {
@@ -243,7 +373,7 @@ export default function Eldrathor() {
     let t = { ...territory, nodes: territory.nodes.map((x) => (x.id === n.id ? { ...x, sanctuaryUsed: true } : x)) };
     t = clearNode(t, n.id, runRng.current);
     t = advanceClock(t, n.id);
-    setTerritory(t); setCurrentId(n.id); setFightNode(null); setRunStage('route');
+    setTerritory(t); setPrevId(currentId); setCurrentId(n.id); setFightNode(null); setRunStage('route');
   }
 
   // ---------- fights ----------
@@ -254,7 +384,7 @@ export default function Eldrathor() {
   }, []);
   function startFight(n, opts = {}) {
     if (busy || !territory) return;
-    clearFightTimers(); setBusy(true); setScout(null);
+    clearFightTimers(); setBusy(true); setScout(null); setAmbush(null); clearTravel(); setTravel(null);
     const t = { ...territory, nodes: territory.nodes.map((x) => (x.id === n.id ? { ...x, typeKnown: true, scouted: true } : x)) };
     setTerritory(t);
     const eff = effectiveType(t, n);
@@ -264,7 +394,7 @@ export default function Eldrathor() {
     const seed = (runSeed.current ^ Math.imul(fightIndex.current, 0x9e3779b1)) >>> 0;
     const rng = mulberry32(seed ^ 0x5bd1e995);
     const enemies = (opts.enemies && opts.enemies.length ? opts.enemies : enemiesFor(t, n, rng)).map((e) => ({ ...e }));
-    const sim = simulateFight({ party, enemies, seed, startHpFrac: runHpFrac || undefined, runMods });
+    const sim = simulateFight({ party, enemies, seed, startHpFrac: runHpFrac || undefined, runMods, enemyFirst: !!opts.enemyFirst });
     const bossKill = sim.result.win && eff === 'boss';
     const mapClear = bossKill && allCleared({ ...t, nodes: t.nodes.map((x) => (x.id === n.id ? { ...x, cleared: true, respawned: false } : x)) });
     const rewards = sim.result.win
@@ -302,7 +432,7 @@ export default function Eldrathor() {
     t = clearNode(t, n.id, runRng.current);
     const sealJustBroke = f.rare && !isSealed(t) && isSealed(territory);
     t = advanceClock(t, n.id);
-    setTerritory(t); setCurrentId(n.id);
+    setTerritory(t); setPrevId(currentId); setCurrentId(n.id);
     setPartyHP(res.hpPct); setRunHpFrac(res.partyHpFrac);
     setRunVein((v) => v + (rewards?.worldvein || 0));
     pushLog(`✔ Cleared in ${res.durationSec}s. +${rewards?.worldvein || 0} Worldvein.${f.eff === 'crystal' ? ' The deposit splinters — ×2 harvest.' : ''}`, 'good');
@@ -318,6 +448,8 @@ export default function Eldrathor() {
       resetRunToIsland(); setTab('mountain'); setHubSkinForTab('mountain'); return;
     }
     clearFightTimers(); setFightNode(null); setFight(null); setBusy(false); setRunStage('route');
+    const near = rareNear(t, n.id);
+    if (near) window.setTimeout(() => openAmbush(t, { kind: 'rare', nodeId: near.nodeId, rareId: near.id, prevId: currentId }), 0);
   }
   function extract() {
     doFlash(`Extracted ${runVein} Worldvein`, colors.mythros);
@@ -343,7 +475,7 @@ export default function Eldrathor() {
 
   // Screen id for the ? help sheet — every tab root and every drilled-in screen.
   const screenId = tab === 'mountain'
-    ? (runStage === 'route' && scout ? 'scout' : { island: 'island', rally: 'rally', route: 'route', fight: 'fight', loot: 'results', sanctuary: 'sanctuary' }[runStage] || 'island')
+    ? (runStage === 'route' && (scout || ambush) ? 'scout' : { island: 'island', rally: 'rally', route: 'route', fight: 'fight', loot: 'results', sanctuary: 'sanctuary' }[runStage] || 'island')
     : { player: 'player', party: 'party', town: 'town', afk: 'seam' }[tab] || 'basics';
   const inRun = tab === 'mountain' && !!territory && runStage !== 'island' && runStage !== 'rally';
   const canExtract = inRun && runStage === 'route'; // DESIGN-OPEN: menu Extract mid-fight/results is held until the fight resolves
@@ -360,7 +492,7 @@ export default function Eldrathor() {
         {tab === 'afk' && <AfkScreen unlocked={unlocked} party={party} roster={roster} inventory={inventory} afk={afk} worldvein={worldvein} onUpdateGatherSlot={onUpdateGatherSlot} onToggleGather={onToggleGather} onUpdateProcess={onUpdateProcess} onToggleProcess={onToggleProcess} onUpdateIdle={onUpdateIdle} onToggleIdle={onToggleIdle} />}
         {tab === 'mountain' && runStage === 'island' && <IslandWorldMap areas={AREAS} unlocked={unlocked} onSelectArea={onSelectArea} onHarbor={() => selectTab('town')} />}
         {tab === 'mountain' && runStage === 'rally' && selectedArea && <RallyScreen area={selectedArea} party={party} roster={roster} onSwap={onRallySwap} onExplore={onRallyExplore} onBack={onRallyBack} />}
-        {tab === 'mountain' && runStage === 'route' && area && territory && <RouteMapScreen area={area} territory={territory} currentId={currentId} busy={busy} partyHP={partyHP} runVein={runVein} party={party} archetypes={ARCHETYPES} log={log} logRef={logRef} scout={scout} onTapNode={onTapNode} onEngage={onEngage} onLeave={onLeave} onExtract={extract} />}
+        {tab === 'mountain' && runStage === 'route' && area && territory && <RouteMapScreen area={area} territory={territory} currentId={currentId} busy={busy} partyHP={partyHP} runVein={runVein} party={party} archetypes={ARCHETYPES} log={log} logRef={logRef} scout={scout} ambush={ambush} travel={travel} onTapNode={onTapNode} onEngage={onEngage} onLeave={onLeave} onFight={onAmbushFight} onFlee={onAmbushFlee} onExtract={extract} />}
         {tab === 'mountain' && runStage === 'sanctuary' && fightNode && <SanctuaryScreen area={area} party={party} runHpFrac={runHpFrac} pouch={10 * area.tier} onChoose={onSanctuaryChoose} />}
         {tab === 'mountain' && runStage === 'fight' && fightNode && fight && <FightScreen area={area} node={fightNode} party={party} fight={fight} elapsedMs={fightElapsed} speed={fightSpeed} onSpeed={setFightSpeed} onSkip={skipFight} />}
         {tab === 'mountain' && runStage === 'loot' && fight && <LootResults area={area} nodeLabel={fightNode ? (nodeTypeMeta[fightNode.type]?.label || 'Node') : null} fight={fight} onContinue={applyLootAndReturnToRoute} />}

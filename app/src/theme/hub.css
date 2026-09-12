@@ -3,16 +3,18 @@
 .eld-root {
   --hub-transition: background-color 380ms ease, border-color 380ms ease, color 380ms ease,
     box-shadow 380ms ease, background 380ms ease, text-shadow 380ms ease, filter 380ms ease;
-  /* Mind-view scale — docs/Eldrathor_UI_Shell_Lock.md. Body ≥16, labels ≥13, numbers 18,
-     taps ≥48 px tall, party cards ≥96 px, feed ≥15 px at 1.4 line-height. Used on the route
-     map HUD, scout card, fight, results, sanctuary and the shell sheets. */
-  --mv-text: 16px;
-  --mv-label: 13px;
-  --mv-num: 18px;
-  --mv-tap: 48px;
-  --mv-card-min: 96px;
-  --mv-feed: 15px;
-  --mv-feed-lh: 1.4;
+  /* Mind-view scale — docs/Eldrathor_RouteMap_v3_Travel_Lock.md §4 (supersedes the UI Shell values).
+     Body 18, labels 15, numbers 24, titles 26, feed 17/1.45, taps >=52 px, party cards >=120 px,
+     bars 14 px. No inline numeric fontSize below --mv-label on any Mind-view screen. */
+  --mv-text: 18px;
+  --mv-label: 15px; /* uppercase labels may use 14px with letter-spacing */
+  --mv-num: 24px;
+  --mv-title: 26px;
+  --mv-tap: 52px;
+  --mv-card-min: 120px;
+  --mv-feed: 17px;
+  --mv-feed-lh: 1.45;
+  --mv-bar: 14px;
 }
 
 .eld-root .eld-frame,

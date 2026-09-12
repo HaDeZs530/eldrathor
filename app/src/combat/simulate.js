@@ -48,12 +48,15 @@ export function partyAuras(party) {
 }
 
 /**
- * @param {{party: object[], enemies: object[], seed?: number, startHpFrac?: number[], runMods?: {dmgMult?:number, mitAdd?:number}}} args
+ * @param {{party: object[], enemies: object[], seed?: number, startHpFrac?: number[], runMods?: {dmgMult?:number, mitAdd?:number}, enemyFirst?: boolean}} args
+ *   enemyFirst  — failed flee (v3 §3): enemies act first, the party gets no swings or innates for 1.5 s
  *   startHpFrac — per-Adventurer HP fraction carried from the run (≤0 = fallen, sits the fight out)
  *   runMods     — sanctuary bonuses for the run: damage multiplier, additive mitigation
  * @returns {{events: object[], result: object, stats: object}}
  */
-export function simulateFight({ party, enemies, seed = 1, startHpFrac, runMods }) {
+export const ENEMY_FIRST_MS = 1500;
+
+export function simulateFight({ party, enemies, seed = 1, startHpFrac, runMods, enemyFirst = false }) {
   const rng = mulberry32(seed);
   const modDmg = runMods?.dmgMult || 1;
   const modMit = runMods?.mitAdd || 0;
@@ -70,8 +73,8 @@ export function simulateFight({ party, enemies, seed = 1, startHpFrac, runMods }
       mana: d.maxMana,
       alive: !fallen,
       // DESIGN-OPEN: small opening stagger so the three don't swing on the same tick.
-      nextSwing: 300 + i * 150,
-      cdReady: 500 + i * 100,
+      nextSwing: (enemyFirst ? ENEMY_FIRST_MS : 0) + 300 + i * 150,
+      cdReady: (enemyFirst ? ENEMY_FIRST_MS : 0) + 500 + i * 100,
       stacks: 0, nextStack: 3000,
       aegisUntil: 0,
       dealt: 0, taken: 0, healed: 0, kills: 0,
@@ -79,7 +82,7 @@ export function simulateFight({ party, enemies, seed = 1, startHpFrac, runMods }
   });
   const E = enemies.map((e, i) => ({
     ...e, id: e.id || `e${i}`, i, hp: e.hp, alive: true,
-    nextSwing: 700 + i * 250, stunnedUntil: 0, stunImmuneUntil: 0,
+    nextSwing: (enemyFirst ? 200 : 700) + i * 250, stunnedUntil: 0, stunImmuneUntil: 0,
     nextEnrage: e.isBoss ? 15000 : Infinity, enraged: false,
   }));
 
@@ -101,7 +104,7 @@ export function simulateFight({ party, enemies, seed = 1, startHpFrac, runMods }
     taunt: { ...taunt }, resonanceUntil,
   });
 
-  ev({ t: 0, type: 'start', auras: [...auras] });
+  ev({ t: 0, type: 'start', auras: [...auras], enemyFirst });
   snap();
   if (livingP().length === 0) outcome = 'wipe';
 

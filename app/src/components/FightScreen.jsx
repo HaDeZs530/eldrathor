@@ -6,9 +6,9 @@ import '../combat/fight.css';
 
 /**
  * Combat v2 fight screen — playback of a pre-rolled event script (spec §5–§6).
- * Top ⅓: stage (enemies row + party row with HP bars, hit flashes, crit shake).
- * Middle: three party cards — HP + mana bars, innate button (dims on cooldown, flashes on
- * fire), group aura icons lit. Bottom: feed (~6 lines, newest at bottom). 1× / 2× / Skip.
+ * v3 §5 order: enemies row (hit flashes, crit shake) → three party cards (HP + mana bars,
+ * innate button that dims on cooldown and flashes on fire, aura icons) → 1× / 2× / Skip →
+ * feed (newest at bottom). The party cards are the party's only representation.
  * Auto-resolves; the player never taps attacks. Tab bar stays visible (parent).
  */
 const FLASH_MS = 320;
@@ -76,30 +76,6 @@ export default function FightScreen({ area, node, party, fight, elapsedMs, speed
             );
           })}
         </div>
-        <div style={S.rowLbl}>Party</div>
-        <div style={S.partyRow}>
-          {party.map((m, i) => {
-            const ps = snap?.party?.[i] || { hp: 1, alive: true };
-            const a = ARCHETYPES[m.archetype] || {};
-            const maxHp = fight.derived[i].maxHp;
-            const id = `p${i}`;
-            const cls = ['eld-fight-unit', hitTargets.has(id) && 'is-hit', critTargets.has(id) && 'is-crit', !ps.alive && 'is-dead'].filter(Boolean).join(' ');
-            return (
-              <div key={id} className={cls} style={{ ...S.unit, borderColor: a.color || '#5fc7e0' }}>
-                <div style={{ ...S.unitGlyph, color: a.color }}>{INNATES[m.archetype]?.glyph || '♟'}</div>
-                <div style={S.unitName}>{m.name}</div>
-                <Bar value={ps.hp / maxHp} color={hpColor(ps.hp / maxHp)} />
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* --- speed --- */}
-      <div style={S.speedRow}>
-        <button type="button" className={`eld-btn eld-btn-ghost eld-speed-btn${speed === 1 ? ' is-active' : ''}`} onClick={() => onSpeed(1)} disabled={done}>1×</button>
-        <button type="button" className={`eld-btn eld-btn-ghost eld-speed-btn${speed === 2 ? ' is-active' : ''}`} onClick={() => onSpeed(2)} disabled={done}>2×</button>
-        <button type="button" className="eld-btn eld-speed-btn" onClick={onSkip}>Skip ▸</button>
       </div>
 
       {/* --- party cards --- */}
@@ -139,6 +115,13 @@ export default function FightScreen({ area, node, party, fight, elapsedMs, speed
         })}
       </div>
 
+      {/* --- speed --- */}
+      <div style={S.speedRow}>
+        <button type="button" className={`eld-btn eld-btn-ghost eld-speed-btn${speed === 1 ? ' is-active' : ''}`} onClick={() => onSpeed(1)} disabled={done}>1×</button>
+        <button type="button" className={`eld-btn eld-btn-ghost eld-speed-btn${speed === 2 ? ' is-active' : ''}`} onClick={() => onSpeed(2)} disabled={done}>2×</button>
+        <button type="button" className="eld-btn eld-speed-btn" onClick={onSkip}>Skip ▸</button>
+      </div>
+
       {/* --- feed --- */}
       <div className="eld-panel" style={S.feedBox} ref={feedRef}>
         {feed.length === 0 && <div className="eld-feed-line">The bond tightens. Blades find rhythm…</div>}
@@ -154,7 +137,7 @@ function Bar({ value, color, label, thin }) {
   const pct = Math.max(0, Math.min(1, value || 0)) * 100;
   return (
     <div style={{ ...S.barWrap, marginTop: thin ? 3 : 5 }}>
-      <div style={{ ...S.barTrack, height: thin ? 5 : 8 }}>
+      <div style={{ ...S.barTrack, height: 'var(--mv-bar, 14px)' }}>
         <div style={{ width: `${pct}%`, height: '100%', background: color, transition: 'width 120ms linear' }} />
       </div>
       {label && <div style={S.barLbl}>{label}</div>}
@@ -196,27 +179,27 @@ function feedText(e) {
 const S = {
   wrap: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 8, padding: '8px 12px 8px', textAlign: 'left', overflow: 'hidden' },
   head: { flexShrink: 0 },
-  kick: { fontSize: 'var(--mv-label, 13px)', letterSpacing: '0.18em', textTransform: 'uppercase', color: '#5f8494', fontFamily: 'var(--eld-font-display, Cinzel, Georgia, serif)' },
-  title: { fontSize: 'var(--mv-num, 18px)', fontWeight: 700, marginTop: 2, color: '#e6f2f7' },
-  sub: { fontSize: 'var(--mv-label, 13px)', color: '#5f8494', marginTop: 2, fontStyle: 'italic' },
+  kick: { fontSize: 'var(--mv-label, 15px)', letterSpacing: '0.18em', textTransform: 'uppercase', color: '#5f8494', fontFamily: 'var(--eld-font-display, Cinzel, Georgia, serif)' },
+  title: { fontSize: 'var(--mv-title, 26px)', fontWeight: 700, marginTop: 2, color: '#e6f2f7', lineHeight: 1.1 },
+  sub: { fontSize: 'var(--mv-label, 15px)', color: '#5f8494', marginTop: 2, fontStyle: 'italic' },
   stage: { padding: '8px 10px', flexShrink: 0, background: 'radial-gradient(circle at 50% 40%, #0e2430 0%, #060d11 80%)' },
-  rowLbl: { fontSize: 'var(--mv-label, 13px)', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#5f8494', margin: '2px 0 4px' },
+  rowLbl: { fontSize: 'var(--mv-label, 15px)', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#5f8494', margin: '2px 0 4px' },
   enemyRow: { display: 'flex', gap: 6, marginBottom: 6 },
   partyRow: { display: 'flex', gap: 6 },
-  unit: { flex: 1, minWidth: 0, border: '1px solid', borderRadius: 8, padding: '5px 6px', background: 'rgba(0,0,0,0.3)' },
-  unitGlyph: { fontSize: 'var(--mv-num, 18px)', lineHeight: 1, textAlign: 'center' },
-  unitName: { fontSize: 'var(--mv-label, 13px)', color: '#cfe0e8', textAlign: 'center', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
-  enrageTag: { fontSize: 'var(--mv-label, 13px)', letterSpacing: '0.12em', color: '#ff7a6e', textAlign: 'center', marginTop: 2 },
+  unit: { flex: 1, minWidth: 0, border: '1px solid', borderRadius: 8, padding: '8px 6px', background: 'rgba(0,0,0,0.3)' },
+  unitGlyph: { fontSize: 'var(--mv-num, 24px)', lineHeight: 1, textAlign: 'center' },
+  unitName: { fontSize: 'var(--mv-label, 15px)', color: '#cfe0e8', textAlign: 'center', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+  enrageTag: { fontSize: 'var(--mv-label, 15px)', letterSpacing: '0.12em', color: '#ff7a6e', textAlign: 'center', marginTop: 2 },
   speedRow: { display: 'flex', gap: 6, flexShrink: 0 },
   cards: { display: 'flex', gap: 6, flexShrink: 0 },
-  card: { flex: 1, minWidth: 0, padding: '8px 7px', borderLeft: '3px solid', minHeight: 'var(--mv-card-min, 96px)' },
+  card: { flex: 1, minWidth: 0, padding: '8px 7px', borderLeft: '3px solid', minHeight: 'var(--mv-card-min, 120px)' },
   cardTop: { display: 'flex', flexDirection: 'column' },
-  cardName: { fontSize: 'var(--mv-text, 16px)', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
-  cardMeta: { fontSize: 'var(--mv-label, 13px)', color: '#5f8494' },
-  stacks: { fontSize: 'var(--mv-label, 13px)', color: '#e0a04d' },
+  cardName: { fontSize: 'var(--mv-text, 18px)', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+  cardMeta: { fontSize: 'var(--mv-label, 15px)', color: '#5f8494' },
+  stacks: { fontSize: 'var(--mv-label, 15px)', color: '#e0a04d' },
   auraRow: { display: 'flex', gap: 4, marginTop: 6 },
   barWrap: {},
   barTrack: { background: '#08141a', borderRadius: 4, overflow: 'hidden', border: '1px solid #16303a' },
-  barLbl: { fontSize: 'var(--mv-label, 13px)', color: '#5f8494', marginTop: 1, fontVariantNumeric: 'tabular-nums' },
-  feedBox: { padding: '8px 10px', flex: '1 1 96px', minHeight: 84, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 3, fontSize: 'var(--mv-feed, 15px)', lineHeight: 'var(--mv-feed-lh, 1.4)' },
+  barLbl: { fontSize: 'var(--mv-label, 15px)', color: '#5f8494', marginTop: 1, fontVariantNumeric: 'tabular-nums' },
+  feedBox: { padding: '8px 10px', flex: '1 1 96px', minHeight: 84, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 3, fontSize: 'var(--mv-feed, 17px)', lineHeight: 'var(--mv-feed-lh, 1.45)' },
 };
