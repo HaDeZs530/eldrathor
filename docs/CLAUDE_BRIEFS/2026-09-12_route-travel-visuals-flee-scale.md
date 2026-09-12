@@ -1,5 +1,7 @@
 # BRIEF — Route map v3: one-tap travel, node visual states, ambush flee, Mind-view scale fix
 
+> **DONE** — PR #23 (travel, node states, ambush flee, scale, fight order) + PR #26 (§6–§8 amendments: no respawns, free travel, named at generation, full-screen map) + PR #27/#28 (camera margin).
+
 **Status:** READY · **Date:** 2026-09-12 · **Author:** Claude Design Chat  
 **Spec:** `docs/Eldrathor_RouteMap_v3_Travel_Lock.md` (authoritative)
 

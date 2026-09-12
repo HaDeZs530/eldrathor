@@ -10,8 +10,7 @@
 4. Open PRs; don't invent LOCKED design — use `// DESIGN-OPEN:` for gaps.
 
 ## Active briefs (priority)
-1. **`docs/CLAUDE_BRIEFS/2026-09-12_route-travel-visuals-flee-scale.md`** — one-tap travel with cost, node visual states, ambush flee, real Mind-view scale-up. Spec: `Eldrathor_RouteMap_v3_Travel_Lock.md`.
-2. **`docs/CLAUDE_BRIEFS/2026-09-12_route-polish-2.md`** — run log, node scale, planar outward web, travel pacing/camera. Spec: v3 lock §9–12.
+_(none queued — waiting on the Design Chat's next brief)_
 
 ## Recently DONE (don't redo)
 - PR #10 — pannable island + parchment node map
@@ -23,6 +22,11 @@
 - PR #20 — playtest polish
 - PR #21 — route map v2
 - PR #22 — UI shell (zoom, help/menu; scale pass was insufficient → redone in v3 brief)
+- PR #23 — route map v3: one-tap travel, node visual states, ambush flee, Mind-view scale, fight order
+- PR #24 / #25 — Mind-view scale on Player / Party / Seam; Party stat sizes
+- PR #26 — v3 amendments: no respawns, free travel, named at generation, full-screen map + 44 px HUD
+- PR #27 / #28 — camera margin so the party marker is never under the HUD/toast (fogged parchment margin)
+- PR #29 — route polish 2: run log sheet + badge + toast, node scale (40/34/26), planar outward generator (Gabriel + band-filtered, 200-map crossing test), 350 ms glide + eased camera follow
 
 ## Still OPEN (Anthony deciding / later)
 - AFK **root tab** final name (working label **Seam** — do not rename until locked)
@@ -31,7 +35,7 @@
 - Note: A1/A3 were re-ruled 2026-09-12 — scouting replaces cut-flee; all 9 pins are areas (`Eldrathor_Island_Areas_Lock.md`).
 
 ## Playtest
-Phone: `cd app && npm run dev -- --host` → LAN URL. Mountain should pan; zoom off after polish brief.
+Phone: `cd app && npm run dev -- --host` → LAN URL (or `npm run dev:phone` once PR #15 lands for a QR code). Island pans + zoom toggle; route map fills the screen.
 
 ## Rules reminder
 Weapons drop / armor craft; Worldvein currency; tab bar stays during runs; themes crossfade; no new deps without reason.
