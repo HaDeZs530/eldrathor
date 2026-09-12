@@ -1,0 +1,151 @@
+/* Combat v2 fight screen — Mind-view playback effects (docs/Eldrathor_Combat_v2_Lock.md §5–§6) */
+
+.eld-fight-unit {
+  position: relative;
+  transition: transform 120ms ease, box-shadow 160ms ease;
+}
+
+.eld-fight-unit.is-hit {
+  box-shadow: 0 0 0 2px rgba(224, 93, 111, 0.55), 0 0 18px rgba(224, 93, 111, 0.35);
+}
+
+.eld-fight-unit.is-hit::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: rgba(255, 120, 130, 0.22);
+  animation: eld-hitflash 260ms ease-out forwards;
+  pointer-events: none;
+}
+
+.eld-fight-unit.is-crit {
+  animation: eld-shake 320ms ease;
+}
+
+.eld-fight-unit.is-dead {
+  opacity: 0.35;
+  filter: grayscale(1);
+}
+
+.eld-fight-unit.is-stunned {
+  box-shadow: 0 0 0 2px rgba(181, 143, 224, 0.6), 0 0 14px rgba(181, 143, 224, 0.4);
+}
+
+.eld-innate-btn {
+  position: relative;
+  width: 100%;
+  border: 1px solid #1c4a54;
+  border-radius: 8px;
+  background: #0e2830;
+  color: #5fc7e0;
+  font-family: var(--eld-font-display, Cinzel, Georgia, serif);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  padding: 6px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: default;
+  transition: opacity 200ms ease, box-shadow 200ms ease;
+}
+
+.eld-innate-btn.is-cooldown {
+  opacity: 0.4;
+}
+
+.eld-innate-btn.is-fired {
+  opacity: 1;
+  box-shadow: 0 0 0 3px rgba(95, 199, 224, 0.5), 0 0 22px rgba(95, 199, 224, 0.75);
+  background: #164a58;
+  color: #e6f7ff;
+}
+
+.eld-innate-btn.is-fired::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 12px;
+  border: 2px solid rgba(95, 199, 224, 0.9);
+  animation: eld-ring 520ms ease-out forwards;
+  pointer-events: none;
+}
+
+.eld-innate-cd {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  background: #5fc7e0;
+  border-radius: 0 0 8px 8px;
+  opacity: 0.7;
+}
+
+.eld-aura-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid #1c3a44;
+  font-size: 11px;
+  color: #5f8494;
+}
+
+.eld-aura-icon.is-lit {
+  color: #e0c090;
+  border-color: rgba(224, 160, 77, 0.6);
+  box-shadow: 0 0 10px rgba(224, 160, 77, 0.45);
+}
+
+.eld-speed-btn {
+  flex: 1;
+  padding: 8px 6px;
+  font-size: 11px;
+}
+
+.eld-speed-btn.is-active {
+  box-shadow: 0 0 0 1px #5fc7e0, 0 0 14px rgba(95, 199, 224, 0.4);
+}
+
+.eld-feed-line {
+  font-size: 11px;
+  line-height: 1.4;
+  color: #9fb2bd;
+}
+
+.eld-feed-line.is-crit { color: #e0a04d; }
+.eld-feed-line.is-innate { color: #5fc7e0; }
+.eld-feed-line.is-heal { color: #7fd6a0; }
+.eld-feed-line.is-kill { color: #cfe0e8; }
+.eld-feed-line.is-bad { color: #e05d6f; }
+.eld-feed-line.is-enrage { color: #ff7a6e; font-weight: 700; }
+.eld-feed-line.is-end { color: #e6f2f7; font-weight: 700; }
+
+@keyframes eld-hitflash {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes eld-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-4px); }
+  40% { transform: translateX(4px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(3px); }
+}
+
+@keyframes eld-ring {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: scale(1.25); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .eld-fight-unit.is-crit,
+  .eld-fight-unit.is-hit::after,
+  .eld-innate-btn.is-fired::before {
+    animation: none;
+  }
+}
