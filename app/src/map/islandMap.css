@@ -178,3 +178,47 @@
   pointer-events: none;
   z-index: 5;
 }
+
+/* zoom crossfade (Close ⇄ Overview) — 250 ms, focal point preserved by the component */
+.eld-island-layer.is-fading {
+  transition: transform 250ms ease;
+}
+
+.eld-island-layer.is-fading .eld-island-img {
+  animation: eld-zoom-fade 250ms ease;
+}
+
+@keyframes eld-zoom-fade {
+  0% { filter: brightness(0.85); }
+  50% { filter: brightness(1.1); }
+  100% { filter: brightness(1); }
+}
+
+/* Dotted route 1→10 — drawn in code, scales with the map layer */
+.eld-island-route {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+  overflow: visible;
+  z-index: 2;
+}
+
+.eld-island-route-under,
+.eld-island-route-over {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 0 11;
+}
+
+.eld-island-route-under {
+  stroke: #1a120a;
+  stroke-width: 7;
+  opacity: 0.85;
+}
+
+.eld-island-route-over {
+  stroke: #f5d080;
+  stroke-width: 3.6;
+}
