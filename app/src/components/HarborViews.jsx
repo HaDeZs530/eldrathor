@@ -1,5 +1,6 @@
 import React from 'react';
 import { ARCHETYPES, WEAPONS, WORLDS, TIER_COLOR } from '../data.js';
+import { deriveDisplay } from '../combat/derive.js';
 
 export function Header({ worldvein, mode, colors, hubLabel }) {
   return (
@@ -141,9 +142,9 @@ export function PartyEditor({ party, setParty }) {
                 {Object.keys(WEAPONS).map((k) => <option key={k}>{k}</option>)}
               </select>
               <div style={S.statRow}>
-                <span>HP {a.hp + m.level * 12}</span>
-                <span>ATK {a.atk + m.level * 2}</span>
-                <span>DEF {a.def}</span>
+                <span>HP {deriveDisplay(m).maxHp}</span>
+                <span>DPS {deriveDisplay(m).dps}</span>
+                <span>MIT {deriveDisplay(m).mitigation}%</span>
               </div>
             </div>
           );

@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { ARCHETYPES, WEAPONS, STATS, STAT_LABELS, ARCHETYPE_SEEDS } from '../data.js';
 import GearPaperdoll from './GearPaperdoll.jsx';
+import { deriveDisplay } from '../combat/derive.js';
+import { INNATES } from '../combat/simulate.js';
 
 const CLASS_GLYPH = {
   Bulwark: '🛡',
@@ -128,17 +130,21 @@ function MemberRow({ m, badge, onClick }) {
 
 function MemberDetail({ member, onBack, onChange, onPromoteToParty }) {
   const a = ARCHETYPES[member.archetype];
-  const hp = a.hp + member.level * 12;
-  const atk = a.atk + member.level * 2;
-  const def = a.def;
+  const d = deriveDisplay(member);
+  const inn = INNATES[member.archetype];
 
+  // Derived combat values (combat v2 §2) — seeds × level × weapon; gems multiply later.
   const stats = [
     { k: 'Level', v: String(member.level) },
     { k: 'Role', v: a.role },
-    { k: 'HP', v: String(hp) },
-    { k: 'ATK', v: String(atk) },
-    { k: 'DEF', v: String(def) },
-    { k: 'Weapon', v: member.weapon },
+    { k: 'Max HP', v: String(d.maxHp) },
+    { k: 'Hit / swing', v: `${d.hitDamage} / ${d.swingInterval}s` },
+    { k: 'DPS', v: String(d.dps) },
+    { k: 'Mitigation', v: `${d.mitigation}%` },
+    { k: 'Crit', v: `${d.critChance}% ×${d.critMult}` },
+    { k: 'Mana', v: `${d.maxMana} · +${d.manaRegen}/s` },
+    { k: 'Innate', v: inn ? `${inn.glyph} ${inn.name}` : '—' },
+    { k: 'Aura', v: inn ? `${inn.aura.glyph} ${inn.aura.name}` : '—' },
   ];
 
   // DESIGN-OPEN: per-adventurer upgrade economy.

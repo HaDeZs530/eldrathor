@@ -4,7 +4,7 @@ import { frame, colors, nodeTypeMeta } from './theme/tokens.js';
 import { genTerritory, revealNeighbors } from './map/genTerritory.js';
 import TerritoryMap from './map/TerritoryMap.jsx';
 import { ARCHETYPES, DEFAULT_PARTY } from './data.js';
-import { resolveFight, rollLoot } from './combat.js';
+import { simulateFight, spawnEnemies, rollRewards, deriveStats, mulberry32 } from './combat.js';
 import { Header } from './components/HarborViews.jsx';
 import PlayerScreen from './components/PlayerScreen.jsx';
 import PartyScreen from './components/PartyScreen.jsx';
@@ -30,7 +30,8 @@ const HUB_LABELS = {
 
 // Theme ladder (NodeMap art lock): island = warm RPG, node map = hybrid parchment, fight/loot = Mind-view.
 const MIND_STAGES = new Set(['fight', 'loot']);
-const FIGHT_RESOLVE_MS = 2200;
+const PLAYBACK_TICK_MS = 100;
+const RESULTS_HOLD_MS = 900; // pause on the final event before Spoils
 
 export default function Eldrathor() {
   const { enterMindView, exitMindView, currentMode, setHubSkinForTab } = useTheme();
@@ -63,11 +64,16 @@ export default function Eldrathor() {
     idle: { charKey: null, running: false, progress: 0 },
   });
   const [fightNode, setFightNode] = useState(null);
-  const [fightPhase, setFightPhase] = useState('resolving');
-  const [fightResult, setFightResult] = useState(null);
+  const [fight, setFight] = useState(null); // { enemies, derived, events, result, stats, rewards }
   const [fightElapsed, setFightElapsed] = useState(0);
-  const [pendingLoot, setPendingLoot] = useState(null);
-  const fightTimers = useRef({ tick: null, done: null, startedAt: 0, result: null, loot: null });
+  const [fightSpeed, setFightSpeed] = useState(1);
+  // DESIGN-OPEN: per-Adventurer HP carries across fights within a run (§8c vitality pressure); reset on wipe/extract.
+  const [runHpFrac, setRunHpFrac] = useState(null);
+  const runSeed = useRef(1);
+  const fightIndex = useRef(0);
+  const fightTimers = useRef({ tick: null, done: null });
+  const fightSpeedRef = useRef(1);
+  useEffect(() => { fightSpeedRef.current = fightSpeed; }, [fightSpeed]);
   const afkRef = useRef(afk);
   const inventoryRef = useRef(inventory);
   const worldveinRef = useRef(worldvein);
@@ -108,12 +114,12 @@ export default function Eldrathor() {
     const ft = fightTimers.current;
     if (ft.tick) window.clearInterval(ft.tick);
     if (ft.done) window.clearTimeout(ft.done);
-    fightTimers.current = { tick: null, done: null, startedAt: 0, result: null, loot: null };
+    fightTimers.current = { tick: null, done: null };
   }
   function resetRunToIsland() {
     clearFightTimers(); exitMindView(); setRunStage('island'); setSelectedWorld(null);
     setTerritory(null); setWorld(null); setCurrentId(null); setRunVein(0); setFightNode(null);
-    setFightPhase('resolving'); setFightResult(null); setFightElapsed(0); setPendingLoot(null); setBusy(false);
+    setFight(null); setFightElapsed(0); setFightSpeed(1); setRunHpFrac(null); setBusy(false);
   }
   // World pin → Rally screen (audit A2: no difficulty bands — the World is the band).
   function onSelectWorld(w) { setSelectedWorld(w); setRunStage('rally'); }
@@ -123,60 +129,77 @@ export default function Eldrathor() {
     const t = genTerritory(w); t.nodes.forEach((n) => { n.tier = w.tier; });
     setWorld(w); setTerritory(t); setCurrentId(t.entranceId);
     setLog([{ t: `You unroll the route map. ${w.name} lies unexplored beyond the entry.`, k: 'sys' }]);
+    runSeed.current = (Math.random() * 0xffffffff) >>> 0; fightIndex.current = 0; setRunHpFrac(null);
     setPartyHP(1); setRunVein(0); setRunStage('expedition');
   }
+  /** Playback reached the end (or Skip) → Spoils. */
   const finishFightToLoot = useCallback(() => {
-    const ft = fightTimers.current; const res = ft.result; const loot = ft.loot;
-    if (!res) return;
-    setFightPhase('done');
-    setFightResult({ ...res, feed: buildFightFeed(res, loot, fightTimers.current.nodeLabel) });
-    setPendingLoot(loot); setRunStage('loot'); setBusy(false);
+    clearFightTimers();
+    setFight((f) => { if (f) setFightElapsed(f.result.durationMs); return f; });
+    setRunStage('loot'); setBusy(false);
   }, []);
+  /**
+   * Node tap → simulate the whole fight instantly (combat v2 §1), then play the script back.
+   * Deterministic per run seed + fight index.
+   */
   function startFight(n) {
     if (busy) return;
     clearFightTimers(); setBusy(true);
     setTerritory((prev) => ({ ...prev, nodes: prev.nodes.map((x) => (x.id === n.id ? { ...x, typeKnown: true } : x)) }));
     const label = n.type === 'boss' ? 'Boss' : n.type === 'rare' ? 'Rare' : n.type === 'crystal' ? 'Vein Crystal' : 'Skirmish';
-    pushLog(`→ Entering a ${label} node…`, 'sys'); // node tap = fight begins (audit A1: no engage step)
+    pushLog(`→ Entering a ${label} node…`, 'sys');
     const fightNodeFull = { ...n, tier: world.tier };
-    const res = resolveFight(party, fightNodeFull); const loot = rollLoot(fightNodeFull);
-    setFightNode(fightNodeFull); setFightPhase('resolving');
-    setFightResult({ win: res.win, hpPct: res.hpPct, duration: res.duration, feed: [{ t: 'The bond tightens. Blades find rhythm…', color: '#5f8494' }] });
-    setFightElapsed(0); setPendingLoot(null); setRunStage('fight'); enterMindView();
-    const startedAt = Date.now();
-    fightTimers.current = { ...fightTimers.current, startedAt, result: res, loot, nodeLabel: label };
-    fightTimers.current.tick = window.setInterval(() => setFightElapsed(Date.now() - startedAt), 100);
-    fightTimers.current.done = window.setTimeout(() => {
-      if (fightTimers.current.tick) window.clearInterval(fightTimers.current.tick);
-      fightTimers.current.tick = null; setFightElapsed(FIGHT_RESOLVE_MS); finishFightToLoot();
-    }, FIGHT_RESOLVE_MS);
+    fightIndex.current += 1;
+    const seed = (runSeed.current ^ Math.imul(fightIndex.current, 0x9e3779b1)) >>> 0;
+    const rng = mulberry32(seed ^ 0x5bd1e995);
+    const enemies = spawnEnemies(world.tier, n.type, !!n.namedRare, { rng, bossName: world.boss });
+    const sim = simulateFight({ party, enemies, seed, startHpFrac: runHpFrac || undefined });
+    const rewards = sim.result.win ? rollRewards({ worldTier: world.tier, nodeType: n.type, attuneVein: sim.result.attuneVein, rng }) : null;
+    const derived = party.map((m) => deriveStats(m));
+    setFight({ enemies, derived, events: sim.events, result: sim.result, stats: sim.stats, rewards, seed });
+    setFightNode(fightNodeFull); setFightElapsed(0); setFightSpeed(1);
+    setRunStage('fight'); enterMindView();
+    fightTimers.current.tick = window.setInterval(() => {
+      setFightElapsed((e) => {
+        const next = e + PLAYBACK_TICK_MS * fightSpeedRef.current;
+        if (next >= sim.result.durationMs + RESULTS_HOLD_MS) {
+          window.clearInterval(fightTimers.current.tick); fightTimers.current.tick = null;
+          window.setTimeout(finishFightToLoot, 0);
+          return sim.result.durationMs;
+        }
+        return next;
+      });
+    }, PLAYBACK_TICK_MS);
   }
+  function skipFight() { finishFightToLoot(); }
   function visitNode(n, opts = {}) {
     if (busy) return;
     if (opts.repositionOnly) { setCurrentId(n.id); pushLog('Repositioned to a cleared node.', 'sys'); return; }
     startFight(n);
   }
   function applyLootAndReturnToExpedition() {
-    const res = fightResult; const loot = pendingLoot; const n = fightNode;
-    if (!res || !n) { setRunStage('expedition'); return; }
+    const f = fight; const n = fightNode;
+    if (!f || !n) { setRunStage('expedition'); return; }
+    const res = f.result; const rewards = f.rewards;
     if (!res.win) {
-      doFlash('Party defeated — returned to Veinharbor', colors.mindDanger);
+      // §8c death rule: banked kept, map resets, home to Veinharbor.
+      doFlash('The bond pulls them home', colors.mindDanger);
       setWorldvein((v) => v + runVein); resetRunToIsland(); setTab('town'); setHubSkinForTab('town'); return;
     }
-    setTerritory((prev) => revealNeighbors(prev, n.id)); setCurrentId(n.id); setPartyHP(res.hpPct);
-    setRunVein((v) => v + (loot?.worldvein || 0));
-    pushLog(`✔ Cleared in ${res.duration}s. +${loot?.worldvein || 0} Worldvein.${n.type === 'crystal' ? ' The crystal splinters — rich harvest.' : ''}`, 'good');
-    if (loot?.gear) { setStash((s) => [...s, loot.gear]); pushLog(`  ⬥ Loot: ${loot.gear.name} (${loot.gear.rating}/100)`, 'loot'); }
-    if (loot?.healCrystal) { setPartyHP((h) => Math.min(1, h + 0.3)); pushLog('  ✚ A healing crystal restores the party.', 'heal'); }
+    setTerritory((prev) => revealNeighbors(prev, n.id)); setCurrentId(n.id);
+    setPartyHP(res.hpPct); setRunHpFrac(res.partyHpFrac);
+    setRunVein((v) => v + (rewards?.worldvein || 0));
+    pushLog(`✔ Cleared in ${res.durationSec}s. +${rewards?.worldvein || 0} Worldvein.${n.type === 'crystal' ? ' The crystal splinters — rich harvest.' : ''}`, 'good');
+    if (rewards?.gear) { setStash((s) => [...s, rewards.gear]); pushLog(`  ⬥ Loot: ${rewards.gear.name} (${rewards.gear.rating}/100)`, 'loot'); }
     if (n.type === 'boss') {
       pushLog(`${world.boss} is defeated. The way upward opens.`, 'boss');
       doFlash(`${world.name} cleared!`, world.accent);
       setUnlocked((u) => Math.max(u, world.id + 1));
-      setWorldvein((v) => v + runVein + (loot?.worldvein || 0));
-      clearFightTimers(); setFightNode(null); setFightResult(null); setPendingLoot(null);
+      setWorldvein((v) => v + runVein + (rewards?.worldvein || 0));
+      clearFightTimers(); setFightNode(null); setFight(null);
       resetRunToIsland(); setTab('mountain'); setHubSkinForTab('mountain'); return;
     }
-    clearFightTimers(); setFightNode(null); setFightResult(null); setPendingLoot(null); setBusy(false); setRunStage('expedition');
+    clearFightTimers(); setFightNode(null); setFight(null); setBusy(false); setRunStage('expedition');
   }
   function extract() {
     doFlash(`Extracted ${runVein} Worldvein`, colors.mythros);
@@ -212,25 +235,12 @@ export default function Eldrathor() {
         {tab === 'mountain' && runStage === 'island' && <IslandWorldMap unlocked={unlocked} onSelectWorld={onSelectWorld} onHarbor={() => selectTab('town')} />}
         {tab === 'mountain' && runStage === 'rally' && selectedWorld && <RallyScreen world={selectedWorld} party={party} onExplore={onRallyExplore} onBack={onRallyBack} />}
         {tab === 'mountain' && runStage === 'expedition' && world && territory && <TerritoryMap world={world} territory={territory} currentId={currentId} busy={busy} partyHP={partyHP} runVein={runVein} party={party} archetypes={ARCHETYPES} log={log} logRef={logRef} onVisit={visitNode} onExtract={extract} />}
-        {tab === 'mountain' && runStage === 'fight' && fightNode && <FightScreen world={world} node={fightNode} party={party} partyHP={partyHP} phase={fightPhase} result={fightResult} elapsedMs={fightElapsed} resolveMs={FIGHT_RESOLVE_MS} />}
-        {tab === 'mountain' && runStage === 'loot' && <LootResults world={world} nodeLabel={fightNode ? (nodeTypeMeta[fightNode.type]?.label || 'Node') : null} win={fightResult?.win} loot={pendingLoot} duration={fightResult?.duration} onContinue={applyLootAndReturnToExpedition} />}
+        {tab === 'mountain' && runStage === 'fight' && fightNode && fight && <FightScreen world={world} node={fightNode} party={party} fight={fight} elapsedMs={fightElapsed} speed={fightSpeed} onSpeed={setFightSpeed} onSkip={skipFight} />}
+        {tab === 'mountain' && runStage === 'loot' && fight && <LootResults world={world} nodeLabel={fightNode ? (nodeTypeMeta[fightNode.type]?.label || 'Node') : null} fight={fight} onContinue={applyLootAndReturnToExpedition} />}
         <TabBar activeTab={tab} onSelect={selectTab} />
       </div>
     </div>
   );
-}
-
-function buildFightFeed(res, loot, label) {
-  const feed = [
-    { t: 'The bond tightens. Blades find rhythm…', color: '#5f8494' },
-    { t: res.win ? `Party holds the line against the ${label}.` : `The ${label} overwhelms the bond.`, color: res.win ? '#7fd6a0' : '#e05d6f' },
-  ];
-  if (res.win) {
-    feed.push({ t: `Resolved in ${res.duration}s.`, color: '#9fb2bd' });
-    if (loot?.worldvein) feed.push({ t: `+${loot.worldvein} Worldvein gleaned.`, color: '#5fc7e0' });
-    if (loot?.gear) feed.push({ t: `Loot: ${loot.gear.name}`, color: '#e0a04d' });
-  } else feed.push({ t: `Fell after ${res.duration}s.`, color: '#e05d6f' });
-  return feed;
 }
 
 const S = {

@@ -1,21 +1,22 @@
-// DESIGN-OPEN: legacy prototype numbers (hp/atk/def); replaced by ARCHETYPE_SEEDS in combat v2.
+/** Archetype identity only — combat numbers come from ARCHETYPE_SEEDS via combat/derive.js. */
 export const ARCHETYPES = {
-  Bulwark: { role: 'Tank', hp: 220, atk: 10, def: 14, color: '#6fb7d6', blurb: 'Draws focus, endures.' },
-  Warden: { role: 'Healer', hp: 150, atk: 9, def: 8, color: '#7fd6a0', blurb: 'Mends the party.' },
-  Striker: { role: 'Damage', hp: 130, atk: 22, def: 6, color: '#e0a04d', blurb: 'Ramps damage in a fight.' },
-  Adept: { role: 'Control', hp: 140, atk: 14, def: 7, color: '#b58fe0', blurb: 'Locks and sunders foes.' },
-  Resonator: { role: 'Support', hp: 145, atk: 12, def: 8, color: '#d6c86f', blurb: 'Empowers the party & harvest.' },
+  Bulwark: { role: 'Tank', color: '#6fb7d6', blurb: 'Draws focus, endures.' },
+  Warden: { role: 'Healer', color: '#7fd6a0', blurb: 'Mends the party.' },
+  Striker: { role: 'Damage', color: '#e0a04d', blurb: 'Ramps damage in a fight.' },
+  Adept: { role: 'Control', color: '#b58fe0', blurb: 'Locks and sunders foes.' },
+  Resonator: { role: 'Support', color: '#d6c86f', blurb: 'Empowers the party & harvest.' },
 };
 
+/** Weapon table — docs/Eldrathor_Combat_v2_Lock.md §2: dmg per hit, tempo = seconds per swing, mit. */
 export const WEAPONS = {
-  'Dual Daggers': { tempo: 0.55, dmg: 0.85, mit: 0.02, group: 'Melee DPS' },
-  'Dual Swords': { tempo: 0.8, dmg: 1.0, mit: 0.05, group: 'Melee DPS' },
-  Greatsword: { tempo: 1.5, dmg: 1.7, mit: 0.1, group: 'Tank' },
-  'Sword + Shield': { tempo: 1.0, dmg: 0.7, mit: 0.22, group: 'Tank' },
-  Bow: { tempo: 0.7, dmg: 0.95, mit: 0.02, group: 'Ranged' },
-  Crossbow: { tempo: 1.3, dmg: 1.5, mit: 0.03, group: 'Ranged' },
-  Staff: { tempo: 0.9, dmg: 1.1, mit: 0.04, group: 'Caster' },
-  'Orb + Tome': { tempo: 1.4, dmg: 1.6, mit: 0.05, group: 'Caster' },
+  Greatsword: { dmg: 22, tempo: 1.6, mit: 0.1, group: 'Tank' },
+  'Sword + Shield': { dmg: 12, tempo: 1.2, mit: 0.25, group: 'Tank' },
+  'Dual Daggers': { dmg: 7, tempo: 0.8, mit: 0.02, group: 'Melee DPS' },
+  'Dual Swords': { dmg: 11, tempo: 1.0, mit: 0.04, group: 'Melee DPS' },
+  Bow: { dmg: 10, tempo: 0.9, mit: 0.03, group: 'Ranged' },
+  Crossbow: { dmg: 20, tempo: 1.5, mit: 0.03, group: 'Ranged' },
+  Staff: { dmg: 12, tempo: 1.1, mit: 0.05, group: 'Caster' },
+  'Orb + Tome': { dmg: 19, tempo: 1.4, mit: 0.05, group: 'Caster' },
 };
 
 export const WORLDS = [
