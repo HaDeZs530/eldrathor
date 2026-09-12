@@ -145,6 +145,7 @@ Each tap drills one level deeper; each completion pops one level back.
 ---
 
 ## 5b. WORLD / ZONE STRUCTURE — The Mountain (LOCKED)
+> **SUPERSEDED 2026-09-12** by `docs/Eldrathor_Island_Areas_Lock.md` — nine areas in pin order, one boss each, court bosses in areas 4–9 + summit. Kept below for history.
 
 **One level (one procedural map) per World.** The mountain is climbed as a **clockwise spiral from 6 o'clock upward** (the mountain is not a perfect circle). Each World's boss unlocks the next.
 
@@ -405,6 +406,7 @@ The game is split into two distinct activities, each with its own mode. This del
 - Combat itself is fully automatic per earlier decision (classes fire skills like most idle-fighter games). Interactivity lives entirely in map traversal.
 
 ### 8c. The Expedition Map — "Unexplored Territory" Model (LOCKED)
+> **Refined 2026-09-12** by `docs/Eldrathor_RouteMap_v2_Lock.md`: now called the **Route map**; scout→engage/leave interaction; 5 node types (Sanctuary added); depth difficulty; roaming rares + seal and respawn rules as written there. Entrance/exit table below is superseded by the nine-area structure.
 **Territory, not a route.** Large sprawling map (vertical AND horizontal, pannable, bigger than one screen), ~30–45 nodes (Forge wings 25–35 each; Castle 40+). The feel: dropped into unexplored wilderness — genuine frontier choices in multiple directions, not a hiking path.
 
 **Entrances/exits per map (tied to the mountain spiral):**
