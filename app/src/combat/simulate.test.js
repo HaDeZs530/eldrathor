@@ -57,3 +57,14 @@ test('deterministic by seed', () => {
   const b = simulateFight({ party: LEVEL1_PARTY, enemies, seed: 99 });
   assert.deepEqual(a.events.map((e) => [e.t, e.type, e.amount]), b.events.map((e) => [e.t, e.type, e.amount]));
 });
+
+test('enemyFirst: a failed flee gives enemies a 1.5 s free window before any party swing', () => {
+  const enemies = spawnEnemies(1, 'rare', false, { rng: mulberry32(9) });
+  const { events } = simulateFight({ party: LEVEL1_PARTY, enemies, seed: 21, enemyFirst: true });
+  const firstPartySwing = events.find((e) => e.type === 'swing');
+  const firstEnemyHit = events.find((e) => e.enemy && (e.type === 'hit' || e.type === 'crit'));
+  assert.ok(firstPartySwing && firstPartySwing.t >= 1500, `party first swing at ${firstPartySwing?.t}ms should be >= 1500`);
+  assert.ok(firstEnemyHit && firstEnemyHit.t < firstPartySwing.t, 'enemies land a hit before the party swings');
+  const normal = simulateFight({ party: LEVEL1_PARTY, enemies, seed: 21 });
+  assert.ok(normal.events.find((e) => e.type === 'swing').t < 1500, 'without the flag the party swings before 1.5 s');
+});

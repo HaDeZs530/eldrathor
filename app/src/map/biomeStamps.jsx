@@ -254,10 +254,6 @@ export function renderInterior({ territory, byId, biome }) {
 /** Convenience: full biome layer for a territory. */
 export function renderBiomeLayer({ territory, byId, biome }) {
   if (biome.interior) return renderInterior({ territory, byId, biome });
-  return (
-    <>
-      {renderStamps({ territory, biome })}
-      {renderPaths({ territory, byId })}
-    </>
-  );
+  // v3 s2: edges are drawn by RouteMapScreen by state; outdoor biomes contribute stamps only.
+  return renderStamps({ territory, biome });
 }

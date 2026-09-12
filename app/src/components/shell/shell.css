@@ -62,7 +62,7 @@
 
 .eld-sheet-title {
   font-family: var(--eld-font-display, Cinzel, Georgia, serif);
-  font-size: var(--mv-text, 16px);
+  font-size: var(--mv-text, 18px);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   margin-bottom: 8px;
@@ -71,7 +71,7 @@
 .eld-sheet-bullets {
   margin: 0 0 12px;
   padding-left: 18px;
-  font-size: var(--mv-text, 16px);
+  font-size: var(--mv-text, 18px);
   line-height: 1.45;
   color: var(--eld-text, #cfe0e8);
 }
@@ -81,7 +81,7 @@
 }
 
 .eld-sheet-sub {
-  font-size: var(--mv-label, 13px);
+  font-size: var(--mv-label, 15px);
   color: var(--eld-muted, #5f8494);
   margin: 10px 0 6px;
   letter-spacing: 0.1em;
@@ -99,11 +99,11 @@
   align-items: center;
   gap: 10px;
   width: 100%;
-  min-height: var(--mv-tap, 48px);
+  min-height: var(--mv-tap, 52px);
   padding: 8px 12px;
   text-align: left;
   font-family: inherit;
-  font-size: var(--mv-text, 16px);
+  font-size: var(--mv-text, 18px);
   color: inherit;
   cursor: pointer;
 }
@@ -125,7 +125,7 @@
 
 .eld-menu-note {
   margin-left: auto;
-  font-size: var(--mv-label, 13px);
+  font-size: var(--mv-label, 15px);
   color: var(--eld-muted, #5f8494);
 }
 
@@ -137,7 +137,7 @@
 
 .eld-sheet-actions .eld-btn {
   flex: 1;
-  min-height: var(--mv-tap, 48px);
+  min-height: var(--mv-tap, 52px);
 }
 
 @keyframes eld-sheet-up {

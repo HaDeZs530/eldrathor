@@ -1,7 +1,9 @@
 /**
- * Route map run state — docs/Eldrathor_RouteMap_v2_Lock.md §2, §4, §5, §6.
+ * Route map run state — docs/Eldrathor_RouteMap_v2_Lock.md §2, §4, §5, §6 and
+ * docs/Eldrathor_RouteMap_v3_Travel_Lock.md §1, §3.
  * Pure helpers over the territory object: reveal-on-clear, node-action clock, roaming
- * rares, respawns + named variants, the boss seal, and path highlighting.
+ * rares, respawns + named variants, the boss seal, path highlighting, travel planning
+ * and the ambush flee roll.
  */
 
 export const RESPAWN_EVERY_TICKS = 4;
@@ -23,6 +25,14 @@ export const byId = (t) => Object.fromEntries(t.nodes.map((n) => [n.id, n]));
 /** Living rare standing on a node, if any. */
 export function rareAt(t, nodeId) {
   return t.rares.find((r) => r.alive && r.nodeId === nodeId) || null;
+}
+
+/** A living rare on the node itself or on one of its neighbours (v3 §3 ambush trigger). */
+export function rareNear(t, nodeId) {
+  const map = byId(t);
+  const here = map[nodeId];
+  if (!here) return null;
+  return rareAt(t, nodeId) || here.neighbors.map((id) => rareAt(t, id)).find(Boolean) || null;
 }
 
 /** What the node fights as right now: a living rare on it overrides the underlying type. */
@@ -78,10 +88,10 @@ export function killRare(t, nodeId) {
 }
 
 /**
- * Node-action clock (scout, clear, ambush fight). Every 2 ticks living rares roam one edge
- * to a random revealed, uncleared, non-boss neighbour (or stay). Every 4 ticks each cleared
- * node (not the entrance, not where the party stands) rolls 25% to respawn; 10% of those
- * come back as a named variant.
+ * Node-action clock (scout, clear, travel hop, flee). Every 2 ticks living rares roam one
+ * edge to a random revealed, uncleared, non-boss neighbour (or stay). Every 4 ticks each
+ * cleared node (not the entrance, not where the party stands) rolls 25% to respawn; 10% of
+ * those come back as a named variant.
  * @returns {{territory:object, events:Array<{type:string, nodeId:string, rareId?:string, named?:boolean}>}}
  */
 export function tickClock(t, { currentId, rng = Math.random } = {}) {
@@ -127,6 +137,10 @@ export function tickClock(t, { currentId, rng = Math.random } = {}) {
 
 /** Shortest path over REVEALED nodes (BFS). Returns node ids or null. */
 export function revealedPath(t, fromId, toId) {
+  return bfsPath(t, fromId, toId, (n) => n.revealed);
+}
+
+function bfsPath(t, fromId, toId, walkable) {
   const map = byId(t);
   if (!map[fromId] || !map[toId]) return null;
   const prev = new Map([[fromId, null]]);
@@ -135,7 +149,8 @@ export function revealedPath(t, fromId, toId) {
     const c = q.shift();
     if (c === toId) break;
     for (const n of map[c].neighbors) {
-      if (!prev.has(n) && map[n]?.revealed) {
+      const node = map[n];
+      if (!prev.has(n) && node && (n === toId || walkable(node))) {
         prev.set(n, c);
         q.push(n);
       }
@@ -145,6 +160,46 @@ export function revealedPath(t, fromId, toId) {
   const path = [];
   for (let c = toId; c != null; c = prev.get(c)) path.push(c);
   return path.reverse();
+}
+
+/** Ground the party can walk over: cleared nodes, and respawned ones (which halt the trip on arrival). */
+export const isWalkable = (n) => n.cleared || n.respawned;
+
+/**
+ * v3 §1 — planned travel path through cleared ground from the current node to a cleared
+ * (or respawned) destination. Returns [current, …, dest] or null.
+ */
+export function travelPath(t, fromId, toId) {
+  const map = byId(t);
+  if (!map[toId] || !isWalkable(map[toId])) return null;
+  return bfsPath(t, fromId, toId, isWalkable);
+}
+
+/**
+ * v3 §1 — tapping a frontier / boss node: travel to its NEAREST walkable neighbour
+ * (shortest cleared path), then act there. Returns the path to that neighbour or null.
+ */
+export function approachPath(t, fromId, frontierId) {
+  const map = byId(t);
+  const target = map[frontierId];
+  if (!target) return null;
+  let best = null;
+  for (const id of target.neighbors) {
+    const n = map[id];
+    if (!n || !isWalkable(n)) continue;
+    const p = id === fromId ? [fromId] : bfsPath(t, fromId, id, isWalkable);
+    if (p && (!best || p.length < best.length)) best = p;
+  }
+  return best;
+}
+
+/**
+ * v3 §3 — flee chance: 65% base, 45% if the ambusher is a rare, +5% per Striker or Adept
+ * in the party. Bosses never ambush.
+ */
+export function fleeChance(party, ambusherIsRare) {
+  const quick = party.filter((m) => m.archetype === 'Striker' || m.archetype === 'Adept').length;
+  return Math.min(0.95, (ambusherIsRare ? 0.45 : 0.65) + 0.05 * quick);
 }
 
 /** Threat band from a dry-run win rate. DESIGN-OPEN: Even/Hard boundaries (Easy ≥80%, Deadly ≤20% are locked). */

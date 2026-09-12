@@ -1,24 +1,27 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { nodeTypeMeta } from '../theme/tokens.js';
 import { biomeForArea, renderBiomeLayer } from './biomeStamps.jsx';
-import { rareAt, effectiveType, isSealed, reachableIds, revealedPath } from './routeState.js';
+import { rareAt, effectiveType, isSealed, reachableIds, revealedPath, isWalkable } from './routeState.js';
 import './parchment.css';
 
 /**
- * Route map — docs/Eldrathor_RouteMap_v2_Lock.md §2–§6 on the hybrid parchment surface
- * (docs/Eldrathor_NodeMap_Art_Lock.md). Frontier nodes are unknown runes; tapping one
- * scouts it and slides up the ScoutCard (Engage / Leave). Rares roam as red skulls, the
- * boss stays chained until the seal breaks, respawned nodes glow, named ones get a gold rim.
+ * Route map — docs/Eldrathor_RouteMap_v2_Lock.md + docs/Eldrathor_RouteMap_v3_Travel_Lock.md
+ * on the hybrid parchment surface (docs/Eldrathor_NodeMap_Art_Lock.md).
+ * One-tap travel: tap any cleared node to walk there (the planned path glows gold first);
+ * tap a frontier rune anywhere to walk to its nearest cleared neighbour and scout it.
+ * Node states follow the v3 §2 table (shape = state, colour = type). Cards (scout / ambush /
+ * seal / extract) slide up inside the viewport.
  */
 
-const PARCHMENT_INK = {
-  normal: '#4a3620',
-  crystal: '#2c6a86',
-  sanctuary: '#2f7a55',
-  rare: '#8a2626',
-  boss: '#6b4a10',
-  unknown: '#3a3028',
+/** v3 §2 palette — colour distinguishes type. */
+const TYPE_COLOR = {
+  normal: '#a9b4c7',
+  crystal: '#4fa3ff',
+  sanctuary: '#5fbf8a',
+  rare: '#c0392b',
+  boss: '#8e6bd1',
 };
+const TYPE_GLYPH = { normal: '⚔', crystal: '❖', sanctuary: '✧', rare: '☠', boss: '♛' };
 const TAP_SLOP = 8;
 
 /** Keep pointer events flowing to the viewport during a drag; tolerate synthetic pointers. */
@@ -32,7 +35,7 @@ function capturePointer(el, pointerId) {
 
 export default function RouteMapScreen({
   area, territory, currentId, busy, partyHP, runVein, party, archetypes, log, logRef,
-  scout, onTapNode, onEngage, onLeave, onExtract,
+  scout, ambush, travel, onTapNode, onEngage, onLeave, onFight, onFlee, onExtract,
 }) {
   const vpRef = useRef(null);
   const [vp, setVp] = useState({ w: 0, h: 0 });
@@ -47,6 +50,12 @@ export default function RouteMapScreen({
   const sealed = isSealed(territory);
   const raresLeft = territory.rares.filter((r) => r.alive).length;
   const litPath = useMemo(() => (sealed ? null : revealedPath(territory, currentId, territory.bossId)), [territory, currentId, sealed]);
+  const planEdges = useMemo(() => {
+    const s = new Set();
+    const p = travel?.path;
+    if (p) for (let i = 0; i < p.length - 1; i++) s.add(`${p[i]}|${p[i + 1]}`);
+    return s;
+  }, [travel]);
   const W = territory.width;
   const H = territory.height;
 
@@ -70,6 +79,14 @@ export default function RouteMapScreen({
   }
   const view = pan ? clampPan(pan) : centerOn(byId[currentId]);
 
+  // follow the party marker while it travels: when the current node changes mid-trip, drop the
+  // manual pan so the derived "centre on the party" view applies (state adjusted during render).
+  const [followedId, setFollowedId] = useState(currentId);
+  if (currentId !== followedId) {
+    setFollowedId(currentId);
+    if (travel) { setPan(null); setAnim(true); }
+  }
+
   function localPt(e) {
     const r = vpRef.current.getBoundingClientRect();
     return { x: e.clientX - r.left, y: e.clientY - r.top };
@@ -77,11 +94,7 @@ export default function RouteMapScreen({
   function activateNode(id) {
     const n = byId[id];
     if (!n || busy) return;
-    if (!reachable.has(n.id) && n.id !== currentId) return;
-    if (n.cleared && !n.respawned && n.id !== currentId) {
-      setAnim(true);
-      setPan(centerOn(n));
-    }
+    if (!n.revealed) return;
     onTapNode(n);
   }
   function onPointerDown(e) {
@@ -107,12 +120,16 @@ export default function RouteMapScreen({
     const g = gesture.current;
     if (!g.active) return;
     g.active = false;
-    if (!g.moved && g.target) activateNode(g.target);
+    if (!g.moved) {
+      if (travel) onTapNode(null); // tap anywhere while travelling = skip the animation
+      else if (g.target) activateNode(g.target);
+    }
     g.target = null;
   }
 
   const revealed = territory.nodes.filter((n) => n.revealed);
   const clearedCount = territory.nodes.filter((n) => n.cleared && !n.respawned).length;
+  const card = ambush || scout;
 
   return (
     <div className="eld-map-wrap" style={styles.wrap}>
@@ -124,7 +141,7 @@ export default function RouteMapScreen({
             {biome.interior ? ' — rooms open as you advance' : ''}
           </div>
           <div style={styles.hudLine}>
-            <span style={{ color: sealed ? '#8a2626' : '#2f7a55' }}>{sealed ? `♛⛓ Boss sealed · ${raresLeft} rare${raresLeft === 1 ? '' : 's'} roaming` : '♛ Seal broken — the way is lit'}</span>
+            <span style={{ color: sealed ? '#8e6bd1' : '#3d6b6e' }}>{sealed ? `♛⛓ Boss sealed · ${raresLeft} rare${raresLeft === 1 ? '' : 's'} roaming` : '♛ Seal broken — the way is lit'}</span>
             <span style={styles.hudDim}>· {clearedCount}/{territory.nodes.length} cleared · clock {territory.clock}</span>
           </div>
         </div>
@@ -153,16 +170,19 @@ export default function RouteMapScreen({
               </mask>
             </defs>
             {renderBiomeLayer({ territory, byId, biome })}
-            {/* lit shortest path to the boss once the seal breaks */}
-            {litPath && litPath.length > 1 && (
-              <g>
-                {litPath.slice(1).map((id, i) => {
-                  const a = byId[litPath[i]];
-                  const b = byId[id];
-                  return <line key={`lit-${id}`} x1={a.x} y1={a.y} x2={b.x} y2={b.y} className="eld-lit-path" />;
-                })}
-              </g>
-            )}
+            {/* edges by state (v3 §2) */}
+            <g>
+              {territory.edges.map(([a, b]) => {
+                const na = byId[a];
+                const nb = byId[b];
+                if (!na || !nb || (!na.revealed && !nb.revealed)) return null;
+                const bothWalkable = isWalkable(na) && isWalkable(nb);
+                const planned = planEdges.has(`${a}|${b}`) || planEdges.has(`${b}|${a}`);
+                const lit = litPath && litPath.includes(a) && litPath.includes(b) && Math.abs(litPath.indexOf(a) - litPath.indexOf(b)) === 1;
+                const cls = planned ? 'eld-edge-plan' : lit ? 'eld-lit-path' : bothWalkable ? 'eld-edge-cleared' : 'eld-edge-frontier';
+                return <line key={`${a}-${b}`} x1={na.x} y1={na.y} x2={nb.x} y2={nb.y} className={cls} fill="none" />;
+              })}
+            </g>
             <g mask="url(#eld-fog-mask)">
               <rect width={W} height={H} fill="#e2d2ab" opacity="0.95" />
               <rect width={W} height={H} fill="url(#eld-mist)" opacity="0.4" />
@@ -175,24 +195,18 @@ export default function RouteMapScreen({
             const rare = rareAt(territory, n.id);
             const known = n.typeKnown || n.cleared;
             const eff = effectiveType(territory, n);
-            const meta = known ? nodeTypeMeta[eff] || nodeTypeMeta.normal : null;
-            const ink = known ? PARCHMENT_INK[eff] || PARCHMENT_INK.normal : PARCHMENT_INK.unknown;
             const bossSealed = n.type === 'boss' && sealed;
-            const cls = [
-              'eld-pnode',
-              here && 'is-here',
-              canGo && 'is-reach',
-              n.cleared && !here && 'is-cleared',
-              !known && 'is-unknown',
-              n.respawned && 'is-respawned',
-              n.namedRare && 'is-named',
-              rare && 'is-rare',
-              n.type === 'boss' && (bossSealed ? 'is-sealed' : 'is-unsealed'),
-              n.type === 'sanctuary' && known && !n.sanctuaryUsed && 'is-sanctuary',
-              biome.interior && 'is-room',
-            ].filter(Boolean).join(' ');
-            const glyph = !known ? 'ᚱ' : rare ? '☠' : n.type === 'boss' ? (bossSealed ? '♛' : '♛') : meta.glyph;
-            const label = here ? 'Party' : !known ? 'Unknown' : rare ? 'Rare' : n.type === 'boss' && bossSealed ? 'Sealed' : n.respawned ? (n.namedRare ? 'Named' : 'Respawned') : meta.label;
+            let state;
+            if (here) state = 'is-here';
+            else if (rare) state = 'is-rare';
+            else if (n.type === 'boss') state = `is-boss ${bossSealed ? 'is-sealed' : 'is-unsealed'}`;
+            else if (!known) state = 'is-unknown';
+            else if (n.respawned) state = n.namedRare ? 'is-named' : 'is-respawned';
+            else if (n.cleared) state = 'is-cleared';
+            else state = 'is-scouted';
+            const cls = ['eld-pnode', state, canGo && 'is-reach', isWalkable(n) && 'is-walkable'].filter(Boolean).join(' ');
+            const glyph = here ? '' : rare ? '☠' : !known ? 'ᚱ' : TYPE_GLYPH[n.type] || '⚔';
+            const label = here ? 'Party' : !known ? 'Unknown' : rare ? 'Rare' : bossSealed ? 'Boss (sealed)' : n.respawned ? (n.namedRare ? 'Named respawn' : 'Respawned') : n.cleared ? 'Cleared' : nodeTypeMeta[eff]?.label || 'Node';
             return (
               <button
                 key={n.id}
@@ -200,36 +214,42 @@ export default function RouteMapScreen({
                 data-node={n.id}
                 className={cls}
                 title={label}
-                aria-disabled={busy || (!canGo && !here) || undefined}
-                style={{ left: n.x - 26, top: n.y - 26, '--ink': ink, opacity: canGo || here ? undefined : 0.7 }}
+                aria-label={label}
+                style={{ left: n.x - 22, top: n.y - 22, '--type': TYPE_COLOR[n.type] || TYPE_COLOR.normal }}
                 onClick={(e) => { if (e.detail === 0) activateNode(n.id); }}
               >
-                <span className="eld-pnode-glyph">{glyph}</span>
-                <span className="eld-pnode-lbl">{label}</span>
-                {bossSealed && <span className="eld-pnode-chain" aria-hidden="true">⛓</span>}
+                <span className="eld-pnode-shape" aria-hidden="true">{glyph}</span>
+                {n.type === 'boss' && bossSealed && <span className="eld-pnode-chain" aria-hidden="true">⛓</span>}
               </button>
             );
           })}
         </div>
         <div className="eld-route-hint" aria-hidden="true">
-          <span>Drag to pan · tap a rune to scout · Engage or Leave</span>
+          <span>{travel ? 'Travelling… tap to skip' : 'Tap a rune to scout · tap cleared ground to travel'}</span>
         </div>
 
-        {scout && (
-          <div className="eld-scout-card eld-panel" role="dialog" aria-label="Scout report">
+        {card && !confirmExtract && (
+          <div className={`eld-scout-card eld-panel${ambush ? ' is-ambush' : ''}`} role="dialog" aria-label={ambush ? 'Ambush' : 'Scout report'}>
             <div className="eld-scout-top">
-              <span className="eld-scout-type" style={{ color: nodeTypeMeta[scout.type]?.color }}>
-                {nodeTypeMeta[scout.type]?.glyph} {scout.title}
+              <span className="eld-scout-type" style={{ color: ambush ? '#c0392b' : TYPE_COLOR[card.type] || undefined }}>
+                {ambush ? '☠ Ambush!' : `${TYPE_GLYPH[card.type] || ''} ${card.title}`}
               </span>
-              {scout.threat && <span className="eld-scout-threat" style={{ color: scout.threat.color, borderColor: scout.threat.color }}>{scout.threat.label}</span>}
+              {card.threat && <span className="eld-scout-threat" style={{ color: card.threat.color, borderColor: card.threat.color }}>{card.threat.label}</span>}
             </div>
-            <div className="eld-scout-body">{scout.body}</div>
-            {scout.yieldText && <div className="eld-scout-yield">{scout.yieldText}</div>}
+            <div className="eld-scout-body">{card.body}</div>
+            {card.yieldText && <div className="eld-scout-yield">{card.yieldText}</div>}
             <div className="eld-scout-actions">
-              <button type="button" className="eld-btn eld-btn-ghost" style={styles.cardBtn} onClick={onLeave}>Leave</button>
-              <button type="button" className="eld-btn" style={styles.cardBtn} onClick={onEngage} disabled={scout.engageDisabled || busy}>
-                {scout.engageLabel || 'Engage'}
-              </button>
+              {ambush ? (
+                <>
+                  <button type="button" className="eld-btn eld-btn-ghost" onClick={onFlee} disabled={busy}>Flee ({Math.round(ambush.fleeChance * 100)}%)</button>
+                  <button type="button" className="eld-btn" onClick={onFight} disabled={busy}>Fight</button>
+                </>
+              ) : (
+                <>
+                  <button type="button" className="eld-btn eld-btn-ghost" onClick={onLeave}>Leave</button>
+                  <button type="button" className="eld-btn" onClick={onEngage} disabled={card.engageDisabled || busy}>{card.engageLabel || 'Engage'}</button>
+                </>
+              )}
             </div>
           </div>
         )}
@@ -239,8 +259,8 @@ export default function RouteMapScreen({
             <div className="eld-scout-top"><span className="eld-scout-type">Extract from {area.name}?</span></div>
             <div className="eld-scout-body">Bank {runVein} ❖ Worldvein and everything found. The map is gone when you leave — the next visit generates a fresh one.</div>
             <div className="eld-scout-actions">
-              <button type="button" className="eld-btn eld-btn-ghost" style={styles.cardBtn} onClick={() => setConfirmExtract(false)}>Stay</button>
-              <button type="button" className="eld-btn" style={styles.cardBtn} onClick={() => { setConfirmExtract(false); onExtract(); }}>Extract</button>
+              <button type="button" className="eld-btn eld-btn-ghost" onClick={() => setConfirmExtract(false)}>Stay</button>
+              <button type="button" className="eld-btn" onClick={() => { setConfirmExtract(false); onExtract(); }}>Extract</button>
             </div>
           </div>
         )}
@@ -254,7 +274,7 @@ export default function RouteMapScreen({
           </div>
           <div style={styles.partyMini}>
             {party.map((m, i) => (
-              <span key={i} style={{ color: archetypes[m.archetype]?.color || '#5fc7e0', fontSize: 'var(--mv-label, 13px)', fontWeight: 600 }}>{m.name}</span>
+              <span key={i} style={{ color: archetypes[m.archetype]?.color || '#5fc7e0', fontSize: 'var(--mv-label, 15px)', fontWeight: 600 }}>{m.name}</span>
             ))}
           </div>
         </div>
@@ -268,23 +288,22 @@ export default function RouteMapScreen({
   );
 }
 
-const LOG_COLOR = { sys: '#8fb0bd', good: '#7fd6a0', bad: '#e05d6f', loot: '#e0a04d', heal: '#7fd6c0', boss: '#e05d6f', rare: '#e08a8a', n: '#c8d4d8' };
+const LOG_COLOR = { sys: '#8fb0bd', good: '#7fd6a0', bad: '#e05d6f', loot: '#e0a04d', heal: '#7fd6c0', boss: '#b58fe0', rare: '#e08a8a', n: '#c8d4d8' };
 
 const styles = {
   wrap: { display: 'flex', flexDirection: 'column', gap: 8, flex: 1, minHeight: 0, padding: '8px 10px 10px', textAlign: 'left' },
   head: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 },
-  title: { fontSize: 16, fontWeight: 700 },
-  sub: { fontSize: 'var(--mv-label, 13px)', color: 'var(--eld-muted, #8aa09a)', marginTop: 2, fontStyle: 'italic' },
-  hudLine: { fontSize: 'var(--mv-label, 13px)', marginTop: 4, display: 'flex', gap: 6, flexWrap: 'wrap' },
+  title: { fontSize: 'var(--mv-title, 26px)', fontWeight: 700, lineHeight: 1.1 },
+  sub: { fontSize: 'var(--mv-label, 15px)', color: 'var(--eld-muted, #8aa09a)', marginTop: 2, fontStyle: 'italic' },
+  hudLine: { fontSize: 'var(--mv-label, 15px)', marginTop: 4, display: 'flex', gap: 6, flexWrap: 'wrap' },
   hudDim: { color: 'var(--eld-muted, #8aa09a)' },
-  extractBtn: { padding: '10px 12px', whiteSpace: 'nowrap', flexShrink: 0, minHeight: 'var(--mv-tap, 48px)' },
-  cardBtn: { flex: 1, minHeight: 'var(--mv-tap, 48px)' },
+  extractBtn: { padding: '10px 12px', whiteSpace: 'nowrap', flexShrink: 0, minHeight: 'var(--mv-tap, 52px)', fontSize: 'var(--mv-label, 15px)' },
   side: { display: 'flex', flexDirection: 'column', gap: 6 },
   hpBox: { padding: '8px 12px' },
-  hpLbl: { fontSize: 'var(--mv-label, 13px)', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--eld-muted, #8aa09a)', marginBottom: 6 },
-  hpBar: { height: 10, background: 'rgba(0,0,0,0.35)', borderRadius: 5, overflow: 'hidden', border: '1px solid var(--eld-border, #3a5a68)' },
+  hpLbl: { fontSize: 'var(--mv-label, 15px)', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--eld-muted, #8aa09a)', marginBottom: 6 },
+  hpBar: { height: 14, background: 'rgba(0,0,0,0.35)', borderRadius: 7, overflow: 'hidden', border: '1px solid var(--eld-border, #3a5a68)' },
   hpFill: { height: '100%', transition: 'width 0.4s, background 0.4s' },
   partyMini: { display: 'flex', gap: 10, marginTop: 6 },
-  logBox: { padding: '8px 10px', height: 86, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 3 },
-  logLine: { fontSize: 'var(--mv-label, 13px)', lineHeight: 1.4, textAlign: 'left' },
+  logBox: { padding: '8px 10px', height: 90, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 3 },
+  logLine: { fontSize: 'var(--mv-label, 15px)', lineHeight: 1.4, textAlign: 'left' },
 };

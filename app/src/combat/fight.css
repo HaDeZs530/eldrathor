@@ -40,10 +40,10 @@
   background: #0e2830;
   color: #5fc7e0;
   font-family: var(--eld-font-display, Cinzel, Georgia, serif);
-  font-size: var(--mv-label, 13px);
+  font-size: var(--mv-label, 15px);
   letter-spacing: 0.06em;
   padding: 8px 8px;
-  min-height: 40px;
+  min-height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -91,7 +91,7 @@
   height: 20px;
   border-radius: 50%;
   border: 1px solid #1c3a44;
-  font-size: 11px;
+  font-size: var(--mv-label, 15px);
   color: #5f8494;
 }
 
@@ -104,8 +104,8 @@
 .eld-speed-btn {
   flex: 1;
   padding: 8px 6px;
-  font-size: var(--mv-label, 13px);
-  min-height: var(--mv-tap, 48px);
+  font-size: var(--mv-label, 15px);
+  min-height: var(--mv-tap, 52px);
 }
 
 .eld-speed-btn.is-active {
@@ -113,8 +113,8 @@
 }
 
 .eld-feed-line {
-  font-size: var(--mv-feed, 15px);
-  line-height: var(--mv-feed-lh, 1.4);
+  font-size: var(--mv-feed, 17px);
+  line-height: var(--mv-feed-lh, 1.45);
   color: #9fb2bd;
 }
 
