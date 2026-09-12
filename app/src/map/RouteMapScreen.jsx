@@ -27,10 +27,11 @@ const ZOOM = 0.72;
 const NODE_HIT = 56;
 const TAP_SLOP = 8;
 /**
- * Camera slack past the sheet edges so nodes on the map's rim (the entrance sits at the very
- * bottom) can be centred clear of the 44 px HUD strip above and the toast / cards below.
+ * Fogged parchment margin around the web (screen px) so nodes on the map's rim (the entrance
+ * sits at the very bottom) can be centred clear of the 44 px HUD strip above and the toast /
+ * cards below — the extra room is paper, never the desk behind it.
  */
-const INSET = { top: 56, bottom: 96, side: 48 };
+const MARGIN = { top: 56, bottom: 96, side: 48 };
 
 /** Keep pointer events flowing to the viewport during a drag; tolerate synthetic pointers. */
 function capturePointer(el, pointerId) {
@@ -66,8 +67,12 @@ export default function RouteMapScreen({
   }, [travel]);
   const W = territory.width;
   const H = territory.height;
-  const SW = W * ZOOM;
-  const SH = H * ZOOM;
+  // margin in map units; the sheet/SVG cover the web plus this margin
+  const M = { x: MARGIN.side / ZOOM, top: MARGIN.top / ZOOM, bottom: MARGIN.bottom / ZOOM };
+  const VW = W + 2 * M.x;
+  const VH = H + M.top + M.bottom;
+  const SW = VW * ZOOM;
+  const SH = VH * ZOOM;
 
   useEffect(() => {
     const el = vpRef.current;
@@ -79,15 +84,17 @@ export default function RouteMapScreen({
 
   function clampPan(p) {
     if (!vp.w || !vp.h) return p;
-    const minX = Math.min(INSET.side, vp.w - SW - INSET.side);
-    const minY = Math.min(INSET.top, vp.h - SH - INSET.bottom);
-    return { x: Math.max(minX, Math.min(INSET.side, p.x)), y: Math.max(minY, Math.min(INSET.top, p.y)) };
+    const minX = Math.min(0, vp.w - SW);
+    const minY = Math.min(0, vp.h - SH);
+    return { x: Math.max(minX, Math.min(0, p.x)), y: Math.max(minY, Math.min(0, p.y)) };
   }
+  const sx = (x) => (x + M.x) * ZOOM; // map → sheet px
+  const sy = (y) => (y + M.top) * ZOOM;
   /** Centre a node in the band between the HUD strip and the bottom toast/cards. */
   function centerOn(node) {
     if (!node) return { x: 0, y: 0 };
-    const midY = (INSET.top + (vp.h - INSET.bottom)) / 2;
-    return clampPan({ x: vp.w / 2 - node.x * ZOOM, y: midY - node.y * ZOOM });
+    const midY = (MARGIN.top + (vp.h - MARGIN.bottom)) / 2;
+    return clampPan({ x: vp.w / 2 - sx(node.x), y: midY - sy(node.y) });
   }
   const view = pan ? clampPan(pan) : centerOn(byId[currentId]);
 
@@ -147,7 +154,7 @@ export default function RouteMapScreen({
     <div className="eld-map-wrap" style={styles.wrap}>
       <div ref={vpRef} className="eld-route-viewport eld-route-viewport--full" onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}>
         <div className={`eld-parchment-sheet${anim ? ' is-anim' : ''}`} style={{ width: SW, height: SH, transform: `translate(${view.x}px, ${view.y}px)` }}>
-          <svg className="eld-parchment-svg" width={SW} height={SH} viewBox={`0 0 ${W} ${H}`}>
+          <svg className="eld-parchment-svg" width={SW} height={SH} viewBox={`${-M.x} ${-M.top} ${VW} ${VH}`}>
             <defs>
               <radialGradient id="eld-fog-hole">
                 <stop offset="0" stopColor="#000" />
@@ -157,8 +164,8 @@ export default function RouteMapScreen({
               <pattern id="eld-mist" width="26" height="26" patternUnits="userSpaceOnUse" patternTransform="rotate(-18)">
                 <path d="M0 13 q6.5 -6 13 0 t13 0" fill="none" stroke="rgba(255,250,236,0.4)" strokeWidth="2" />
               </pattern>
-              <mask id="eld-fog-mask" maskUnits="userSpaceOnUse" x="0" y="0" width={W} height={H}>
-                <rect width={W} height={H} fill="#fff" />
+              <mask id="eld-fog-mask" maskUnits="userSpaceOnUse" x={-M.x} y={-M.top} width={VW} height={VH}>
+                <rect x={-M.x} y={-M.top} width={VW} height={VH} fill="#fff" />
                 {revealed.map((n) => (
                   <circle key={n.id} cx={n.x} cy={n.y} r={biome.interior ? (n.cleared ? 128 : 104) : n.cleared ? 150 : 118} fill="url(#eld-fog-hole)" />
                 ))}
@@ -179,8 +186,8 @@ export default function RouteMapScreen({
               })}
             </g>
             <g mask="url(#eld-fog-mask)">
-              <rect width={W} height={H} fill="#e2d2ab" opacity="0.95" />
-              <rect width={W} height={H} fill="url(#eld-mist)" opacity="0.4" />
+              <rect x={-M.x} y={-M.top} width={VW} height={VH} fill="#e2d2ab" opacity="0.95" />
+              <rect x={-M.x} y={-M.top} width={VW} height={VH} fill="url(#eld-mist)" opacity="0.4" />
             </g>
           </svg>
 
@@ -209,7 +216,7 @@ export default function RouteMapScreen({
                 className={cls}
                 title={label}
                 aria-label={label}
-                style={{ left: n.x * ZOOM - NODE_HIT / 2, top: n.y * ZOOM - NODE_HIT / 2, '--type': TYPE_COLOR[n.type] || TYPE_COLOR.normal }}
+                style={{ left: sx(n.x) - NODE_HIT / 2, top: sy(n.y) - NODE_HIT / 2, '--type': TYPE_COLOR[n.type] || TYPE_COLOR.normal }}
                 onClick={(e) => { if (e.detail === 0) activateNode(n.id); }}
               >
                 <span className="eld-pnode-shape" aria-hidden="true">{glyph}</span>
