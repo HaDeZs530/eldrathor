@@ -49,3 +49,6 @@ The previous pass set the vars near browser defaults, so nothing visibly changed
 | `--mv-card-min` | **120px** party card |
 | Bars | HP/mana bars **14px** tall, not 6–8 |
 Rally lore panel uses `--mv-text`; Rally name/tier uses `--mv-title`/`--mv-label`. The 9–14 px inline sizes in `RallyScreen.jsx` are removed.
+
+## 5. Fight screen order (amends Combat v2 lock §6)
+Top to bottom: **enemies row → party cards (HP, mana, innate button, aura icon) → speed controls (1×/2×/Skip) → combat feed.** The separate party HP-bar row on the stage is **removed** — the party cards are the party's only representation; the stage shows enemies only, with hit-flashes on the enemy portraits. No duplicated bars anywhere.
