@@ -6,7 +6,7 @@ import { ARCHETYPES, TIER_COLOR } from '../data.js';
  * (with the Attune Vein bonus line), loot (weapon + tier + rating 1–100), kill count.
  * Wipe: same card in red, "The bond pulls them home" → Veinharbor.
  */
-export default function LootResults({ world, nodeLabel, fight, onContinue }) {
+export default function LootResults({ area, nodeLabel, fight, onContinue }) {
   const { result, stats, rewards } = fight;
   const win = result.win;
   const accent = win ? '#5fc7e0' : '#e05d6f';
@@ -17,7 +17,7 @@ export default function LootResults({ world, nodeLabel, fight, onContinue }) {
         <div style={S.kick}>Mind View · Spoils</div>
         <div className="eld-brand-name" style={{ ...S.title, color: win ? '#e6f2f7' : '#e05d6f' }}>{win ? 'Victory' : 'The bond breaks'}</div>
         <div style={S.sub}>
-          {world?.name}
+          {area?.name}
           {nodeLabel ? ` · ${nodeLabel}` : ''}
           {` · ${result.durationSec}s`}
           {` · ${stats.kills} ${stats.kills === 1 ? 'kill' : 'kills'}`}
@@ -57,13 +57,19 @@ export default function LootResults({ world, nodeLabel, fight, onContinue }) {
                 Attune Vein ▸ +{rewards.attuneBonus} Worldvein · loot tier biased +1
               </div>
             )}
-            {rewards.gear ? (
-              <div style={{ ...S.gear, borderColor: TIER_COLOR[rewards.gear.tier] || accent }}>
-                <div style={{ color: TIER_COLOR[rewards.gear.tier] || '#e0a04d', fontWeight: 700 }}>{rewards.gear.name}</div>
-                <div style={S.gearMeta}>
-                  {rewards.gear.tier} · rating {rewards.gear.rating}/100 · weapon drop
+            {rewards.mapClearBonus > 0 && (
+              <div style={{ ...S.line, color: '#e0a04d' }}>Map cleared ▸ +{rewards.mapClearBonus} Worldvein · a guaranteed Rare-tier weapon</div>
+            )}
+            {fight.named && <div style={{ ...S.line, color: '#e0c090' }}>Named variant ▸ one extra weapon roll at +1 tier</div>}
+            {rewards.gears.length ? (
+              rewards.gears.map((g, i) => (
+                <div key={i} style={{ ...S.gear, borderColor: TIER_COLOR[g.tier] || accent }}>
+                  <div style={{ color: TIER_COLOR[g.tier] || '#e0a04d', fontWeight: 700 }}>{g.name}</div>
+                  <div style={S.gearMeta}>
+                    {g.tier} · rating {g.rating}/100 · weapon drop
+                  </div>
                 </div>
-              </div>
+              ))
             ) : (
               <div style={{ ...S.line, color: '#5f8494', fontStyle: 'italic' }}>No weapon this time — the Vein still yields dust.</div>
             )}

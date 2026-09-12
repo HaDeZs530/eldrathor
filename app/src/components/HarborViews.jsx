@@ -1,5 +1,5 @@
 import React from 'react';
-import { ARCHETYPES, WEAPONS, WORLDS, TIER_COLOR } from '../data.js';
+import { ARCHETYPES, WEAPONS, TIER_COLOR } from '../data.js';
 import { deriveDisplay } from '../combat/derive.js';
 
 export function Header({ worldvein, mode, colors, hubLabel }) {
@@ -65,43 +65,6 @@ export function Harbor({ party, stash, setTab }) {
             <div style={S.worldMeta}>{fn.sub} · DESIGN-OPEN</div>
           </div>
         ))}
-      </div>
-    </div>
-  );
-}
-
-/** Mountain tab — world select / expedition entry (hybrid chrome). */
-export function MountainSelect({ unlocked, enterWorld }) {
-  return (
-    <div style={S.body}>
-      <SectionTitle t="The Mountain" sub="Choose an expedition — enter Mind View" />
-      <div style={S.worldList}>
-        {WORLDS.map((w) => {
-          const locked = w.id > unlocked;
-          return (
-            <button
-              key={w.id}
-              type="button"
-              className="eld-card"
-              disabled={locked}
-              onClick={() => enterWorld(w)}
-              style={{
-                ...S.worldCard,
-                opacity: locked ? 0.4 : 1,
-                cursor: locked ? 'not-allowed' : 'pointer',
-                borderLeftColor: w.accent,
-              }}
-            >
-              <div style={S.worldClock}>{w.clock} o'clock</div>
-              <div style={S.worldName}>{w.name}</div>
-              <div style={S.worldMeta}>
-                <span>Tier {w.tier}</span>
-                {w.court && <span style={S.courtTag}>Court-Art</span>}
-                {locked && <span style={S.lockTag}>Locked</span>}
-              </div>
-            </button>
-          );
-        })}
       </div>
     </div>
   );

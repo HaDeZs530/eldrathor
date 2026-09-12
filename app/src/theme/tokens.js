@@ -73,11 +73,13 @@ export const frame = {
   height: 844,
 };
 
+/** Route map node types — docs/Eldrathor_RouteMap_v2_Lock.md §3 (fight / crystal / sanctuary / rare / boss). */
 export const nodeTypeMeta = {
-  normal: { label: 'Skirmish', glyph: '✦', color: '#8aa0b5' },
-  rare: { label: 'Rare', glyph: '◈', color: '#e0a04d' },
-  crystal: { label: 'Vein Crystal', glyph: '❖', color: '#5fc7e0' },
-  boss: { label: 'Boss', glyph: '☠', color: '#e05d6f' },
+  normal: { label: 'Fight', glyph: '⚔', color: '#8aa0b5' },
+  crystal: { label: 'Crystal', glyph: '❖', color: '#5fc7e0' },
+  sanctuary: { label: 'Sanctuary', glyph: '✧', color: '#7fd6a0' },
+  rare: { label: 'Rare', glyph: '☠', color: '#e05d6f' },
+  boss: { label: 'Boss', glyph: '♛', color: '#e0a04d' },
 };
 
 /** Infused mat quality ladder (Process RNG). */
