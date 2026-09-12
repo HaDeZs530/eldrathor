@@ -10,6 +10,7 @@
 4. Open PRs; don't invent LOCKED design — use `// DESIGN-OPEN:` for gaps.
 
 ## Active briefs (priority)
+0. **`docs/CLAUDE_BRIEFS/2026-09-12_route-transitions.md`** — do FIRST: map persists under fight overlays (no close/open/recenter), continuous travel tween. Spec: v3 lock §13–14.
 _(none queued — waiting on the Design Chat's next brief)_
 
 ## Recently DONE (don't redo)

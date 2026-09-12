@@ -82,3 +82,13 @@ Party diamond **40 px**, type icons **34 px**, unknown runes **26 px**, edge str
 - **Camera:** on tap, the camera first **eases to centre on the party (300 ms)**, then **follows the marker** hop by hop so it stays centred, then settles. Never a cut.
 - After arrival: 200 ms pause, then the scout card / seal card / fight opens. Cards slide up in 250 ms.
 - Every camera move on the route map is eased ≥ 250 ms; no instant jumps anywhere (pan release included).
+
+## 13. Transitions between fight and map — continuous, never rebuilt (RULED 2026-09-12)
+- The route map is **never unmounted** during a run. Fight, Results, Scout/Ambush/Seal cards and Sanctuary render as **overlays above the map**, so returning from Results is a **single 350 ms crossfade** back to a map that is already positioned. No close → open → recenter sequence; no layout reflow; the camera is already where it was when the fight started (centred on the party), so **no recentering happens at all on return**.
+- Entering a fight: map stays put, Mind-view overlay fades in over it (350 ms). Leaving Results (Continue): overlay fades out over the same map. One motion each way.
+- The route map's camera state, pan position and node layout persist in `routeState`, not component-local state, so nothing resets across overlays.
+
+## 14. Travel motion — one continuous ease (replaces §12 timing)
+- **450 ms per hop.** The marker's motion is a **single continuous path animation** across all hops (one tween along the polyline with ease-in-out at the start and end only), not per-hop tweens — so there's no hitch between hops and **no jump on the last hop**. Arrival lands exactly on the destination node position; the marker never snaps.
+- Camera follows the marker every frame using the same tween, so the marker stays centred without lag or a final correction. Tap to skip → 200 ms ease to the destination, not a cut.
+- The 200 ms pause before a card opens stands.
