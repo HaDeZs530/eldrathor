@@ -4,33 +4,23 @@ import '../map/islandMap.css';
 
 /**
  * Mountain tab root — the island world map.
- * Lock: docs/Eldrathor_NodeMap_Art_Lock.md — WARM RPG micro-pixel landscape art,
- * pan + pinch/wheel zoom on a portrait phone (no hard 9:16 crop), camera starts on
- * the south harbor. Hotspots → RallyScreen → node map.
+ * Locks: docs/Eldrathor_NodeMap_Art_Lock.md (warm RPG micro-pixel art, camera starts on the
+ * south harbor) + playtest lock 2026-09-11 (CLAUDE.md): **pan only, no zoom**.
+ * Hotspots → RallyScreen → node map.
  */
 
 const MAP_SRC = '/maps/island-world.png';
 const MAP_NATURAL = { w: 1280, h: 720 };
-const ZOOM_MIN = 1;
-const ZOOM_MAX = 3.5;
-/** Start zoomed on the south harbor (lock); zoom out (1.0 = whole island fits the height). */
-const ZOOM_START = 1.4;
+/** Fixed view scale relative to "island fits the viewport height" (1.0). Pan only — no zoom. */
+const VIEW_ZOOM = 1.4;
 const TAP_SLOP = 8;
-
-/** Keep pointer events flowing to the viewport during a drag; tolerate synthetic pointers. */
-function capturePointer(el, pointerId) {
-  try {
-    el?.setPointerCapture?.(pointerId);
-  } catch {
-    /* no active pointer (synthetic event) — panning still works via bubbling */
-  }
-}
 
 /**
  * Hotspots as % of the island art (approximate — DESIGN-OPEN: precise hotspot %).
  * Clockwise intent from the south harbor: harbor → forest W1 → peninsula town W2 →
  * cliffs W3 → forge W4 → castle W5 → summit / Vaelyx. Table mirrored in
- * app/public/maps/README.md.
+ * app/public/maps/README.md. (Audit A3: the 10-pin path lock becomes path art with these
+ * 6 worlds tappable — handled by the island-path brief.)
  */
 const ISLAND_HOTSPOTS = [
   { id: 'harbor', worldId: null, label: 'Veinharbor', sub: 'Town', x: 49, y: 85, glyph: '⚓' },
@@ -43,7 +33,14 @@ const ISLAND_HOTSPOTS = [
 ];
 const HARBOR = ISLAND_HOTSPOTS[0];
 
-const clampZ = (z) => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z));
+/** Keep pointer events flowing to the viewport during a drag; tolerate synthetic pointers. */
+function capturePointer(el, pointerId) {
+  try {
+    el?.setPointerCapture?.(pointerId);
+  } catch {
+    /* no active pointer (synthetic event) — panning still works via bubbling */
+  }
+}
 
 export default function IslandWorldMap({ unlocked, onSelectWorld, onHarbor }) {
   const vpRef = useRef(null);
@@ -51,35 +48,28 @@ export default function IslandWorldMap({ unlocked, onSelectWorld, onHarbor }) {
   const [img, setImg] = useState(MAP_NATURAL);
   // null = untouched → derived "harbor" camera below (no setState-in-effect needed)
   const [cam, setCam] = useState(null);
-  const pointers = useRef(new Map());
-  const gesture = useRef({ dist: 0, moved: false, target: null, lastDist: 0, lastMid: null });
-  const zoomAtRef = useRef(null);
+  const gesture = useRef({ active: false, dist: 0, moved: false, target: null, last: null });
 
   const base = vp.w && vp.h ? Math.max(vp.w / img.w, vp.h / img.h) : 1;
+  const scale = base * VIEW_ZOOM;
 
   const clampCam = useCallback(
     (c) => {
-      const z = clampZ(c.z);
-      const s = base * z;
-      const W = img.w * s;
-      const H = img.h * s;
+      const W = img.w * scale;
+      const H = img.h * scale;
       const x = W <= vp.w ? (vp.w - W) / 2 : Math.min(0, Math.max(vp.w - W, c.x));
       const y = H <= vp.h ? (vp.h - H) / 2 : Math.min(0, Math.max(vp.h - H, c.y));
-      return { z, x, y };
+      return { x, y };
     },
-    [base, img, vp],
+    [scale, img, vp],
   );
 
   const camAtPct = useCallback(
-    (px, py, z) => {
-      const s = base * z;
-      return clampCam({ z, x: vp.w / 2 - (px / 100) * img.w * s, y: vp.h / 2 - (py / 100) * img.h * s });
-    },
-    [base, clampCam, img, vp],
+    (px, py) => clampCam({ x: vp.w / 2 - (px / 100) * img.w * scale, y: vp.h / 2 - (py / 100) * img.h * scale }),
+    [clampCam, scale, img, vp],
   );
 
-  const view = cam ? clampCam(cam) : camAtPct(HARBOR.x, HARBOR.y, ZOOM_START);
-  const scale = base * view.z;
+  const view = cam ? clampCam(cam) : camAtPct(HARBOR.x, HARBOR.y);
 
   // Measure viewport (ResizeObserver fires once on observe, so no sync setState here).
   useEffect(() => {
@@ -88,34 +78,6 @@ export default function IslandWorldMap({ unlocked, onSelectWorld, onHarbor }) {
     const ro = new ResizeObserver(() => setVp({ w: el.clientWidth, h: el.clientHeight }));
     ro.observe(el);
     return () => ro.disconnect();
-  }, []);
-
-  function zoomAt(factor, cx, cy) {
-    setCam((prev) => {
-      const c = prev ?? view;
-      const z2 = clampZ(c.z * factor);
-      const s1 = base * c.z;
-      const s2 = base * z2;
-      const ix = (cx - c.x) / s1;
-      const iy = (cy - c.y) / s1;
-      return clampCam({ z: z2, x: cx - ix * s2, y: cy - iy * s2 });
-    });
-  }
-  useEffect(() => {
-    zoomAtRef.current = zoomAt;
-  });
-
-  // React registers wheel as passive; attach natively so we can preventDefault page scroll.
-  useEffect(() => {
-    const el = vpRef.current;
-    if (!el) return undefined;
-    const onWheel = (e) => {
-      e.preventDefault();
-      const r = el.getBoundingClientRect();
-      zoomAtRef.current?.(Math.exp(-e.deltaY * 0.0015), e.clientX - r.left, e.clientY - r.top);
-    };
-    el.addEventListener('wheel', onWheel, { passive: false });
-    return () => el.removeEventListener('wheel', onWheel);
   }, []);
 
   function localPt(e) {
@@ -135,77 +97,39 @@ export default function IslandWorldMap({ unlocked, onSelectWorld, onHarbor }) {
     onSelectWorld(w);
   }
 
+  // Single-pointer pan. A second finger is ignored (no pinch zoom — playtest lock).
   function onPointerDown(e) {
-    const pts = pointers.current;
     const g = gesture.current;
-    pts.set(e.pointerId, localPt(e));
+    if (g.active) return;
+    g.active = true;
+    g.dist = 0;
+    g.moved = false;
+    g.last = localPt(e);
+    g.target = e.target.closest?.('[data-hotspot]')?.dataset.hotspot || null;
     capturePointer(vpRef.current, e.pointerId);
-    if (pts.size === 1) {
-      g.dist = 0;
-      g.moved = false;
-      g.target = e.target.closest?.('[data-hotspot]')?.dataset.hotspot || null;
-    } else if (pts.size === 2) {
-      const [a, b] = [...pts.values()];
-      g.lastDist = Math.hypot(a.x - b.x, a.y - b.y);
-      g.lastMid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
-      g.moved = true;
-    }
   }
 
   function onPointerMove(e) {
-    const pts = pointers.current;
-    if (!pts.has(e.pointerId)) return;
     const g = gesture.current;
-    const prevP = pts.get(e.pointerId);
+    if (!g.active) return;
     const p = localPt(e);
-    pts.set(e.pointerId, p);
-
-    if (pts.size === 1) {
-      const dx = p.x - prevP.x;
-      const dy = p.y - prevP.y;
-      g.dist += Math.abs(dx) + Math.abs(dy);
-      if (g.dist > TAP_SLOP) g.moved = true;
-      setCam((prev) => {
-        const c = prev ?? view;
-        return clampCam({ ...c, x: c.x + dx, y: c.y + dy });
-      });
-      return;
-    }
-
-    const [a, b] = [...pts.values()];
-    const dist = Math.hypot(a.x - b.x, a.y - b.y);
-    const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
-    const factor = g.lastDist ? dist / g.lastDist : 1;
-    const dmx = g.lastMid ? mid.x - g.lastMid.x : 0;
-    const dmy = g.lastMid ? mid.y - g.lastMid.y : 0;
-    g.lastDist = dist;
-    g.lastMid = mid;
+    const dx = p.x - g.last.x;
+    const dy = p.y - g.last.y;
+    g.last = p;
+    g.dist += Math.abs(dx) + Math.abs(dy);
+    if (g.dist > TAP_SLOP) g.moved = true;
     setCam((prev) => {
       const c = prev ?? view;
-      const z2 = clampZ(c.z * factor);
-      const s1 = base * c.z;
-      const s2 = base * z2;
-      const ix = (mid.x - c.x) / s1;
-      const iy = (mid.y - c.y) / s1;
-      return clampCam({ z: z2, x: mid.x - ix * s2 + dmx, y: mid.y - iy * s2 + dmy });
+      return clampCam({ x: c.x + dx, y: c.y + dy });
     });
   }
 
-  function onPointerUp(e) {
-    const pts = pointers.current;
+  function onPointerUp() {
     const g = gesture.current;
-    pts.delete(e.pointerId);
-    if (pts.size === 0) {
-      if (!g.moved && g.target) activateHotspot(g.target);
-      g.target = null;
-      g.moved = false;
-      g.dist = 0;
-      g.lastDist = 0;
-      g.lastMid = null;
-    } else if (pts.size === 1) {
-      g.lastDist = 0;
-      g.lastMid = null;
-    }
+    if (!g.active) return;
+    g.active = false;
+    if (!g.moved && g.target) activateHotspot(g.target);
+    g.target = null;
   }
 
   const held = WORLDS.filter((w) => w.id < unlocked).length;
@@ -297,18 +221,10 @@ export default function IslandWorldMap({ unlocked, onSelectWorld, onHarbor }) {
 
         <div className="eld-island-hint" aria-hidden="true">
           drag to pan
-          <br />
-          pinch / scroll to zoom
         </div>
 
         <div className="eld-island-ctl" onPointerDown={(e) => e.stopPropagation()}>
-          <button type="button" aria-label="Zoom in" onClick={() => zoomAt(1.4, vp.w / 2, vp.h / 2)}>
-            +
-          </button>
-          <button type="button" aria-label="Zoom out" onClick={() => zoomAt(1 / 1.4, vp.w / 2, vp.h / 2)}>
-            −
-          </button>
-          <button type="button" aria-label="Return to harbor" onClick={() => setCam(camAtPct(HARBOR.x, HARBOR.y, ZOOM_START))}>
+          <button type="button" aria-label="Return to harbor" onClick={() => setCam(camAtPct(HARBOR.x, HARBOR.y))}>
             ⚓
           </button>
         </div>

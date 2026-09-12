@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { WORLDS, ARCHETYPES } from '../data.js';
 import { GATHER_FAMILIES, MAT_QUALITY } from '../theme/tokens.js';
+import { GATHER_CYCLE_MS, PROCESS_CYCLE_MS, IDLE_CYCLE_MS, PROCESS_VEIN_COST } from '../afkRuntime.js';
 
 const SUBS = [
   { id: 'gather', label: 'Gather' },
   { id: 'process', label: 'Process' },
-  { id: 'idle', label: 'Idle' },
+  { id: 'idle', label: 'Train' }, // job key stays 'idle'; label locked to Train (playtest polish)
 ];
 
 /** AFK tab (Seam working label). Timers live in App. DESIGN-OPEN: final name; Process art; persistence/offline. */
@@ -23,7 +24,7 @@ export default function AfkScreen({
     <div style={S.wrap} className={sub === 'process' ? 'eld-afk-process' : ''}>
       <div style={S.kick}>Mind View · Seam (AFK)</div>
       <div className="eld-brand-name" style={S.title}>The Seam</div>
-      <div style={S.sub}>Park bench Adventurers. Timers keep running across tabs.</div>
+      <div style={S.sub}>Park Adventurers who aren't on the Mountain into a job. Jobs keep running while you're on other tabs. Each Adventurer can hold one job at a time.</div>
       <div className="eld-seg" role="tablist" aria-label="AFK jobs">
         {SUBS.map((s) => (
           <button key={s.id} type="button" role="tab" aria-selected={sub === s.id}
@@ -49,7 +50,10 @@ export default function AfkScreen({
 function GatherPanel({ slots, areas, bench, skillXp, inventory, onUpdate, onToggle }) {
   return (
     <div style={S.col}>
-      <div style={S.note}>Assign characters · world-gated areas · Melvor-like cycles. Skill XP + raw mats.</div>
+      <div className="eld-panel" style={S.help}>
+        <div style={S.helpH}>Gather — collect raw materials</div>
+        <div>Assign an Adventurer to an area you've unlocked and a skill family (wood, metal, or hunt). Every cycle (~{Math.round(GATHER_CYCLE_MS / 1000)}s) they bring back raw mats and earn skill XP. Higher-tier areas yield more per cycle. Costs nothing. {/* DESIGN-OPEN: rates */}</div>
+      </div>
       <div className="eld-panel" style={S.strip}>
         <span>Raw · wood {inventory.raw.wood}</span><span>metal {inventory.raw.metal}</span><span>hunt {inventory.raw.hunt}</span>
       </div>
@@ -100,12 +104,31 @@ function GatherPanel({ slots, areas, bench, skillXp, inventory, onUpdate, onTogg
   );
 }
 
+// DESIGN-OPEN: Process recipes — one placeholder recipe per raw family (1 raw + Worldvein → 1 infused, quality roll).
+const PROCESS_RECIPES = GATHER_FAMILIES.map((f) => ({
+  id: f.id,
+  family: f.id,
+  glyph: f.glyph,
+  name: `Infuse ${f.label}`,
+  inputs: [{ family: f.id, qty: 1 }],
+  vein: PROCESS_VEIN_COST,
+  output: `1 infused ${f.label.toLowerCase()}`,
+}));
+const QUALITY_ODDS = (() => {
+  const total = Object.values(MAT_QUALITY).reduce((n, q) => n + q.weight, 0);
+  return Object.entries(MAT_QUALITY).map(([name, q]) => `${name} ${Math.round((q.weight / total) * 100)}%`).join(' · ');
+})();
+
 function ProcessPanel({ process, bench, inventory, worldvein, skillXp, onUpdate, onToggle }) {
   const rawAvail = inventory.raw[process.family] || 0;
-  const cost = 5;
+  const cost = PROCESS_VEIN_COST;
+  const recipe = PROCESS_RECIPES.find((r) => r.id === process.family) || PROCESS_RECIPES[0];
   return (
     <div style={S.col}>
-      <div style={S.note}>Spend Worldvein · raw → infused with quality rolls (rare/mythic). DESIGN-OPEN: Process art theme.</div>
+      <div className="eld-panel" style={S.help}>
+        <div style={S.helpH}>Process — turn raw mats into infused mats</div>
+        <div>Pick a recipe below. Each cycle (~{Math.round(PROCESS_CYCLE_MS / 1000)}s) consumes the listed raw mats <em>and Worldvein</em>, and produces one infused mat with a quality roll ({QUALITY_ODDS}). Infused mats are what the Town Crafter turns into armor. {/* DESIGN-OPEN: rates, art theme */}</div>
+      </div>
       <div className="eld-panel" style={{ ...S.strip, boxShadow: '0 0 18px rgba(224,120,60,0.25)' }}>
         <span>❖ {worldvein} Worldvein</span><span>Process XP {skillXp}</span><span>Raw {process.family}: {rawAvail}</span>
       </div>
@@ -118,17 +141,29 @@ function ProcessPanel({ process, bench, inventory, worldvein, skillXp, onUpdate,
           <option value="">— assign —</option>
           {bench.map((b) => <option key={b.key} value={b.key}>{b.name} · Lv {b.level}</option>)}
         </select>
-        <label style={S.lbl}>Raw family</label>
-        <div style={S.rowWrap}>
-          {GATHER_FAMILIES.map((f) => (
-            <button key={f.id} type="button" className={`eld-btn${process.family === f.id ? '' : ' eld-btn-ghost'}`}
-              disabled={process.running} style={S.fam} onClick={() => onUpdate({ family: f.id })}>
-              {f.glyph} {f.label}
-            </button>
-          ))}
+        <label style={S.lbl}>Recipe</label>
+        <div style={S.recipeList}>
+          {PROCESS_RECIPES.map((r) => {
+            const active = process.family === r.id;
+            const have = inventory.raw[r.family] || 0;
+            return (
+              <button key={r.id} type="button" className="eld-card" disabled={process.running}
+                onClick={() => onUpdate({ family: r.id })} aria-pressed={active}
+                style={{ ...S.recipe, boxShadow: active ? '0 0 0 1px #e0783c, 0 0 14px rgba(224,120,60,0.35)' : undefined, opacity: process.running && !active ? 0.5 : 1 }}>
+                <div style={S.row}><span style={S.recipeName}>{r.glyph} {r.name}</span><span style={S.dim}>{active ? 'selected' : ''}</span></div>
+                <div style={S.recipeIo}>
+                  {r.inputs.map((inp) => (
+                    <span key={inp.family} style={{ color: have >= inp.qty ? 'inherit' : '#e05d6f' }}>−{inp.qty} raw {inp.family} (have {have})</span>
+                  ))}
+                  <span style={{ color: worldvein >= r.vein ? 'inherit' : '#e05d6f' }}>−{r.vein} ❖ Worldvein</span>
+                  <span style={S.ok}>→ {r.output}</span>
+                </div>
+              </button>
+            );
+          })}
         </div>
         <Bar value={process.progress} accent="#e0783c" />
-        <div style={S.meta}>Costs {cost} ❖ / cycle · needs 1 raw</div>
+        <div style={S.meta}>Per cycle: {recipe.inputs.map((i) => `${i.qty} raw ${i.family}`).join(' + ')} + {cost} ❖ → {recipe.output}</div>
         <button type="button" className="eld-btn" style={S.wide}
           disabled={!process.charKey || (rawAvail < 1 && !process.running) || (worldvein < cost && !process.running)}
           onClick={onToggle}>{process.running ? 'Stop process' : 'Start process'}</button>
@@ -155,10 +190,13 @@ function IdlePanel({ idle, bench, party, roster, onUpdate, onToggle }) {
     : 'Assign a trainee for catch-up XP';
   return (
     <div style={S.col}>
-      <div style={S.note}>Character XP only — no mats. Faster below roster top. Mountain stays best for XP+loot.</div>
+      <div className="eld-panel" style={S.help}>
+        <div style={S.helpH}>Train — catch-up levels for benched Adventurers</div>
+        <div>Assign one Adventurer. Every cycle (~{Math.round(IDLE_CYCLE_MS / 1000)}s) they roll for a level. It's fast while they're below your highest-level Adventurer and slows to a crawl near the top. No materials, no cost — but the Mountain is still the best place for XP and loot. {/* DESIGN-OPEN: curve numbers */}</div>
+      </div>
       <div className="eld-card" style={S.card}>
-        <div style={S.row}><span style={S.h}>Train berth</span>
-          <span style={idle.running ? S.live : S.dim}>{idle.running ? 'Training' : 'Idle'}</span></div>
+        <div style={S.row}><span style={S.h}>Training berth</span>
+          <span style={idle.running ? S.live : S.dim}>{idle.running ? 'Training' : 'Stopped'}</span></div>
         <label style={S.lbl}>Trainee</label>
         <select style={S.sel} value={idle.charKey || ''} disabled={idle.running}
           onChange={(e) => onUpdate({ charKey: e.target.value || null })}>
@@ -171,7 +209,7 @@ function IdlePanel({ idle, bench, party, roster, onUpdate, onToggle }) {
         <div style={S.meta}>{rateNote}</div>
         {trainee && <div style={S.ok}>{trainee.name} · Lv {trainee.level} · XP bar {Math.round((idle.progress || 0) * 100)}%</div>}
         <button type="button" className="eld-btn" style={S.wide} disabled={!idle.charKey} onClick={onToggle}>
-          {idle.running ? 'Stop train' : 'Start idle/train'}
+          {idle.running ? 'Stop training' : 'Start training'}
         </button>
       </div>
     </div>
@@ -194,6 +232,12 @@ const S = {
   sub: { fontSize: 12, color: 'var(--eld-muted)', fontStyle: 'italic', margin: '4px 0 12px', lineHeight: 1.4 },
   col: { display: 'flex', flexDirection: 'column', gap: 10 },
   note: { fontSize: 11, color: 'var(--eld-muted)', lineHeight: 1.4 },
+  help: { padding: '10px 12px', fontSize: 11, color: 'var(--eld-muted)', lineHeight: 1.45 },
+  helpH: { fontSize: 11, fontWeight: 700, color: 'var(--eld-text, #cfe0e8)', marginBottom: 4, letterSpacing: '0.04em' },
+  recipeList: { display: 'flex', flexDirection: 'column', gap: 6 },
+  recipe: { textAlign: 'left', padding: '8px 10px', width: '100%', color: 'inherit', fontFamily: 'inherit', cursor: 'pointer' },
+  recipeName: { fontSize: 12, fontWeight: 700 },
+  recipeIo: { display: 'flex', flexWrap: 'wrap', gap: '4px 10px', fontSize: 11, marginTop: 4, color: 'var(--eld-muted)' },
   strip: { display: 'flex', flexWrap: 'wrap', gap: 10, padding: '8px 10px', fontSize: 11, fontVariantNumeric: 'tabular-nums' },
   xp: { fontSize: 11, color: 'var(--eld-accent, #5fc7e0)' },
   card: { padding: 12 },
