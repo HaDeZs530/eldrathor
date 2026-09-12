@@ -1,16 +1,18 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { nodeTypeMeta } from '../theme/tokens.js';
 import { biomeForArea, renderBiomeLayer } from './biomeStamps.jsx';
 import { rareAt, effectiveType, isSealed, reachableIds, revealedPath, isWalkable } from './routeState.js';
+import { clampPan, centerOn, easeInOut, easeOut, polylinePointAt, SKIP_MS } from './camera.js';
 import './parchment.css';
 
 /**
  * Route map — docs/Eldrathor_RouteMap_v2_Lock.md + docs/Eldrathor_RouteMap_v3_Travel_Lock.md
  * on the hybrid parchment surface (docs/Eldrathor_NodeMap_Art_Lock.md).
- * §7 the map fills header→tab bar with one 44 px HUD strip; §9 run-log icon + unread badge +
- * 3 s toast; §10 node scale (party 40 / icons 34 / runes 26, edges 3 px); §12 the party marker
- * glides 350 ms per hop while the camera eases to it and follows — every camera move is eased.
- * One-tap FREE travel (§1/§6); frontier tap = approach + scout. Cards slide up inside the map.
+ * §13: this screen stays mounted for the whole run; fights/results/sanctuary render as overlays
+ * above it and never touch the camera. The camera is explicit run state (`camera` prop) — never
+ * derived from the party's node, so nothing recentres on return. §14: travel is ONE continuous
+ * requestAnimationFrame tween along the polyline (450 ms/hop, eased at the ends only); the camera
+ * follows the marker every frame; tap-to-skip eases 200 ms to the destination; no snaps.
  */
 
 /** v3 §2 palette — colour distinguishes type. */
@@ -41,12 +43,13 @@ function capturePointer(el, pointerId) {
 
 export default function RouteMapScreen({
   area, territory, currentId, busy, partyHP, runVein, party, log, logUnread = 0, onOpenLog,
-  scout, ambush, travel, onTapNode, onEngage, onLeave, onFight, onFlee, onExtract,
+  camera, setCamera, travel, onTravelEnd,
+  scout, ambush, onTapNode, onEngage, onLeave, onFight, onFlee, onExtract,
 }) {
   const vpRef = useRef(null);
+  const sheetRef = useRef(null);
+  const markerRef = useRef(null);
   const [vp, setVp] = useState({ w: 0, h: 0 });
-  const [pan, setPan] = useState(null);
-  const [motion, setMotion] = useState('ease'); // 'none' while dragging | 'ease' (300 ms) | 'follow' (350 ms hop)
   const [confirmExtract, setConfirmExtract] = useState(false);
   const gesture = useRef({ active: false, dist: 0, moved: false, target: null, last: null });
 
@@ -67,8 +70,10 @@ export default function RouteMapScreen({
   const M = { x: MARGIN.side / ZOOM, top: MARGIN.top / ZOOM, bottom: MARGIN.bottom / ZOOM };
   const VW = W + 2 * M.x;
   const VH = H + M.top + M.bottom;
-  const SW = VW * ZOOM;
-  const SH = VH * ZOOM;
+  const sheet = { w: VW * ZOOM, h: VH * ZOOM };
+  const sx = (x) => (x + M.x) * ZOOM; // map → sheet px
+  const sy = (y) => (y + M.top) * ZOOM;
+  const sheetPt = (n) => ({ x: sx(n.x), y: sy(n.y) });
 
   useEffect(() => {
     const el = vpRef.current;
@@ -78,36 +83,64 @@ export default function RouteMapScreen({
     return () => ro.disconnect();
   }, []);
 
-  function clampPan(p) {
-    if (!vp.w || !vp.h) return p;
-    const minX = Math.min(0, vp.w - SW);
-    const minY = Math.min(0, vp.h - SH);
-    return { x: Math.max(minX, Math.min(0, p.x)), y: Math.max(minY, Math.min(0, p.y)) };
+  // First measurement of a fresh run: put the camera on the party once. After that the camera
+  // is only ever moved by drag, travel, or an explicit tap — never by a node change (§13).
+  const cur = byId[currentId];
+  const [initialised, setInitialised] = useState(false);
+  if (!initialised && vp.w && vp.h && cur) {
+    setInitialised(true);
+    if (!camera?.pan) setCamera({ pan: centerOn(sheetPt(cur), vp, sheet, MARGIN), motion: 'none' });
   }
-  const sx = (x) => (x + M.x) * ZOOM; // map → sheet px
-  const sy = (y) => (y + M.top) * ZOOM;
-  /** Centre a node in the band between the HUD strip and the bottom toast/cards. */
-  function centerOn(node) {
-    if (!node) return { x: 0, y: 0 };
-    const midY = (MARGIN.top + (vp.h - MARGIN.bottom)) / 2;
-    return clampPan({ x: vp.w / 2 - sx(node.x), y: midY - sy(node.y) });
-  }
-  const view = pan ? clampPan(pan) : centerOn(byId[currentId]);
+  const pan = camera?.pan || { x: 0, y: 0 };
 
-  // §12 camera: on a trip start ease to the party (300 ms), then follow each hop (350 ms).
-  // State adjusted during render so the derived "centre on the party" view applies with the
-  // right easing class — no effects, no cuts.
-  const [followedId, setFollowedId] = useState(currentId);
-  const [tripSeen, setTripSeen] = useState(!!travel);
-  if (!!travel !== tripSeen) {
-    setTripSeen(!!travel);
-    if (travel) { setPan(null); setMotion('ease'); }
-  }
-  if (currentId !== followedId) {
-    setFollowedId(currentId);
-    setPan(null);
-    setMotion(travel ? 'follow' : 'ease');
-  }
+  // ---------- §14 continuous travel tween (rAF; writes the marker + sheet directly) ----------
+  const tween = useRef({ active: false, pos: null, pan: null, skipFrom: null, skipAt: null, raf: null });
+  const travelRef = useRef(travel);
+  useEffect(() => { travelRef.current = travel; });
+  useEffect(() => {
+    if (!travel) { tween.current.active = false; return undefined; }
+    const points = travel.path.map((id) => sheetPt(byId[id]));
+    const dest = points[points.length - 1];
+    const t0 = travel.startTs;
+    const dur = Math.max(1, travel.duration);
+    tween.current = { active: true, pos: points[0], pan: null, skipFrom: null, skipAt: null, raf: null };
+    let done = false;
+    const step = (now) => {
+      if (done) return;
+      const tw = tween.current;
+      const trv = travelRef.current;
+      let pos;
+      let finished;
+      if (trv?.skipAt != null) {
+        if (tw.skipAt == null) { tw.skipAt = now; tw.skipFrom = tw.pos || points[0]; }
+        const u = Math.min(1, (now - tw.skipAt) / SKIP_MS);
+        const k = easeOut(u);
+        pos = { x: tw.skipFrom.x + (dest.x - tw.skipFrom.x) * k, y: tw.skipFrom.y + (dest.y - tw.skipFrom.y) * k };
+        finished = u >= 1;
+      } else {
+        const u = Math.min(1, (now - t0) / dur);
+        pos = polylinePointAt(points, easeInOut(u));
+        finished = u >= 1;
+      }
+      if (finished) pos = { ...dest };
+      tw.pos = pos;
+      tw.pan = centerOn(pos, vp, sheet, MARGIN);
+      if (markerRef.current) { markerRef.current.style.left = `${pos.x}px`; markerRef.current.style.top = `${pos.y}px`; }
+      if (sheetRef.current) sheetRef.current.style.transform = `translate(${tw.pan.x}px, ${tw.pan.y}px)`;
+      if (finished) {
+        done = true;
+        tw.active = false;
+        // the camera is now exactly where the tween left it — no correction, no snap
+        setCamera({ pan: tw.pan, motion: 'none' });
+        onTravelEnd();
+        return;
+      }
+      tw.raf = window.requestAnimationFrame(step);
+    };
+    tween.current.raf = window.requestAnimationFrame(step);
+    return () => { done = true; if (tween.current.raf) window.cancelAnimationFrame(tween.current.raf); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [travel?.startTs]);
 
   // §9: 3 s toast of the latest log line under the HUD strip
   const last = log.length ? log[log.length - 1] : null;
@@ -141,28 +174,25 @@ export default function RouteMapScreen({
   }
   function onPointerMove(e) {
     const g = gesture.current;
-    if (!g.active) return;
+    if (!g.active || travel) return;
     const p = localPt(e);
     const dx = p.x - g.last.x;
     const dy = p.y - g.last.y;
     g.last = p;
     g.dist += Math.abs(dx) + Math.abs(dy);
     if (g.dist > TAP_SLOP) g.moved = true;
-    setMotion('none');
-    // the sheet follows the finger unclamped; release eases it back inside the bounds
-    setPan((prev) => ({ x: (prev ?? view).x + dx, y: (prev ?? view).y + dy }));
+    // the sheet follows the finger unclamped; release eases it back inside the bounds (§12)
+    setCamera((c) => ({ pan: { x: (c?.pan?.x ?? 0) + dx, y: (c?.pan?.y ?? 0) + dy }, motion: 'none' }));
   }
   function onPointerUp() {
     const g = gesture.current;
     if (!g.active) return;
     g.active = false;
     if (!g.moved) {
-      if (travel) onTapNode(null); // tap anywhere while travelling = skip the animation
+      if (travel) onTapNode(null); // tap anywhere while travelling = 200 ms eased skip
       else if (g.target) activateNode(g.target);
-    } else {
-      // §12: pan release is eased too — settle back inside the bounds over 300 ms
-      setMotion('ease');
-      setPan((prev) => (prev ? clampPan(prev) : prev));
+    } else if (!travel) {
+      setCamera((c) => ({ pan: clampPan(c?.pan || { x: 0, y: 0 }, vp, sheet), motion: 'ease' }));
     }
     g.target = null;
   }
@@ -170,15 +200,22 @@ export default function RouteMapScreen({
   const revealed = territory.nodes.filter((n) => n.revealed);
   const clearedCount = territory.nodes.filter((n) => n.cleared).length;
   const card = ambush || scout;
-  const cur = byId[currentId];
-  const sheetMotion = motion === 'none' ? '' : motion === 'follow' ? ' is-follow' : ' is-anim';
-  const sheetPos = motion === 'none' ? view : clampPan(view);
+  const markerPos = cur ? sheetPt(cur) : { x: 0, y: 0 };
+  const sheetMotion = !travel && camera?.motion === 'ease' ? ' is-anim' : '';
+  // A re-render mid-trip (toast, HUD) must not reset the DOM to the pre-trip pose: re-apply the
+  // tween's latest frame synchronously after every commit while it is running.
+  useLayoutEffect(() => {
+    const tw = tween.current;
+    if (!tw.active || !tw.pos || !tw.pan) return;
+    if (markerRef.current) { markerRef.current.style.left = `${tw.pos.x}px`; markerRef.current.style.top = `${tw.pos.y}px`; }
+    if (sheetRef.current) sheetRef.current.style.transform = `translate(${tw.pan.x}px, ${tw.pan.y}px)`;
+  });
 
   return (
     <div className="eld-map-wrap" style={styles.wrap}>
       <div ref={vpRef} className="eld-route-viewport eld-route-viewport--full" onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}>
-        <div className={`eld-parchment-sheet${sheetMotion}`} style={{ width: SW, height: SH, transform: `translate(${sheetPos.x}px, ${sheetPos.y}px)` }}>
-          <svg className="eld-parchment-svg" width={SW} height={SH} viewBox={`${-M.x} ${-M.top} ${VW} ${VH}`}>
+        <div ref={sheetRef} className={`eld-parchment-sheet${sheetMotion}`} style={{ width: sheet.w, height: sheet.h, transform: `translate(${pan.x}px, ${pan.y}px)` }}>
+          <svg className="eld-parchment-svg" width={sheet.w} height={sheet.h} viewBox={`${-M.x} ${-M.top} ${VW} ${VH}`}>
             <defs>
               <radialGradient id="eld-fog-hole">
                 <stop offset="0" stopColor="#000" />
@@ -249,10 +286,8 @@ export default function RouteMapScreen({
             );
           })}
 
-          {/* §12 the party marker glides along the edge between nodes */}
-          {cur && (
-            <div className={`eld-party-marker${travel ? ' is-gliding' : ''}`} style={{ left: sx(cur.x), top: sy(cur.y) }} aria-hidden="true" />
-          )}
+          {/* §14 the party marker glides along the polyline in one continuous tween */}
+          {cur && <div ref={markerRef} className="eld-party-marker" style={{ left: markerPos.x, top: markerPos.y }} aria-hidden="true" />}
         </div>
 
         {/* §7 — single 44 px run HUD strip overlaid on the map */}

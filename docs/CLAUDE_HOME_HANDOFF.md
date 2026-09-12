@@ -10,10 +10,10 @@
 4. Open PRs; don't invent LOCKED design — use `// DESIGN-OPEN:` for gaps.
 
 ## Active briefs (priority)
-0. **`docs/CLAUDE_BRIEFS/2026-09-12_route-transitions.md`** — do FIRST: map persists under fight overlays (no close/open/recenter), continuous travel tween. Spec: v3 lock §13–14.
 _(none queued — waiting on the Design Chat's next brief)_
 
 ## Recently DONE (don't redo)
+- PR #30 — route transitions: map stays mounted under fight/results/sanctuary overlays (350 ms crossfade, camera untouched), one continuous 450 ms/hop travel tween, 200 ms skip (v3 lock §13–14)
 - PR #10 — pannable island + parchment node map
 - PR #13 — island path lock/brief (docs/assets)
 - PR #16 — node engage Attack/Flee + flee/ambush roll on fight screen
