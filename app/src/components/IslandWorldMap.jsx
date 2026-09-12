@@ -6,8 +6,8 @@ import '../map/islandMap.css';
  * Mountain tab root — the island world map.
  * Locks: docs/Eldrathor_NodeMap_Art_Lock.md (warm RPG micro-pixel art, camera starts on the
  * south harbor) + docs/Eldrathor_UI_Shell_Lock.md: two zoom states toggled by a +/− control —
- * Close (1.4× fit-height, pan both axes) and Overview (fit height, horizontal pan) — with a
- * 250 ms crossfade that keeps the same focal point. Dotted Catmull-Rom route per
+ * Close (1.4× fit-height, pan both axes) and Overview (fit height, horizontal pan; the DEFAULT
+ * since 2026-09-12) — with a 250 ms crossfade that keeps the same focal point. Dotted Catmull-Rom route per
  * docs/Eldrathor_Island_Path_Lock.md; pins 2–10 sit on it. Hotspots → RallyScreen → route map.
  */
 
@@ -41,7 +41,8 @@ export default function IslandWorldMap({ areas, unlocked, onSelectArea, onHarbor
   const [img, setImg] = useState(MAP_NATURAL);
   // null = untouched → derived "harbor" camera below (no setState-in-effect needed)
   const [cam, setCam] = useState(null);
-  const [zoomMode, setZoomMode] = useState('close');
+  // Default is Overview (zoomed out) — Anthony, phone playtest 2026-09-12; amends the UI Shell lock's "Close = default".
+  const [zoomMode, setZoomMode] = useState('overview');
   const [fading, setFading] = useState(false);
   const gesture = useRef({ active: false, dist: 0, moved: false, target: null, last: null });
 
