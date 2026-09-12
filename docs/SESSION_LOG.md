@@ -111,3 +111,4 @@
 - **2026-09-12 (Claude Code) DONE — PR #24** Mind-view scale applied to the Player / Party / Seam tabs (all inline sizes → `--mv-*`, 52 px buttons, 15 px segmented tabs, 14 px bars, paperdoll slots widened). Anthony's follow-up to PR #23.
 - **2026-09-12 (Claude Code) DONE — PR #25** Party screen per-character stats enlarged (names 24 px, class/level/weapon lines 18 px, detail stat values 24 px) — Anthony's note after PR #24.
 - **2026-09-12 (pm):** RULED: no respawns — cleared stays cleared, travel free; named variants at generation; rares roam on scout/clear only. Route map must fill the screen. Amended v3 lock §6–7 and the travel brief.
+- **2026-09-12:** Design intent stated in v3 lock §8: the route map is a farm loop (clear → rares → seal → boss → extract → repeat); pressure from fights and clear-vs-beeline choice, never from the map. Design doc §8c pointer updated.

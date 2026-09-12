@@ -62,3 +62,6 @@ Playtest verdict: the route map is about clearing and progressing. **Cleared nod
 
 ## 7. Route map must dominate the screen
 The route map fills everything between the screen header and the tab bar; the run HUD (Worldvein banked, rares remaining, Extract) is a **single 44 px strip** overlaid at the top of the map, not a stacked panel. Node draw size goes up ~40% (party diamond ≈ 34 px, type icons ≈ 28 px, unknown runes ≈ 22 px); default camera zoom shows roughly 12–16 nodes, pan for the rest. Nothing else on the page competes with it.
+
+## 8. What the route map IS (design intent — LOCKED 2026-09-12)
+The route map is a **farm loop**, not a survival gauntlet. Enter → clear outward → hunt the rares → break the seal → kill the boss → extract → re-enter a fresh map and do it again. Pressure comes from **fight difficulty** (depth scaling, rare and boss power, the gear wall) and from **the decision of how much to clear before the boss** (full-clear bonus vs beeline speed) — never from the map fighting back. Every rule in this doc serves that loop: free travel, no respawns, scouting to choose fights, rares and the boss as the prize. When a future idea adds friction to moving around the map, it's wrong by default.
