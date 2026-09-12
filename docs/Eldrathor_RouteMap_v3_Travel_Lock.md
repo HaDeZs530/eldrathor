@@ -52,3 +52,13 @@ Rally lore panel uses `--mv-text`; Rally name/tier uses `--mv-title`/`--mv-label
 
 ## 5. Fight screen order (amends Combat v2 lock §6)
 Top to bottom: **enemies row → party cards (HP, mana, innate button, aura icon) → speed controls (1×/2×/Skip) → combat feed.** The separate party HP-bar row on the stage is **removed** — the party cards are the party's only representation; the stage shows enemies only, with hit-flashes on the enemy portraits. No duplicated bars anywhere.
+
+## 6. NO RESPAWNS — cleared stays cleared (RULED 2026-09-12, supersedes v2 §5 and design doc §8c respawn text)
+Playtest verdict: the route map is about clearing and progressing. **Cleared nodes never repopulate. Backtracking and crossing the map is free** — travel hops do NOT tick any clock, do NOT trigger ambushes, and there is no penalty for going anywhere you've cleared.
+- **Named variants** now spawn at **generation**: 10% of Fight nodes (min 1 per map) are named — gold rim once scouted, ×1.3 stats, +1 loot roll at +1 tier.
+- **Rares still roam**, but only on **scout and clear** actions (one move per 2 such actions), never on travel hops. Ambush + Flee (§3) applies only to a rare that roams onto the party's node or the party travelling into a rare's node unscouted.
+- Remove the amber "respawned" visual state from §2. Remove `respawned` from `routeState`.
+- Map-clear bonus (v2 §6) stands and is now reliably attainable.
+
+## 7. Route map must dominate the screen
+The route map fills everything between the screen header and the tab bar; the run HUD (Worldvein banked, rares remaining, Extract) is a **single 44 px strip** overlaid at the top of the map, not a stacked panel. Node draw size goes up ~40% (party diamond ≈ 34 px, type icons ≈ 28 px, unknown runes ≈ 22 px); default camera zoom shows roughly 12–16 nodes, pan for the rest. Nothing else on the page competes with it.
