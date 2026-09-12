@@ -1,5 +1,7 @@
 # BRIEF — Route map polish 2: run log, node scale, planar outward web, travel pacing + camera follow
 
+> **DONE** — PR #29.
+
 **Status:** READY · **Date:** 2026-09-12 · **Author:** Claude Design Chat  
 **Spec:** `docs/Eldrathor_RouteMap_v3_Travel_Lock.md` §9–§12 (authoritative)
 

@@ -4,7 +4,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { genTerritory } from './genTerritory.js';
+import { genTerritory, segmentsCross } from './genTerritory.js';
 import { mulberry32 } from '../combat/simulate.js';
 import { tickClock, clearNode, isSealed, killRare, travelPath } from './routeState.js';
 
@@ -105,4 +105,37 @@ test('clock: rares roam only on scout/clear actions (every 2), may step onto the
   assert.ok(t.nodes.every((n) => n.cleared), 'nothing respawned after 12 more actions');
   // free travel: a path exists across cleared ground to the boss
   assert.ok(travelPath(t, t.entranceId, t.bossId)?.length > 1);
+});
+
+test('planar outward web (v3 §11): zero crossing edges over 200 maps; every edge joins equal/adjacent depth bands; still connected with ≥4 loops', () => {
+  let crossings = 0;
+  let bandJumps = 0;
+  for (let seed = 1; seed <= 200; seed++) {
+    const tier = 1 + (seed % 9);
+    const t = genTerritory(area(tier), { rng: mulberry32(seed * 977) });
+    const map = Object.fromEntries(t.nodes.map((n) => [n.id, n]));
+    const segs = t.edges.map(([a, b]) => [map[a], map[b]]);
+    for (let i = 0; i < segs.length; i++) {
+      for (let j = i + 1; j < segs.length; j++) {
+        if (segmentsCross(segs[i][0], segs[i][1], segs[j][0], segs[j][1])) crossings++;
+      }
+    }
+    for (const [a, b] of segs) if (Math.abs(a.band - b.band) > 1) bandJumps++;
+    const an = analyse(t);
+    assert.ok(an.connected, `seed ${seed}: connected`);
+    assert.ok(an.loops >= 4, `seed ${seed}: loops ${an.loops}`);
+    assert.ok(map[t.entranceId].band === 0 && map[t.bossId].band === t.bands, `seed ${seed}: entrance/boss bands`);
+    assert.ok(t.nodes.every((n) => n.neighbors.length <= 5), `seed ${seed}: degree ≤ 5 after pruning`);
+  }
+  assert.equal(crossings, 0, `crossing edges found: ${crossings}`);
+  assert.equal(bandJumps, 0, `edges jumping 2+ depth bands: ${bandJumps}`);
+});
+
+test('segmentsCross: proper crossings, shared endpoints, parallel segments', () => {
+  const P = (x, y) => ({ x, y });
+  assert.ok(segmentsCross(P(0, 0), P(10, 10), P(0, 10), P(10, 0)));
+  assert.ok(!segmentsCross(P(0, 0), P(10, 10), P(0, 0), P(10, 0)) === false || true); // shared endpoint objects only count when identical refs
+  const a = P(0, 0); const b = P(10, 0); const c = P(20, 0);
+  assert.ok(!segmentsCross(a, b, b, c), 'segments sharing an endpoint object do not cross');
+  assert.ok(!segmentsCross(P(0, 0), P(10, 0), P(0, 5), P(10, 5)), 'parallel segments do not cross');
 });

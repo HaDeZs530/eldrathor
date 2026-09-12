@@ -9,8 +9,8 @@ Active coding tasks for **Claude Code**. The **Claude Design Chat** writes these
 - When a brief is done, mark **DONE** at the top and note it in `docs/SESSION_LOG.md`.
 
 ## Queue (2026-09-12 pm)
-- `2026-09-12_route-polish-2.md` — **READY**
-- `2026-09-12_route-travel-visuals-flee-scale.md` — **READY**
+- `2026-09-12_route-polish-2.md` — DONE (#29)
+- `2026-09-12_route-travel-visuals-flee-scale.md` — DONE (#23, #26, #27, #28)
 - `2026-09-12_route-map-v2.md` — DONE (#21)
 - `2026-09-12_ui-shell.md` — DONE (#22)
 

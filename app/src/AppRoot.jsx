@@ -4,7 +4,7 @@ import { frame, colors, nodeTypeMeta } from './theme/tokens.js';
 import { genTerritory } from './map/genTerritory.js';
 import { rareAt, effectiveType, isSealed, allCleared, scoutNode, clearNode, killRare, tickClock, threatBand, travelPath, approachPath, isWalkable, fleeChance } from './map/routeState.js';
 import RouteMapScreen from './map/RouteMapScreen.jsx';
-import { ARCHETYPES, DEFAULT_PARTY, AREAS } from './data.js';
+import { DEFAULT_PARTY, AREAS } from './data.js';
 import { simulateFight, spawnEnemies, rollRewards, deriveStats, mulberry32 } from './combat.js';
 import { Header } from './components/HarborViews.jsx';
 import PlayerScreen from './components/PlayerScreen.jsx';
@@ -22,6 +22,7 @@ import { BASE_CSS } from './appChromeCss.js';
 import ScreenHeaderActions from './components/shell/ScreenHeaderActions.jsx';
 import HelpSheet from './components/shell/HelpSheet.jsx';
 import MenuSheet from './components/shell/MenuSheet.jsx';
+import RunLogSheet from './map/RunLogSheet.jsx';
 
 const HUB_LABELS = {
   player: 'Veinbinder',
@@ -54,13 +55,15 @@ export default function Eldrathor() {
   const [area, setArea] = useState(null);
   const [territory, setTerritory] = useState(null);
   const [currentId, setCurrentId] = useState(null);
-  const [log, setLog] = useState([]);
+  const [log, setLog] = useState([]); // run log (v3 §9): every run event, newest last
+  const [logSeen, setLogSeen] = useState(0); // entries seen when the Run log sheet was last opened
+  const logSeq = useRef(0);
   const [busy, setBusy] = useState(false);
   const [partyHP, setPartyHP] = useState(1);
   const [runVein, setRunVein] = useState(0);
   const [unlocked, setUnlocked] = useState(1);
   const [flash, setFlash] = useState(null);
-  const [sheet, setSheet] = useState(null); // null | 'help' | 'help+basics' | 'menu'
+  const [sheet, setSheet] = useState(null); // null | 'help' | 'help+basics' | 'menu' | 'runlog'
   const logRef = useRef(null);
   const [afk, setAfk] = useState({
     gatherSlots: [emptyGatherSlot(), emptyGatherSlot(), emptyGatherSlot()],
@@ -123,7 +126,9 @@ export default function Eldrathor() {
   useEffect(() => () => { clearFightTimers(); if (travelTimer.current) window.clearTimeout(travelTimer.current); }, []);
 
   function selectTab(id) { setTab(id); setHubSkinForTab(id); }
-  function pushLog(t, k = 'n') { setLog((l) => [...l, { t, k }]); }
+  function pushLog(t, k = 'n') { logSeq.current += 1; const id = logSeq.current; setLog((l) => [...l, { id, t, k, clock: territoryRef.current?.clock ?? null }]); }
+  const territoryRef = useRef(null);
+  useEffect(() => { territoryRef.current = territory; }, [territory]);
   function doFlash(msg, color) { setFlash({ msg, color }); setTimeout(() => setFlash(null), 1400); }
   function clearFightTimers() {
     const ft = fightTimers.current;
@@ -156,7 +161,7 @@ export default function Eldrathor() {
     const t = genTerritory(a, { rng: runRng.current });
     setArea(a); setTerritory(t); setCurrentId(t.entranceId);
     setLog([{ t: `You unroll the route map. ${a.name} lies unexplored beyond the entry — ${t.rares.length} rares roam it and the boss is sealed.`, k: 'sys' }]);
-    setRunHpFrac(null); setRunMods({ dmgMult: 1, mitAdd: 0 }); setScout(null);
+    setRunHpFrac(null); setRunMods({ dmgMult: 1, mitAdd: 0 }); setScout(null); setLogSeen(0);
     setPartyHP(1); setRunVein(0); setRunStage('route');
   }
 
@@ -234,7 +239,8 @@ export default function Eldrathor() {
   function finishTrip(frames, after) {
     setTravel(null); travelTimer.current = null;
     const last = frames[frames.length - 1];
-    if (after && last) runAfter(last.territory, last.currentId, after);
+    // §12: 200 ms pause on arrival before the card opens
+    if (after && last) window.setTimeout(() => runAfter(last.territory, last.currentId, after), 200);
   }
   function stepTrip(frames, i, after) {
     const f = frames[i];
@@ -243,7 +249,7 @@ export default function Eldrathor() {
     if (f.halt) { setTravel(null); travelTimer.current = null; openAmbush(f.territory, f.halt); return; }
     if (i + 1 >= frames.length) { finishTrip(frames, after); return; }
     setTravel((tr) => (tr ? { ...tr, index: i + 1 } : tr));
-    travelTimer.current = window.setTimeout(() => stepTrip(frames, i + 1, after), 120);
+    travelTimer.current = window.setTimeout(() => stepTrip(frames, i + 1, after), 350);
   }
   function beginTrip(path, after) {
     const frames = planTrip(territory, path);
@@ -251,7 +257,7 @@ export default function Eldrathor() {
     setScout(null); setAmbush(null);
     setTravel({ path, frames, index: 0, after });
     pushLog(`→ Travelling ${path.length - 1} hop${path.length - 1 === 1 ? '' : 's'} (free).`, 'sys');
-    // planned path glows for 300 ms, then a hop per ~120 ms (tap again to skip)
+    // §12: camera eases to the party (300 ms) while the planned path glows, then 350 ms eased hops (tap to skip)
     travelTimer.current = window.setTimeout(() => stepTrip(frames, 0, after), 300);
   }
   function skipTrip() {
@@ -329,6 +335,7 @@ export default function Eldrathor() {
     const a = ambush; if (!a || !territory) return;
     const n = territory.nodes.find((x) => x.id === a.nodeId); if (!n) return;
     setAmbush(null);
+    pushLog('⚔ Ambush — the party stands and fights.', 'rare');
     startFight(n, { enemies: a.enemies, ambush: true });
   }
   function onAmbushFlee() {
@@ -447,6 +454,7 @@ export default function Eldrathor() {
     maybeAmbush(t, n.id, currentId);
   }
   function extract() {
+    pushLog(`⇱ Extracted with ${runVein} Worldvein banked.`, 'good');
     doFlash(`Extracted ${runVein} Worldvein`, colors.mythros);
     setWorldvein((v) => v + runVein);
     setTimeout(() => { resetRunToIsland(); setTab('mountain'); setHubSkinForTab('mountain'); }, 600);
@@ -487,12 +495,13 @@ export default function Eldrathor() {
         {tab === 'afk' && <AfkScreen unlocked={unlocked} party={party} roster={roster} inventory={inventory} afk={afk} worldvein={worldvein} onUpdateGatherSlot={onUpdateGatherSlot} onToggleGather={onToggleGather} onUpdateProcess={onUpdateProcess} onToggleProcess={onToggleProcess} onUpdateIdle={onUpdateIdle} onToggleIdle={onToggleIdle} />}
         {tab === 'mountain' && runStage === 'island' && <IslandWorldMap areas={AREAS} unlocked={unlocked} onSelectArea={onSelectArea} onHarbor={() => selectTab('town')} />}
         {tab === 'mountain' && runStage === 'rally' && selectedArea && <RallyScreen area={selectedArea} party={party} roster={roster} onSwap={onRallySwap} onExplore={onRallyExplore} onBack={onRallyBack} />}
-        {tab === 'mountain' && runStage === 'route' && area && territory && <RouteMapScreen area={area} territory={territory} currentId={currentId} busy={busy} partyHP={partyHP} runVein={runVein} party={party} archetypes={ARCHETYPES} log={log} scout={scout} ambush={ambush} travel={travel} onTapNode={onTapNode} onEngage={onEngage} onLeave={onLeave} onFight={onAmbushFight} onFlee={onAmbushFlee} onExtract={extract} />}
+        {tab === 'mountain' && runStage === 'route' && area && territory && <RouteMapScreen area={area} territory={territory} currentId={currentId} busy={busy} partyHP={partyHP} runVein={runVein} party={party} log={log} logUnread={Math.max(0, log.length - logSeen)} onOpenLog={() => { setSheet('runlog'); setLogSeen(log.length); }} scout={scout} ambush={ambush} travel={travel} onTapNode={onTapNode} onEngage={onEngage} onLeave={onLeave} onFight={onAmbushFight} onFlee={onAmbushFlee} onExtract={extract} />}
         {tab === 'mountain' && runStage === 'sanctuary' && fightNode && <SanctuaryScreen area={area} party={party} runHpFrac={runHpFrac} pouch={10 * area.tier} onChoose={onSanctuaryChoose} />}
         {tab === 'mountain' && runStage === 'fight' && fightNode && fight && <FightScreen area={area} node={fightNode} party={party} fight={fight} elapsedMs={fightElapsed} speed={fightSpeed} onSpeed={setFightSpeed} onSkip={skipFight} />}
         {tab === 'mountain' && runStage === 'loot' && fight && <LootResults area={area} nodeLabel={fightNode ? (nodeTypeMeta[fightNode.type]?.label || 'Node') : null} fight={fight} onContinue={applyLootAndReturnToRoute} />}
         <TabBar activeTab={tab} onSelect={selectTab} />
         {(sheet === 'help' || sheet === 'help+basics') && <HelpSheet screenId={screenId} showBasics={sheet === 'help+basics'} onClose={() => setSheet(null)} />}
+        {sheet === 'runlog' && <RunLogSheet log={log} areaName={area?.name} onClose={() => { setLogSeen(log.length); setSheet(null); }} />}
         {sheet === 'menu' && (
           <MenuSheet
             activeTab={tab}

@@ -1,20 +1,26 @@
 /**
- * Route map generator — docs/Eldrathor_RouteMap_v2_Lock.md §1, §3, §4.
- * Single connected WEB (not a tree): 30–45 nodes (tier 9: 45+), entrance at the south
- * edge, boss at the far (north) edge with quadrant variance, cross-links so paths rejoin
- * (≥4 loops, 30–40% of non-entrance nodes with ≥3 edges), texture (quiet trails, dense
- * clusters, dead-ends, long-edge curiosity nodes), depth by BFS, five node types incl.
- * Sanctuary, 2–3 roaming rares, sealed boss, named variants rolled at generation (v3 §6:
- * 10% of Fight nodes, min 1). Deterministic when `opts.rng` is seeded.
+ * Route map generator — docs/Eldrathor_RouteMap_v2_Lock.md §1, §3, §4 and
+ * docs/Eldrathor_RouteMap_v3_Travel_Lock.md §6, §11.
+ *
+ * PLANAR, OUTWARD web: nodes are laid out in depth bands from the entrance (south edge) to the
+ * boss (north edge); candidate edges come from a Gabriel-graph pass over the positions (planar
+ * by construction), kept only between equal or adjacent bands, guarded by a segment-intersection
+ * test, then pruned to 2–4 edges per node while keeping connectivity and ≥4 loops. Texture
+ * (dead-end spurs, quiet side trails, long-edge curiosity nodes) also passes the crossing test.
+ * Five node types incl. Sanctuary, 2–3 roaming rares, sealed boss, named variants at generation.
+ * Deterministic when `opts.rng` is seeded.
  */
 
 const WIDTH = 900;
 const HEIGHT = 1400;
-const MIN_SEP = 70;
+const MIN_SEP = 72;
+const X_MIN = 80;
+const X_MAX = WIDTH - 80;
+const Y_TOP = 110; // boss band centre
+const Y_BOTTOM = HEIGHT - 100; // entrance band centre
 
 const irand = (rng, a, b) => a + Math.floor(rng() * (b - a + 1));
 const rand = (rng, a, b) => a + rng() * (b - a);
-const pick = (rng, arr) => arr[Math.floor(rng() * arr.length)];
 const shuffle = (rng, arr) => {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -24,6 +30,31 @@ const shuffle = (rng, arr) => {
   return a;
 };
 const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+
+/* ---------- geometry ---------- */
+
+function orient(p, q, r) {
+  const v = (q.x - p.x) * (r.y - p.y) - (q.y - p.y) * (r.x - p.x);
+  if (Math.abs(v) < 1e-9) return 0;
+  return v > 0 ? 1 : -1;
+}
+function onSegment(p, q, r) {
+  return Math.min(p.x, r.x) - 1e-9 <= q.x && q.x <= Math.max(p.x, r.x) + 1e-9 && Math.min(p.y, r.y) - 1e-9 <= q.y && q.y <= Math.max(p.y, r.y) + 1e-9;
+}
+/** Proper or touching intersection of segments ab and cd (segments sharing an endpoint object do not count). */
+export function segmentsCross(a, b, c, d) {
+  if (a === c || a === d || b === c || b === d) return false;
+  const o1 = orient(a, b, c);
+  const o2 = orient(a, b, d);
+  const o3 = orient(c, d, a);
+  const o4 = orient(c, d, b);
+  if (o1 !== o2 && o3 !== o4) return true;
+  if (o1 === 0 && onSegment(a, c, b)) return true;
+  if (o2 === 0 && onSegment(a, d, b)) return true;
+  if (o3 === 0 && onSegment(c, a, d)) return true;
+  if (o4 === 0 && onSegment(c, b, d)) return true;
+  return false;
+}
 
 function bfsDepths(adj, from) {
   const depth = new Map([[from, 0]]);
@@ -59,9 +90,9 @@ function shortestPath(adj, from, to) {
   return path.reverse();
 }
 
-function makeNode(id, x, y) {
+function makeNode(id, x, y, band) {
   return {
-    id, x, y,
+    id, x, y, band,
     type: 'normal',
     revealed: false,
     typeKnown: false,
@@ -84,191 +115,68 @@ export function genTerritory(area, opts = {}) {
   const tier = area?.tier || 1;
   const targetCount = opts.nodeCount ?? (tier >= 9 ? irand(rng, 45, 52) : irand(rng, 30, 45));
 
-  // Texture budget is carved out of the total so the map still lands in range.
-  const trailCount = irand(rng, 1, 2);
-  const clusterCount = irand(rng, 1, 2);
-  const curiosityCount = irand(rng, 1, 2);
-  const trailLens = Array.from({ length: trailCount }, () => irand(rng, 3, 4));
-  const textureNodes = trailLens.reduce((a, b) => a + b, 0) + clusterCount * 3 + curiosityCount;
-  const baseCount = Math.max(18, targetCount - textureNodes);
+  // ---------- depth bands: band 0 = entrance (south), band B = boss (north) ----------
+  const B = tier >= 9 ? 9 : irand(rng, 6, 8);
+  const bandY = (i) => Y_BOTTOM - (i * (Y_BOTTOM - Y_TOP)) / B;
+  const bandH = (Y_BOTTOM - Y_TOP) / B;
 
   const nodes = [];
-  const inBounds = (x, y) => x >= 40 && x <= WIDTH - 40 && y >= 40 && y <= HEIGHT - 40;
-  const farEnough = (x, y, sep = MIN_SEP) => nodes.every((n) => Math.hypot(n.x - x, n.y - y) >= sep);
-  const add = (x, y) => {
-    const n = makeNode(`n${nodes.length}`, x, y);
+  const add = (x, y, band) => {
+    const n = makeNode(`n${nodes.length}`, x, y, band);
     nodes.push(n);
     return n;
   };
+  const farEnough = (x, y, sep = MIN_SEP) => nodes.every((n) => Math.hypot(n.x - x, n.y - y) >= sep);
 
-  // --- entrance (south edge) and boss (north edge, quadrant variance) ---
-  const entrance = add(WIDTH * 0.5 + rand(rng, -60, 60), HEIGHT - 90);
-  const boss = add(WIDTH * rand(rng, 0.2, 0.8), rand(rng, 80, 200));
+  const entrance = add(WIDTH * 0.5 + rand(rng, -60, 60), Y_BOTTOM, 0);
+  const boss = add(rand(rng, X_MIN + 60, X_MAX - 60), Y_TOP + rand(rng, -20, 30), B);
 
-  // --- base scatter ---
-  let attempts = 0;
-  while (nodes.length < baseCount && attempts < baseCount * 120) {
-    attempts++;
-    const x = rand(rng, 60, WIDTH - 60);
-    const y = rand(rng, 240, HEIGHT - 170);
-    if (farEnough(x, y)) add(x, y);
+  // texture budget carved out of the total
+  const spurCount = irand(rng, 2, 3);
+  const trailCount = irand(rng, 1, 2);
+  const trailLen = 3;
+  const curiosityCount = irand(rng, 1, 2);
+  const mainCount = Math.max(16, targetCount - 2 - spurCount - trailCount * trailLen - curiosityCount);
+
+  // distribute main nodes over bands 1..B-1 with a hump mid-map
+  const inner = B - 1;
+  const weights = Array.from({ length: inner }, (_, k) => 1 + Math.sin((Math.PI * (k + 1)) / (inner + 1)));
+  const wsum = weights.reduce((a, b) => a + b, 0);
+  const counts = weights.map((w) => Math.max(2, Math.round((w / wsum) * mainCount)));
+  for (let i = 1; i <= inner; i++) {
+    const k = counts[i - 1];
+    const slot = (X_MAX - X_MIN) / k;
+    for (let j = 0; j < k; j++) {
+      let placed = false;
+      for (let tries = 0; tries < 10 && !placed; tries++) {
+        const x = X_MIN + (j + 0.5 + rand(rng, -0.38, 0.38)) * slot;
+        const y = bandY(i) + rand(rng, -0.3, 0.3) * bandH;
+        if (farEnough(x, y)) { add(x, y, i); placed = true; }
+      }
+    }
   }
 
-  // --- adjacency helpers ---
+  // ---------- edges ----------
   const adj = {};
   const edges = [];
   const edgeSet = new Set();
   const key = (a, b) => (a < b ? `${a}|${b}` : `${b}|${a}`);
   const has = (a, b) => edgeSet.has(key(a, b));
+  const byId = () => Object.fromEntries(nodes.map((n) => [n.id, n]));
+  const crossesAny = (a, b) => {
+    const map = byId();
+    return edges.some(([c, d]) => segmentsCross(a, b, map[c], map[d]));
+  };
+  const bandOk = (a, b) => Math.abs(a.band - b.band) <= 1;
   const link = (a, b) => {
-    if (a === b || has(a, b)) return false;
-    edgeSet.add(key(a, b));
-    edges.push([a, b]);
-    (adj[a] ||= []).push(b);
-    (adj[b] ||= []).push(a);
+    if (a === b || has(a.id, b.id)) return false;
+    edgeSet.add(key(a.id, b.id));
+    edges.push([a.id, b.id]);
+    (adj[a.id] ||= []).push(b.id);
+    (adj[b.id] ||= []).push(a.id);
     return true;
   };
-  for (const n of nodes) adj[n.id] = [];
-  const deg = (id) => (adj[id] || []).length;
-
-  // sparse base: nearest neighbour only (cross-links add the loops deliberately below)
-  const baseNodes = [...nodes];
-  for (const n of baseNodes) {
-    const near = baseNodes.filter((o) => o !== n).map((o) => ({ o, d: dist(n, o) })).sort((a, b) => a.d - b.d);
-    if (near.length && near[0].d < 260) link(n.id, near[0].o.id);
-  }
-  // the entrance always opens onto 2–3 nodes (first reveal = 2–3 frontier nodes)
-  {
-    const near = baseNodes.filter((o) => o !== entrance && o !== boss).sort((a, b) => dist(entrance, a) - dist(entrance, b));
-    const want = irand(rng, 2, 3);
-    for (let i = 0; i < want && i < near.length; i++) link(entrance.id, near[i].id);
-  }
-
-  // connectivity: join components by their closest pair
-  const componentOf = () => {
-    const comp = new Map();
-    let c = 0;
-    for (const n of nodes) {
-      if (comp.has(n.id)) continue;
-      const stack = [n.id];
-      comp.set(n.id, c);
-      while (stack.length) {
-        const cur = stack.pop();
-        for (const m of adj[cur]) if (!comp.has(m)) { comp.set(m, c); stack.push(m); }
-      }
-      c++;
-    }
-    return { comp, count: c };
-  };
-  for (let guard = 0; guard < 200; guard++) {
-    const { comp, count } = componentOf();
-    if (count <= 1) break;
-    let best = null;
-    for (const a of nodes) for (const b of nodes) {
-      if (comp.get(a.id) === comp.get(b.id)) continue;
-      const d = dist(a, b);
-      if (!best || d < best.d) best = { a, b, d };
-    }
-    if (!best) break;
-    link(best.a.id, best.b.id);
-  }
-
-  // --- texture: quiet trails (chains of 3–4 single-edge nodes) ---
-  const roots = shuffle(rng, baseNodes.filter((n) => n !== entrance && n !== boss && deg(n.id) <= 2));
-  for (let t = 0; t < trailCount && roots.length; t++) {
-    let prev = roots.pop();
-    const ang = rand(rng, 0, Math.PI * 2);
-    for (let i = 0; i < trailLens[t]; i++) {
-      let placed = null;
-      for (let tries = 0; tries < 12 && !placed; tries++) {
-        const a = ang + rand(rng, -0.6, 0.6);
-        const x = prev.x + Math.cos(a) * rand(rng, 85, 110);
-        const y = prev.y + Math.sin(a) * rand(rng, 85, 110);
-        if (inBounds(x, y) && farEnough(x, y, 60)) placed = add(x, y);
-      }
-      if (!placed) break;
-      adj[placed.id] = [];
-      link(prev.id, placed.id);
-      prev = placed;
-    }
-  }
-  // dense clusters (3 extra nodes tightly around an anchor, interlinked)
-  const anchors = shuffle(rng, baseNodes.filter((n) => n !== entrance && n !== boss));
-  for (let c = 0; c < clusterCount && anchors.length; c++) {
-    const anchor = anchors.pop();
-    const members = [];
-    for (let i = 0; i < 3; i++) {
-      for (let tries = 0; tries < 12; tries++) {
-        const a = rand(rng, 0, Math.PI * 2);
-        const x = anchor.x + Math.cos(a) * rand(rng, 70, 95);
-        const y = anchor.y + Math.sin(a) * rand(rng, 70, 95);
-        if (inBounds(x, y) && farEnough(x, y, 55)) { const m = add(x, y); adj[m.id] = []; members.push(m); break; }
-      }
-    }
-    for (const m of members) link(anchor.id, m.id);
-    for (let i = 0; i < members.length; i++) for (let j = i + 1; j < members.length; j++) if (dist(members[i], members[j]) < 150) link(members[i].id, members[j].id);
-  }
-  // long-edge curiosity nodes (single long edge to a lone node)
-  const curiosityFrom = shuffle(rng, baseNodes.filter((n) => n !== entrance && n !== boss));
-  for (let c = 0; c < curiosityCount && curiosityFrom.length; c++) {
-    const from = curiosityFrom.pop();
-    for (let tries = 0; tries < 20; tries++) {
-      const a = rand(rng, 0, Math.PI * 2);
-      const x = from.x + Math.cos(a) * rand(rng, 320, 420);
-      const y = from.y + Math.sin(a) * rand(rng, 320, 420);
-      if (inBounds(x, y) && farEnough(x, y, 120)) { const m = add(x, y); adj[m.id] = []; link(from.id, m.id); break; }
-    }
-  }
-
-  // top-up: texture placement can fail near the edges — keep the map inside the size band
-  const minCount = tier >= 9 ? 45 : 30;
-  for (let tries = 0; nodes.length < Math.max(minCount, targetCount - 2) && tries < 400; tries++) {
-    const x = rand(rng, 60, WIDTH - 60);
-    const y = rand(rng, 240, HEIGHT - 170);
-    if (!farEnough(x, y)) continue;
-    const m = add(x, y);
-    adj[m.id] = [];
-    const nearest = baseNodes.filter((o) => o !== m).sort((a, b) => dist(m, a) - dist(m, b))[0];
-    if (nearest) link(m.id, nearest.id);
-    baseNodes.push(m);
-  }
-
-  // --- cross-links: ≥4 loops and 30–40% of non-entrance nodes with ≥3 edges ---
-  const textureIds = new Set(nodes.slice(baseNodes.length).map((n) => n.id));
-  const nonEntrance = () => nodes.filter((n) => n !== entrance);
-  const degShare = () => nonEntrance().filter((n) => deg(n.id) >= 3).length / nonEntrance().length;
-  const loops = () => edges.length - nodes.length + 1;
-  const shareTarget = rand(rng, 0.31, 0.39);
-  for (let guard = 0; guard < 400 && (degShare() < shareTarget || loops() < 4); guard++) {
-    const cands = shuffle(rng, baseNodes.filter((n) => n !== entrance && deg(n.id) <= 2));
-    let linked = false;
-    for (const n of cands) {
-      const near = baseNodes
-        .filter((o) => o !== n && !textureIds.has(o.id) && !has(n.id, o.id) && deg(o.id) <= 3 && dist(n, o) < 300)
-        .sort((a, b) => dist(n, a) - dist(n, b));
-      if (near.length) { link(n.id, near[0].id); linked = true; break; }
-    }
-    if (!linked) {
-      // widen the reach once nearby options are exhausted
-      const n = pick(rng, baseNodes.filter((o) => o !== entrance));
-      const far = baseNodes.filter((o) => o !== n && !has(n.id, o.id) && dist(n, o) < 420).sort((a, b) => dist(n, a) - dist(n, b))[0];
-      if (far) link(n.id, far.id); else break;
-    }
-  }
-  // prune: if the web came out denser than 40%, drop edges between two ≥3-degree nodes
-  // while the graph stays connected and keeps ≥4 loops
-  const connectedWithout = (a, b) => {
-    const seen = new Set([a]);
-    const stack = [a];
-    while (stack.length) {
-      const c = stack.pop();
-      for (const m of adj[c]) {
-        if ((c === a && m === b) || (c === b && m === a)) continue;
-        if (!seen.has(m)) { seen.add(m); stack.push(m); }
-      }
-    }
-    return seen.size === nodes.length;
-  };
+  const tryLink = (a, b) => (bandOk(a, b) && !crossesAny(a, b) ? link(a, b) : false);
   const unlink = (a, b) => {
     edgeSet.delete(key(a, b));
     const i = edges.findIndex(([x, y]) => (x === a && y === b) || (x === b && y === a));
@@ -276,23 +184,205 @@ export function genTerritory(area, opts = {}) {
     adj[a] = adj[a].filter((m) => m !== b);
     adj[b] = adj[b].filter((m) => m !== a);
   };
-  for (let guard = 0; guard < 200 && degShare() > 0.4 && loops() > 4; guard++) {
-    const cands = shuffle(rng, edges.filter(([a, b]) => a !== entrance.id && b !== entrance.id && deg(a) >= 3 && deg(b) >= 3));
-    let cut = false;
-    for (const [a, b] of cands) {
-      if (connectedWithout(a, b)) { unlink(a, b); cut = true; break; }
+  for (const n of nodes) adj[n.id] = [];
+  const deg = (id) => (adj[id] || []).length;
+  const loops = () => edges.length - nodes.length + 1;
+  const connected = (skipA = null, skipB = null) => {
+    const seen = new Set([nodes[0].id]);
+    const stack = [nodes[0].id];
+    while (stack.length) {
+      const c = stack.pop();
+      for (const m of adj[c]) {
+        if ((c === skipA && m === skipB) || (c === skipB && m === skipA)) continue;
+        if (!seen.has(m)) { seen.add(m); stack.push(m); }
+      }
     }
-    if (!cut) break;
+    return seen.size === nodes.length;
+  };
+
+  // Gabriel graph over the main layout (planar by construction), band-filtered
+  const main = [...nodes];
+  const gabriel = [];
+  for (let i = 0; i < main.length; i++) {
+    for (let j = i + 1; j < main.length; j++) {
+      const a = main[i];
+      const b = main[j];
+      if (!bandOk(a, b)) continue;
+      const mx = (a.x + b.x) / 2;
+      const my = (a.y + b.y) / 2;
+      const r2 = ((a.x - b.x) ** 2 + (a.y - b.y) ** 2) / 4;
+      let empty = true;
+      for (const c of main) {
+        if (c === a || c === b) continue;
+        if ((c.x - mx) ** 2 + (c.y - my) ** 2 < r2 - 1e-6) { empty = false; break; }
+      }
+      if (empty) gabriel.push([a, b, Math.sqrt(r2 * 4)]);
+    }
   }
-  // guarantee a path entrance → boss
-  if (!shortestPath(adj, entrance.id, boss.id)) link(entrance.id, boss.id);
-  // no isolates
-  for (const n of nodes) if (deg(n.id) === 0) {
-    const nearest = nodes.filter((o) => o !== n).sort((a, b) => dist(n, a) - dist(n, b))[0];
-    if (nearest) link(n.id, nearest.id);
+  gabriel.sort((p, q) => p[2] - q[2]);
+  for (const [a, b] of gabriel) if (!crossesAny(a, b)) link(a, b);
+
+  // connectivity guard: join components with the shortest non-crossing band-adjacent edge
+  for (let guard = 0; guard < 60 && !connected(); guard++) {
+    const comp = new Map();
+    let c = 0;
+    for (const n of nodes) {
+      if (comp.has(n.id)) continue;
+      const stack = [n.id];
+      comp.set(n.id, c);
+      while (stack.length) { const cur = stack.pop(); for (const m of adj[cur]) if (!comp.has(m)) { comp.set(m, c); stack.push(m); } }
+      c++;
+    }
+    let best = null;
+    for (const a of nodes) for (const b of nodes) {
+      if (comp.get(a.id) === comp.get(b.id) || !bandOk(a, b)) continue;
+      const d = dist(a, b);
+      if ((!best || d < best.d) && !crossesAny(a, b)) best = { a, b, d };
+    }
+    if (!best) {
+      for (const a of nodes) for (const b of nodes) {
+        if (comp.get(a.id) === comp.get(b.id)) continue;
+        const d = dist(a, b);
+        if ((!best || d < best.d) && !crossesAny(a, b)) best = { a, b, d };
+      }
+    }
+    if (!best) break;
+    link(best.a, best.b);
   }
 
-  // --- depth (BFS from entrance, normalised by the boss's depth) ---
+  // entrance opens onto 2–3 nodes (first reveal = 2–3 frontier nodes)
+  {
+    const want = irand(rng, 2, 3);
+    const near = nodes.filter((o) => o !== entrance && o !== boss && o.band === 1).sort((a, b) => dist(entrance, a) - dist(entrance, b));
+    for (const o of near) { if (deg(entrance.id) >= want) break; tryLink(entrance, o); }
+  }
+
+  // ---------- prune to 2–4 edges per node, keep connectivity and ≥4 loops ----------
+  const pruneOnce = (predicate) => {
+    const map = byId();
+    const cands = edges
+      .map(([a, b]) => [a, b, dist(map[a], map[b])])
+      .filter(([a, b]) => predicate(a, b))
+      .sort((p, q) => q[2] - p[2]);
+    for (const [a, b] of cands) {
+      if (loops() - 1 < 4) return false;
+      if (!connected(a, b)) continue;
+      unlink(a, b);
+      return true;
+    }
+    return false;
+  };
+  const nonEntrance = () => nodes.filter((n) => n !== entrance);
+  const degShare = () => nonEntrance().filter((n) => deg(n.id) >= 3).length / nonEntrance().length;
+  // over-connected nodes: cut the longest edge even if loops dip below 4 (restored below);
+  // the other end may become a dead-end spur
+  const cutOverDegree = () => {
+    for (let guard = 0; guard < 300; guard++) {
+      const map = byId();
+      const cands = edges
+        .map(([a, b]) => [a, b, dist(map[a], map[b])])
+        .filter(([a, b]) => (deg(a) > 4 || deg(b) > 4) && deg(a) >= 2 && deg(b) >= 2)
+        .sort((p, q) => q[2] - p[2]);
+      let cut = false;
+      for (const [a, b] of cands) { if (connected(a, b)) { unlink(a, b); cut = true; break; } }
+      if (!cut) break;
+    }
+  };
+  // loops below 4: add back the shortest planar, band-adjacent Gabriel edge between low-degree nodes
+  const restoreLoops = () => {
+    for (let guard = 0; guard < 40 && loops() < 4; guard++) {
+      const cand = gabriel.find(([a, b]) => !has(a.id, b.id) && deg(a.id) <= 3 && deg(b.id) <= 3 && !crossesAny(a, b));
+      if (!cand) break;
+      link(cand[0], cand[1]);
+    }
+  };
+  const pruneAll = () => {
+    cutOverDegree();
+    for (let guard = 0; guard < 300 && degShare() > 0.4; guard++) {
+      if (!pruneOnce((a, b) => deg(a) >= 3 && deg(b) >= 3 && a !== entrance.id && b !== entrance.id)) break;
+    }
+    restoreLoops();
+  };
+  pruneAll();
+
+  // ---------- texture (all edges pass the crossing + band tests) ----------
+  const placeNear = (from, band, dx, dy, sep) => {
+    for (let tries = 0; tries < 14; tries++) {
+      const x = Math.max(40, Math.min(WIDTH - 40, from.x + dx * rand(rng, 0.8, 1.2) + rand(rng, -30, 30)));
+      const y = Math.max(50, Math.min(HEIGHT - 50, from.y + dy * rand(rng, 0.8, 1.2) + rand(rng, -20, 20)));
+      if (farEnough(x, y, sep)) { const n = add(x, y, band); adj[n.id] = []; return n; }
+    }
+    return null;
+  };
+  const dropLast = (n) => { nodes.pop(); delete adj[n.id]; };
+  // dead-end spurs: a single node off a main node, one band outward, single edge
+  const spurRoots = shuffle(rng, main.filter((n) => n !== entrance && n !== boss && n.band < B - 1));
+  let spurs = 0;
+  for (const root of spurRoots) {
+    if (spurs >= spurCount) break;
+    const side = root.x < WIDTH / 2 ? -1 : 1;
+    const s = placeNear(root, root.band + 1, side * 90, -bandH * 0.9, 60);
+    if (!s) continue;
+    if (tryLink(root, s)) spurs++; else dropLast(s);
+  }
+  // quiet trails: a chain of 3 along a side margin, advancing one band per step
+  const trailRoots = shuffle(rng, main.filter((n) => n !== entrance && n !== boss && n.band >= 1 && n.band <= B - 4 && (n.x < X_MIN + 140 || n.x > X_MAX - 140)));
+  let trails = 0;
+  for (const root of trailRoots) {
+    if (trails >= trailCount) break;
+    const side = root.x < WIDTH / 2 ? -1 : 1;
+    let prev = root;
+    let made = 0;
+    for (let i = 0; i < trailLen; i++) {
+      const t = placeNear(prev, prev.band + 1, side * 40, -bandH, 58);
+      if (!t) break;
+      if (!tryLink(prev, t)) { dropLast(t); break; }
+      prev = t;
+      made++;
+    }
+    if (made) trails++;
+  }
+  // long-edge curiosity nodes: a lone node one band outward at the map edge, single long edge
+  const curioRoots = shuffle(rng, main.filter((n) => n !== entrance && n !== boss && n.band < B - 1));
+  let curios = 0;
+  for (const root of curioRoots) {
+    if (curios >= curiosityCount) break;
+    const side = root.x < WIDTH / 2 ? -1 : 1;
+    const c = placeNear(root, root.band + 1, side * 330, -bandH * 0.6, 110);
+    if (!c) continue;
+    if (dist(root, c) >= 280 && tryLink(root, c)) curios++; else dropLast(c);
+  }
+
+  // top-up (texture can fail near edges): keep the size band, planar links only
+  const minCount = tier >= 9 ? 45 : 30;
+  for (let tries = 0; nodes.length < Math.max(minCount, targetCount - 2) && tries < 300; tries++) {
+    const band = irand(rng, 1, B - 1);
+    const x = rand(rng, X_MIN, X_MAX);
+    const y = bandY(band) + rand(rng, -0.3, 0.3) * bandH;
+    if (!farEnough(x, y)) continue;
+    const m = add(x, y, band);
+    adj[m.id] = [];
+    const near = nodes.filter((o) => o !== m && bandOk(o, m)).sort((a, b) => dist(m, a) - dist(m, b));
+    let linked = false;
+    for (const o of near.slice(0, 6)) { if (tryLink(m, o)) { linked = true; break; } }
+    if (!linked) dropLast(m);
+  }
+
+  // texture and top-up can push degrees back up — prune once more
+  pruneAll();
+
+  // guarantee a path entrance → boss (never crossing)
+  if (!shortestPath(adj, entrance.id, boss.id)) {
+    const cands = nodes.filter((o) => o !== boss && o.band === B - 1 && !crossesAny(boss, o)).sort((a, b) => dist(boss, a) - dist(boss, b));
+    for (const o of cands) { link(boss, o); if (shortestPath(adj, entrance.id, boss.id)) break; }
+  }
+  // no isolates
+  for (const n of nodes) if (deg(n.id) === 0) {
+    const nearest = nodes.filter((o) => o !== n && bandOk(o, n) && !crossesAny(n, o)).sort((a, b) => dist(n, a) - dist(n, b))[0];
+    if (nearest) link(n, nearest);
+  }
+
+  // ---------- depth (BFS from entrance, normalised by the boss's depth) ----------
   const depths = bfsDepths(adj, entrance.id);
   const bossDepth = Math.max(1, depths.get(boss.id) || 1);
   for (const n of nodes) {
@@ -301,19 +391,17 @@ export function genTerritory(area, opts = {}) {
     n.neighbors = [...adj[n.id]];
   }
 
-  // --- node types ---
+  // ---------- node types ----------
   boss.type = 'boss';
   const entranceAdj = new Set(adj[entrance.id]);
   const bossAdj = new Set(adj[boss.id]);
   const pool = nodes.filter((n) => n !== entrance && n !== boss);
 
-  // rares: 2–3, away from the entrance and not next to the boss
   const rareCount = irand(rng, 2, 3);
   const rareHosts = shuffle(rng, pool.filter((n) => n.depth >= 2 && !entranceAdj.has(n.id) && !bossAdj.has(n.id))).slice(0, rareCount);
   const rares = rareHosts.map((n, i) => ({ id: `r${i}`, nodeId: n.id, alive: true }));
   const rareHostIds = new Set(rareHosts.map((n) => n.id));
 
-  // sanctuaries: 2–4, never adjacent to each other or to the entrance
   const sanctCount = irand(rng, 2, 4);
   const sanctuaries = [];
   for (const n of shuffle(rng, pool.filter((n) => !entranceAdj.has(n.id) && !rareHostIds.has(n.id) && !bossAdj.has(n.id)))) {
@@ -323,19 +411,18 @@ export function genTerritory(area, opts = {}) {
     sanctuaries.push(n);
   }
 
-  // crystals: 12–18% of the rest, biased off the entrance→boss drift
   const path = new Set(shortestPath(adj, entrance.id, boss.id) || []);
   const rest = pool.filter((n) => n.type === 'normal' && !rareHostIds.has(n.id));
   const crystalCount = Math.round(rest.length * rand(rng, 0.12, 0.18));
   const crystalTargets = [...shuffle(rng, rest.filter((n) => !path.has(n.id))), ...shuffle(rng, rest.filter((n) => path.has(n.id)))];
   for (let i = 0; i < crystalCount && i < crystalTargets.length; i++) crystalTargets[i].type = 'crystal';
 
-  // --- named variants at generation (v3 §6): 10% of Fight nodes, at least one per map ---
+  // named variants at generation (v3 §6): 10% of Fight nodes, at least one per map
   const fightNodes = shuffle(rng, pool.filter((n) => n.type === 'normal' && !rareHostIds.has(n.id)));
   const namedCount = Math.max(1, Math.round(fightNodes.length * 0.1));
   for (let i = 0; i < namedCount && i < fightNodes.length; i++) fightNodes[i].namedRare = true;
 
-  // --- fog: entrance cleared + 2–3 neighbours revealed (positions only) ---
+  // ---------- fog: entrance cleared + 2–3 neighbours revealed (positions only) ----------
   entrance.cleared = true;
   entrance.revealed = true;
   entrance.typeKnown = true;
@@ -352,6 +439,7 @@ export function genTerritory(area, opts = {}) {
     height: HEIGHT,
     areaId: area?.id ?? null,
     tier,
+    bands: B,
     bossDepth,
     rares,
     clock: 0,

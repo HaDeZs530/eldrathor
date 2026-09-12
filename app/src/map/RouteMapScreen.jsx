@@ -7,10 +7,10 @@ import './parchment.css';
 /**
  * Route map — docs/Eldrathor_RouteMap_v2_Lock.md + docs/Eldrathor_RouteMap_v3_Travel_Lock.md
  * on the hybrid parchment surface (docs/Eldrathor_NodeMap_Art_Lock.md).
- * §7: the map fills everything between the header and the tab bar; the run HUD is one 44 px
- * strip overlaid at the top. §1/§6: one-tap FREE travel across cleared ground (gold path preview,
- * hop animation, tap to skip); frontier tap = approach + scout. §2: shape = state, colour = type,
- * ~40% larger; hit areas ≥ 44 px. Cards (scout / ambush / seal / extract) slide up inside the map.
+ * §7 the map fills header→tab bar with one 44 px HUD strip; §9 run-log icon + unread badge +
+ * 3 s toast; §10 node scale (party 40 / icons 34 / runes 26, edges 3 px); §12 the party marker
+ * glides 350 ms per hop while the camera eases to it and follows — every camera move is eased.
+ * One-tap FREE travel (§1/§6); frontier tap = approach + scout. Cards slide up inside the map.
  */
 
 /** v3 §2 palette — colour distinguishes type. */
@@ -24,14 +24,11 @@ const TYPE_COLOR = {
 const TYPE_GLYPH = { normal: '⚔', crystal: '❖', sanctuary: '✧', rare: '☠', boss: '♛' };
 /** Default camera zoom — ~12–16 nodes visible on a phone (§7); pan for the rest. */
 const ZOOM = 0.72;
-const NODE_HIT = 56;
+const NODE_HIT = 64;
 const TAP_SLOP = 8;
-/**
- * Fogged parchment margin around the web (screen px) so nodes on the map's rim (the entrance
- * sits at the very bottom) can be centred clear of the 44 px HUD strip above and the toast /
- * cards below — the extra room is paper, never the desk behind it.
- */
+/** Fogged parchment margin (screen px) so rim nodes can be centred clear of the HUD and cards. */
 const MARGIN = { top: 56, bottom: 96, side: 48 };
+const TOAST_MS = 3000;
 
 /** Keep pointer events flowing to the viewport during a drag; tolerate synthetic pointers. */
 function capturePointer(el, pointerId) {
@@ -43,13 +40,13 @@ function capturePointer(el, pointerId) {
 }
 
 export default function RouteMapScreen({
-  area, territory, currentId, busy, partyHP, runVein, party, log,
+  area, territory, currentId, busy, partyHP, runVein, party, log, logUnread = 0, onOpenLog,
   scout, ambush, travel, onTapNode, onEngage, onLeave, onFight, onFlee, onExtract,
 }) {
   const vpRef = useRef(null);
   const [vp, setVp] = useState({ w: 0, h: 0 });
   const [pan, setPan] = useState(null);
-  const [anim, setAnim] = useState(false);
+  const [motion, setMotion] = useState('ease'); // 'none' while dragging | 'ease' (300 ms) | 'follow' (350 ms hop)
   const [confirmExtract, setConfirmExtract] = useState(false);
   const gesture = useRef({ active: false, dist: 0, moved: false, target: null, last: null });
 
@@ -67,7 +64,6 @@ export default function RouteMapScreen({
   }, [travel]);
   const W = territory.width;
   const H = territory.height;
-  // margin in map units; the sheet/SVG cover the web plus this margin
   const M = { x: MARGIN.side / ZOOM, top: MARGIN.top / ZOOM, bottom: MARGIN.bottom / ZOOM };
   const VW = W + 2 * M.x;
   const VH = H + M.top + M.bottom;
@@ -98,13 +94,34 @@ export default function RouteMapScreen({
   }
   const view = pan ? clampPan(pan) : centerOn(byId[currentId]);
 
-  // follow the party marker while it travels: when the current node changes mid-trip, drop the
-  // manual pan so the derived "centre on the party" view applies (state adjusted during render).
+  // §12 camera: on a trip start ease to the party (300 ms), then follow each hop (350 ms).
+  // State adjusted during render so the derived "centre on the party" view applies with the
+  // right easing class — no effects, no cuts.
   const [followedId, setFollowedId] = useState(currentId);
+  const [tripSeen, setTripSeen] = useState(!!travel);
+  if (!!travel !== tripSeen) {
+    setTripSeen(!!travel);
+    if (travel) { setPan(null); setMotion('ease'); }
+  }
   if (currentId !== followedId) {
     setFollowedId(currentId);
-    if (travel) { setPan(null); setAnim(true); }
+    setPan(null);
+    setMotion(travel ? 'follow' : 'ease');
   }
+
+  // §9: 3 s toast of the latest log line under the HUD strip
+  const last = log.length ? log[log.length - 1] : null;
+  const [toast, setToast] = useState(null);
+  const [toastFor, setToastFor] = useState(null);
+  if (last && last.id !== toastFor) {
+    setToastFor(last.id);
+    setToast(last);
+  }
+  useEffect(() => {
+    if (!toast) return undefined;
+    const id = window.setTimeout(() => setToast(null), TOAST_MS);
+    return () => window.clearTimeout(id);
+  }, [toast]);
 
   function localPt(e) {
     const r = vpRef.current.getBoundingClientRect();
@@ -131,8 +148,9 @@ export default function RouteMapScreen({
     g.last = p;
     g.dist += Math.abs(dx) + Math.abs(dy);
     if (g.dist > TAP_SLOP) g.moved = true;
-    setAnim(false);
-    setPan((prev) => clampPan({ x: (prev ?? view).x + dx, y: (prev ?? view).y + dy }));
+    setMotion('none');
+    // the sheet follows the finger unclamped; release eases it back inside the bounds
+    setPan((prev) => ({ x: (prev ?? view).x + dx, y: (prev ?? view).y + dy }));
   }
   function onPointerUp() {
     const g = gesture.current;
@@ -141,6 +159,10 @@ export default function RouteMapScreen({
     if (!g.moved) {
       if (travel) onTapNode(null); // tap anywhere while travelling = skip the animation
       else if (g.target) activateNode(g.target);
+    } else {
+      // §12: pan release is eased too — settle back inside the bounds over 300 ms
+      setMotion('ease');
+      setPan((prev) => (prev ? clampPan(prev) : prev));
     }
     g.target = null;
   }
@@ -148,12 +170,14 @@ export default function RouteMapScreen({
   const revealed = territory.nodes.filter((n) => n.revealed);
   const clearedCount = territory.nodes.filter((n) => n.cleared).length;
   const card = ambush || scout;
-  const lastLog = log.length ? log[log.length - 1] : null;
+  const cur = byId[currentId];
+  const sheetMotion = motion === 'none' ? '' : motion === 'follow' ? ' is-follow' : ' is-anim';
+  const sheetPos = motion === 'none' ? view : clampPan(view);
 
   return (
     <div className="eld-map-wrap" style={styles.wrap}>
       <div ref={vpRef} className="eld-route-viewport eld-route-viewport--full" onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}>
-        <div className={`eld-parchment-sheet${anim ? ' is-anim' : ''}`} style={{ width: SW, height: SH, transform: `translate(${view.x}px, ${view.y}px)` }}>
+        <div className={`eld-parchment-sheet${sheetMotion}`} style={{ width: SW, height: SH, transform: `translate(${sheetPos.x}px, ${sheetPos.y}px)` }}>
           <svg className="eld-parchment-svg" width={SW} height={SH} viewBox={`${-M.x} ${-M.top} ${VW} ${VH}`}>
             <defs>
               <radialGradient id="eld-fog-hole">
@@ -224,6 +248,11 @@ export default function RouteMapScreen({
               </button>
             );
           })}
+
+          {/* §12 the party marker glides along the edge between nodes */}
+          {cur && (
+            <div className={`eld-party-marker${travel ? ' is-gliding' : ''}`} style={{ left: sx(cur.x), top: sy(cur.y) }} aria-hidden="true" />
+          )}
         </div>
 
         {/* §7 — single 44 px run HUD strip overlaid on the map */}
@@ -235,17 +264,21 @@ export default function RouteMapScreen({
           </div>
           <div className="eld-run-hud-right">
             <span className="eld-run-hud-vein">❖ {runVein}</span>
+            <button type="button" className="eld-run-hud-log" aria-label={`Run log${logUnread ? `, ${logUnread} new` : ''}`} onClick={onOpenLog}>
+              📜
+              {logUnread > 0 && <span className="eld-run-hud-badge">{logUnread > 99 ? '99+' : logUnread}</span>}
+            </button>
             <button type="button" className="eld-btn eld-run-hud-extract" onClick={() => setConfirmExtract(true)} disabled={busy}>Extract</button>
           </div>
-          {/* DESIGN-OPEN: party vitality shown as a hairline under the strip (the lock lists Worldvein, rares, Extract only) */}
+          {/* DESIGN-OPEN: party vitality shown as a hairline under the strip (the lock lists Worldvein, rares, Extract, log) */}
           <div className="eld-run-hud-vit" title={`Party vitality ${Math.round(partyHP * 100)}% · ${party.map((m) => m.name).join(', ')}`}>
             <div style={{ width: `${Math.round(partyHP * 100)}%`, background: partyHP > 0.5 ? '#7fd6a0' : partyHP > 0.25 ? '#e0a04d' : '#e05d6f' }} />
           </div>
         </div>
 
-        {lastLog && !card && !confirmExtract && (
-          <div className="eld-route-hint" aria-live="polite">
-            <span style={{ color: LOG_COLOR[lastLog.k] || undefined }}>{travel ? 'Travelling… tap to skip' : lastLog.t}</span>
+        {toast && !card && !confirmExtract && (
+          <div className="eld-run-toast" key={toast.id} aria-live="polite">
+            <span>{travel ? 'Travelling… tap to skip' : toast.t}</span>
           </div>
         )}
 
@@ -289,8 +322,6 @@ export default function RouteMapScreen({
     </div>
   );
 }
-
-const LOG_COLOR = { sys: '#4a3620', good: '#2f7a55', bad: '#8a2626', loot: '#8a5a14', heal: '#2f7a55', boss: '#5a3f8a', rare: '#8a2626', n: '#4a3620' };
 
 const styles = {
   wrap: { display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, padding: 0, textAlign: 'left' },

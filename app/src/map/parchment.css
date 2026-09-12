@@ -474,3 +474,186 @@
 .eld-route-hint {
   bottom: 10px;
 }
+
+/* --- v3 §10 node scale (raised again): party 40 px, type icons 34 px, unknown runes 26 px, edges 3 px --- */
+.eld-pnode {
+  width: 64px;
+  height: 64px;
+}
+
+.eld-pnode.is-unknown .eld-pnode-shape {
+  width: 48px;
+  height: 48px;
+  font-size: 26px;
+}
+
+.eld-pnode.is-scouted .eld-pnode-shape,
+.eld-pnode.is-named .eld-pnode-shape {
+  width: 58px;
+  height: 58px;
+  font-size: 34px;
+}
+
+.eld-pnode.is-rare .eld-pnode-shape,
+.eld-pnode.is-boss .eld-pnode-shape {
+  width: 60px;
+  height: 60px;
+  font-size: 34px;
+}
+
+.eld-pnode.is-cleared .eld-pnode-shape {
+  width: 22px;
+  height: 22px;
+}
+
+.eld-pnode.is-here .eld-pnode-shape {
+  width: 22px;
+  height: 22px;
+  background: #3d6b6e;
+  border: none;
+  box-shadow: none;
+  transform: none;
+  border-radius: 50%;
+}
+
+/* the party marker is its own element so it can glide between nodes (v3 §12) */
+.eld-party-marker {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  margin: -20px 0 0 -20px;
+  border-radius: 6px;
+  transform: rotate(45deg);
+  background: radial-gradient(circle at 50% 50%, #fffdf5 0%, #fffdf5 28%, #e8c46a 32%, #e8c46a 100%);
+  border: 2px solid #fff8e1;
+  box-shadow: 0 0 0 5px rgba(232, 196, 106, 0.55), 0 0 22px 6px rgba(232, 196, 106, 0.75);
+  pointer-events: none;
+  z-index: 6;
+}
+
+.eld-party-marker.is-gliding {
+  transition: left 350ms ease-in-out, top 350ms ease-in-out;
+}
+
+/* edges keep a 3 px screen stroke regardless of the map zoom */
+.eld-edge-cleared,
+.eld-edge-frontier,
+.eld-edge-plan,
+.eld-lit-path {
+  vector-effect: non-scaling-stroke;
+}
+
+.eld-edge-cleared { stroke-width: 3; }
+.eld-edge-frontier { stroke-width: 3; stroke-dasharray: 3 9; }
+.eld-edge-plan { stroke-width: 7; }
+.eld-lit-path { stroke-width: 5; }
+
+/* --- v3 §12: every camera move eased ≥ 250 ms; cards slide up in 250 ms --- */
+.eld-parchment-sheet.is-anim {
+  transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.eld-parchment-sheet.is-follow {
+  transition: transform 350ms ease-in-out;
+}
+
+.eld-scout-card {
+  animation: eld-card-up 250ms ease-out;
+}
+
+@keyframes eld-card-up {
+  from { transform: translateY(24px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* --- v3 §9: run log icon on the HUD strip + toast under it --- */
+.eld-run-hud-log {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 1px solid var(--eld-border, #3a5a68);
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--eld-text, #e4efe8);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.eld-run-hud-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: #e0a04d;
+  color: #1a120a;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+  font-family: system-ui, sans-serif;
+}
+
+.eld-run-toast {
+  position: absolute;
+  top: 50px;
+  left: 10px;
+  right: 10px;
+  text-align: center;
+  pointer-events: none;
+  z-index: 9;
+  animation: eld-toast 3s ease forwards;
+}
+
+.eld-run-toast span {
+  display: inline-block;
+  font-size: var(--mv-label, 15px);
+  color: #f3e6c2;
+  background: rgba(12, 20, 24, 0.85);
+  border: 1px solid var(--eld-border, #3a5a68);
+  border-radius: 6px;
+  padding: 4px 12px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@keyframes eld-toast {
+  0% { opacity: 0; transform: translateY(-6px); }
+  8% { opacity: 1; transform: translateY(0); }
+  85% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.eld-runlog-list {
+  max-height: 55vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.eld-runlog-line {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  font-size: var(--mv-text, 18px);
+  line-height: 1.4;
+}
+
+.eld-runlog-clock {
+  flex-shrink: 0;
+  min-width: 28px;
+  text-align: right;
+  font-size: var(--mv-label, 15px);
+  color: var(--eld-muted, #5f8494);
+  font-variant-numeric: tabular-nums;
+}
