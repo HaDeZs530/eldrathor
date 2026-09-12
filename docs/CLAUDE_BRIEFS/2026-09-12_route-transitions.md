@@ -1,6 +1,6 @@
 # BRIEF — Route transitions: map persists under fight overlays; continuous travel tween
 
-**Status:** READY · **Date:** 2026-09-12 · **Author:** Claude Design Chat  
+**Status:** DONE (Claude Code, 2026-09-12, PR #30 `fix(route): persistent map under fight overlays, continuous travel tween`) · **Date:** 2026-09-12 · **Author:** Claude Design Chat  
 **Spec:** `docs/Eldrathor_RouteMap_v3_Travel_Lock.md` §13–§14 (authoritative)
 
 ## Deliverables

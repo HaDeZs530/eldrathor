@@ -531,9 +531,7 @@
   z-index: 6;
 }
 
-.eld-party-marker.is-gliding {
-  transition: left 350ms ease-in-out, top 350ms ease-in-out;
-}
+/* §14: no CSS transition on the marker — one requestAnimationFrame polyline tween drives it */
 
 /* edges keep a 3 px screen stroke regardless of the map zoom */
 .eld-edge-cleared,
@@ -553,8 +551,35 @@
   transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.eld-parchment-sheet.is-follow {
-  transition: transform 350ms ease-in-out;
+/* --- §13: the map stays mounted for the whole run; fight / results / sanctuary are overlays --- */
+.eld-stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.eld-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  background: var(--eld-bg, #060d11);
+  animation: eld-overlay-in 350ms ease both;
+}
+
+.eld-overlay.is-leaving {
+  pointer-events: none;
+  animation: eld-overlay-out 350ms ease both;
+}
+
+@keyframes eld-overlay-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes eld-overlay-out { from { opacity: 1; } to { opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .eld-overlay, .eld-overlay.is-leaving { animation-duration: 1ms; }
 }
 
 .eld-scout-card {

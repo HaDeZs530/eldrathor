@@ -23,6 +23,7 @@ import ScreenHeaderActions from './components/shell/ScreenHeaderActions.jsx';
 import HelpSheet from './components/shell/HelpSheet.jsx';
 import MenuSheet from './components/shell/MenuSheet.jsx';
 import RunLogSheet from './map/RunLogSheet.jsx';
+import { travelDuration, CARD_PAUSE_MS, OVERLAY_FADE_MS } from './map/camera.js';
 
 const HUB_LABELS = {
   player: 'Veinbinder',
@@ -34,6 +35,7 @@ const HUB_LABELS = {
 
 // Theme ladder: island = warm RPG, route map = hybrid parchment, fight/loot/sanctuary = Mind-view.
 const MIND_STAGES = new Set(['fight', 'loot', 'sanctuary']);
+const RUN_STAGES = new Set(['route', 'fight', 'loot', 'sanctuary']); // §13: the route map stays mounted through all of these
 const PLAYBACK_TICK_MS = 100;
 const RESULTS_HOLD_MS = 900; // pause on the final event before Spoils
 const THREAT_DRY_RUNS = 6; // DESIGN-OPEN: quick-estimate sample size for the scout card
@@ -75,7 +77,10 @@ export default function Eldrathor() {
   // --- run state (route map v2) ---
   const [scout, setScout] = useState(null); // ScoutCard data for the tapped node
   const [ambush, setAmbush] = useState(null); // AmbushCard (v3 §3): { nodeId, prevId, kind, enemies, fleeChance, ... }
-  const [travel, setTravel] = useState(null); // v3 §1 trip in progress: { path, frames, index, after }
+  const [travel, setTravel] = useState(null); // §14 trip: { path, startTs, duration, after, skipAt? }
+  const [camera, setCamera] = useState({ pan: null, motion: 'none' }); // §13 explicit run camera — overlays never touch it
+  const [overlayLeaving, setOverlayLeaving] = useState(null); // snapshot of the last overlay while it fades out (350 ms)
+  const overlayTimer = useRef(null);
   const [prevId, setPrevId] = useState(null); // node the party came from (flee steps back here)
   const travelTimer = useRef(null);
   const [runMods, setRunMods] = useState({ dmgMult: 1, mitAdd: 0 }); // sanctuary bonuses, per run
@@ -123,7 +128,7 @@ export default function Eldrathor() {
     const wantMind = tab === 'mountain' && MIND_STAGES.has(runStage);
     if (wantMind) enterMindView(); else exitMindView();
   }, [tab, runStage, setHubSkinForTab, enterMindView, exitMindView]);
-  useEffect(() => () => { clearFightTimers(); if (travelTimer.current) window.clearTimeout(travelTimer.current); }, []);
+  useEffect(() => () => { clearFightTimers(); if (travelTimer.current) window.clearTimeout(travelTimer.current); if (overlayTimer.current) window.clearTimeout(overlayTimer.current); }, []);
 
   function selectTab(id) { setTab(id); setHubSkinForTab(id); }
   function pushLog(t, k = 'n') { logSeq.current += 1; const id = logSeq.current; setLog((l) => [...l, { id, t, k, clock: territoryRef.current?.clock ?? null }]); }
@@ -139,7 +144,7 @@ export default function Eldrathor() {
     clearFightTimers(); exitMindView(); setRunStage('island'); setSelectedArea(null);
     setTerritory(null); setArea(null); setCurrentId(null); setRunVein(0); setFightNode(null);
     setFight(null); setFightElapsed(0); setFightSpeed(1); setRunHpFrac(null); setScout(null);
-    clearTravel(); setTravel(null); setAmbush(null); setPrevId(null);
+    clearTravel(); setTravel(null); setAmbush(null); setPrevId(null); setCamera({ pan: null, motion: 'none' }); setOverlayLeaving(null);
     setRunMods({ dmgMult: 1, mitAdd: 0 }); setBusy(false);
   }
 
@@ -222,52 +227,26 @@ export default function Eldrathor() {
     if (travelTimer.current) { window.clearTimeout(travelTimer.current); travelTimer.current = null; }
   }
   /**
-   * Plan a trip eagerly: one frame per hop. Travel is FREE (v3 §6): no clock ticks, no rare
-   * moves, no interruptions — cleared ground is safe ground.
+   * §14: the trip is ONE continuous tween run by RouteMapScreen (450 ms/hop, eased at the ends).
+   * Travel is FREE (§6): no clock ticks, no interruptions. On arrival the party is placed on the
+   * destination, then (§12) a 200 ms pause before the card opens.
    */
-  function planTrip(t0, path) {
-    const frames = [];
-    for (let i = 1; i < path.length; i++) {
-      frames.push({ currentId: path[i], prevId: path[i - 1], territory: t0, logs: [], halt: null });
-    }
-    return frames;
-  }
-  function applyFrame(f) {
-    setTerritory(f.territory); setCurrentId(f.currentId); setPrevId(f.prevId);
-    for (const l of f.logs) pushLog(l, 'rare');
-  }
-  function finishTrip(frames, after) {
-    setTravel(null); travelTimer.current = null;
-    const last = frames[frames.length - 1];
-    // §12: 200 ms pause on arrival before the card opens
-    if (after && last) window.setTimeout(() => runAfter(last.territory, last.currentId, after), 200);
-  }
-  function stepTrip(frames, i, after) {
-    const f = frames[i];
-    if (!f) { finishTrip(frames, after); return; }
-    applyFrame(f);
-    if (f.halt) { setTravel(null); travelTimer.current = null; openAmbush(f.territory, f.halt); return; }
-    if (i + 1 >= frames.length) { finishTrip(frames, after); return; }
-    setTravel((tr) => (tr ? { ...tr, index: i + 1 } : tr));
-    travelTimer.current = window.setTimeout(() => stepTrip(frames, i + 1, after), 350);
-  }
   function beginTrip(path, after) {
-    const frames = planTrip(territory, path);
-    if (!frames.length) { if (after) runAfter(territory, currentId, after); return; }
+    if (!path || path.length < 2) { if (after) runAfter(territory, currentId, after); return; }
     setScout(null); setAmbush(null);
-    setTravel({ path, frames, index: 0, after });
     pushLog(`→ Travelling ${path.length - 1} hop${path.length - 1 === 1 ? '' : 's'} (free).`, 'sys');
-    // §12: camera eases to the party (300 ms) while the planned path glows, then 350 ms eased hops (tap to skip)
-    travelTimer.current = window.setTimeout(() => stepTrip(frames, 0, after), 300);
+    setTravel({ path, startTs: performance.now(), duration: travelDuration(path.length - 1), after, skipAt: null });
+  }
+  function onTravelEnd() {
+    const tr = travel; if (!tr) return;
+    const dest = tr.path[tr.path.length - 1];
+    setPrevId(tr.path[tr.path.length - 2] || currentId);
+    setCurrentId(dest);
+    setTravel(null);
+    if (tr.after) travelTimer.current = window.setTimeout(() => runAfter(territoryRef.current || territory, dest, tr.after), CARD_PAUSE_MS);
   }
   function skipTrip() {
-    const tr = travel; if (!tr) return;
-    clearTravel();
-    let halted = null;
-    for (const f of tr.frames.slice(tr.index)) { applyFrame(f); if (f.halt) { halted = f; break; } }
-    setTravel(null);
-    if (halted) openAmbush(halted.territory, halted.halt);
-    else finishTrip(tr.frames, tr.after);
+    setTravel((tr) => (tr && tr.skipAt == null ? { ...tr, skipAt: performance.now() } : tr));
   }
   /** What to do on arrival: scout the frontier / boss node we were heading for. */
   function runAfter(t, curId, after) {
@@ -376,6 +355,7 @@ export default function Eldrathor() {
     let t = { ...territory, nodes: territory.nodes.map((x) => (x.id === n.id ? { ...x, sanctuaryUsed: true } : x)) };
     t = clearNode(t, n.id, runRng.current);
     t = advanceClock(t, n.id);
+    fadeOutOverlay('sanctuary');
     setTerritory(t); setPrevId(currentId); setCurrentId(n.id); setFightNode(null); setRunStage('route');
   }
 
@@ -421,8 +401,15 @@ export default function Eldrathor() {
     }, PLAYBACK_TICK_MS);
   }
   function skipFight() { finishFightToLoot(); }
+  /** Keep the last overlay rendered for 350 ms while it fades out (§13 single crossfade). */
+  function fadeOutOverlay(kind) {
+    setOverlayLeaving({ kind, fight, fightNode, area });
+    if (overlayTimer.current) window.clearTimeout(overlayTimer.current);
+    overlayTimer.current = window.setTimeout(() => setOverlayLeaving(null), OVERLAY_FADE_MS);
+  }
   function applyLootAndReturnToRoute() {
     const f = fight; const n = fightNode;
+    if (f && n && territory && f.result.win && f.eff !== 'boss') fadeOutOverlay('loot');
     if (!f || !n || !territory) { setRunStage('route'); return; }
     const res = f.result; const rewards = f.rewards;
     if (!res.win) {
@@ -495,10 +482,24 @@ export default function Eldrathor() {
         {tab === 'afk' && <AfkScreen unlocked={unlocked} party={party} roster={roster} inventory={inventory} afk={afk} worldvein={worldvein} onUpdateGatherSlot={onUpdateGatherSlot} onToggleGather={onToggleGather} onUpdateProcess={onUpdateProcess} onToggleProcess={onToggleProcess} onUpdateIdle={onUpdateIdle} onToggleIdle={onToggleIdle} />}
         {tab === 'mountain' && runStage === 'island' && <IslandWorldMap areas={AREAS} unlocked={unlocked} onSelectArea={onSelectArea} onHarbor={() => selectTab('town')} />}
         {tab === 'mountain' && runStage === 'rally' && selectedArea && <RallyScreen area={selectedArea} party={party} roster={roster} onSwap={onRallySwap} onExplore={onRallyExplore} onBack={onRallyBack} />}
-        {tab === 'mountain' && runStage === 'route' && area && territory && <RouteMapScreen area={area} territory={territory} currentId={currentId} busy={busy} partyHP={partyHP} runVein={runVein} party={party} log={log} logUnread={Math.max(0, log.length - logSeen)} onOpenLog={() => { setSheet('runlog'); setLogSeen(log.length); }} scout={scout} ambush={ambush} travel={travel} onTapNode={onTapNode} onEngage={onEngage} onLeave={onLeave} onFight={onAmbushFight} onFlee={onAmbushFlee} onExtract={extract} />}
-        {tab === 'mountain' && runStage === 'sanctuary' && fightNode && <SanctuaryScreen area={area} party={party} runHpFrac={runHpFrac} pouch={10 * area.tier} onChoose={onSanctuaryChoose} />}
-        {tab === 'mountain' && runStage === 'fight' && fightNode && fight && <FightScreen area={area} node={fightNode} party={party} fight={fight} elapsedMs={fightElapsed} speed={fightSpeed} onSpeed={setFightSpeed} onSkip={skipFight} />}
-        {tab === 'mountain' && runStage === 'loot' && fight && <LootResults area={area} nodeLabel={fightNode ? (nodeTypeMeta[fightNode.type]?.label || 'Node') : null} fight={fight} onContinue={applyLootAndReturnToRoute} />}
+        {tab === 'mountain' && RUN_STAGES.has(runStage) && area && territory && (
+          <div className="eld-stage">
+            <RouteMapScreen area={area} territory={territory} currentId={currentId} busy={busy} partyHP={partyHP} runVein={runVein} party={party} log={log} logUnread={Math.max(0, log.length - logSeen)} onOpenLog={() => { setSheet('runlog'); setLogSeen(log.length); }} camera={camera} setCamera={setCamera} travel={travel} onTravelEnd={onTravelEnd} scout={scout} ambush={ambush} onTapNode={onTapNode} onEngage={onEngage} onLeave={onLeave} onFight={onAmbushFight} onFlee={onAmbushFlee} onExtract={extract} />
+            {MIND_STAGES.has(runStage) && (
+              <div className="eld-overlay" key={fightIndex.current}>
+                {runStage === 'sanctuary' && fightNode && <SanctuaryScreen area={area} party={party} runHpFrac={runHpFrac} pouch={10 * area.tier} onChoose={onSanctuaryChoose} />}
+                {runStage === 'fight' && fightNode && fight && <FightScreen area={area} node={fightNode} party={party} fight={fight} elapsedMs={fightElapsed} speed={fightSpeed} onSpeed={setFightSpeed} onSkip={skipFight} />}
+                {runStage === 'loot' && fight && <LootResults area={area} nodeLabel={fightNode ? (nodeTypeMeta[fightNode.type]?.label || 'Node') : null} fight={fight} onContinue={applyLootAndReturnToRoute} />}
+              </div>
+            )}
+            {!MIND_STAGES.has(runStage) && overlayLeaving && (
+              <div className="eld-overlay is-leaving" aria-hidden="true">
+                {overlayLeaving.kind === 'loot' && overlayLeaving.fight && <LootResults area={overlayLeaving.area} nodeLabel={overlayLeaving.fightNode ? (nodeTypeMeta[overlayLeaving.fightNode.type]?.label || 'Node') : null} fight={overlayLeaving.fight} onContinue={() => {}} />}
+                {overlayLeaving.kind === 'sanctuary' && <SanctuaryScreen area={overlayLeaving.area} party={party} runHpFrac={runHpFrac} pouch={10 * (overlayLeaving.area?.tier || 1)} onChoose={() => {}} />}
+              </div>
+            )}
+          </div>
+        )}
         <TabBar activeTab={tab} onSelect={selectTab} />
         {(sheet === 'help' || sheet === 'help+basics') && <HelpSheet screenId={screenId} showBasics={sheet === 'help+basics'} onClose={() => setSheet(null)} />}
         {sheet === 'runlog' && <RunLogSheet log={log} areaName={area?.name} onClose={() => { setLogSeen(log.length); setSheet(null); }} />}
