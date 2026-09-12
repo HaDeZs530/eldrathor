@@ -26,6 +26,11 @@ const TYPE_GLYPH = { normal: '⚔', crystal: '❖', sanctuary: '✧', rare: '☠
 const ZOOM = 0.72;
 const NODE_HIT = 56;
 const TAP_SLOP = 8;
+/**
+ * Camera slack past the sheet edges so nodes on the map's rim (the entrance sits at the very
+ * bottom) can be centred clear of the 44 px HUD strip above and the toast / cards below.
+ */
+const INSET = { top: 56, bottom: 96, side: 48 };
 
 /** Keep pointer events flowing to the viewport during a drag; tolerate synthetic pointers. */
 function capturePointer(el, pointerId) {
@@ -74,13 +79,15 @@ export default function RouteMapScreen({
 
   function clampPan(p) {
     if (!vp.w || !vp.h) return p;
-    const minX = Math.min(0, vp.w - SW);
-    const minY = Math.min(0, vp.h - SH);
-    return { x: Math.max(minX, Math.min(0, p.x)), y: Math.max(minY, Math.min(0, p.y)) };
+    const minX = Math.min(INSET.side, vp.w - SW - INSET.side);
+    const minY = Math.min(INSET.top, vp.h - SH - INSET.bottom);
+    return { x: Math.max(minX, Math.min(INSET.side, p.x)), y: Math.max(minY, Math.min(INSET.top, p.y)) };
   }
+  /** Centre a node in the band between the HUD strip and the bottom toast/cards. */
   function centerOn(node) {
     if (!node) return { x: 0, y: 0 };
-    return clampPan({ x: vp.w / 2 - node.x * ZOOM, y: vp.h / 2 - node.y * ZOOM });
+    const midY = (INSET.top + (vp.h - INSET.bottom)) / 2;
+    return clampPan({ x: vp.w / 2 - node.x * ZOOM, y: midY - node.y * ZOOM });
   }
   const view = pan ? clampPan(pan) : centerOn(byId[currentId]);
 
