@@ -10,9 +10,7 @@
 4. Open PRs; don't invent LOCKED design — use `// DESIGN-OPEN:` for gaps.
 
 ## Active briefs (priority)
-1. **`docs/CLAUDE_BRIEFS/2026-09-12_route-map-v2.md`** — core loop: web gen, scout/engage/leave, 5 node types, roaming rares + seal, respawns, Rally party-edit + lore. Specs: `Eldrathor_RouteMap_v2_Lock.md`, `Eldrathor_Island_Areas_Lock.md`.
-2. **`docs/CLAUDE_BRIEFS/2026-09-12_ui-shell.md`** — island zoom + dotted path, Mind-view scale-up, ? and ☰ on every screen. Spec: `Eldrathor_UI_Shell_Lock.md`.
-3. `docs/CLAUDE_BRIEFS/2026-09-11_island-dotted-path-10-nodes.md` — folded into brief 2 (mark DONE when 2 lands).
+1. **`docs/CLAUDE_BRIEFS/2026-09-12_route-travel-visuals-flee-scale.md`** — one-tap travel with cost, node visual states, ambush flee, real Mind-view scale-up. Spec: `Eldrathor_RouteMap_v3_Travel_Lock.md`.
 
 ## Recently DONE (don't redo)
 - PR #10 — pannable island + parchment node map
@@ -22,6 +20,8 @@
 - PR #18 — loop cleanup, Rally screen, stat spine
 - PR #19 — combat v2
 - PR #20 — playtest polish
+- PR #21 — route map v2
+- PR #22 — UI shell (zoom, help/menu; scale pass was insufficient → redone in v3 brief)
 
 ## Still OPEN (Anthony deciding / later)
 - AFK **root tab** final name (working label **Seam** — do not rename until locked)

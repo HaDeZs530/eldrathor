@@ -15,7 +15,8 @@ Eldrathor: a UI-based iOS RPG (Vite + React now; Capacitor iOS wrap later). The 
    - `docs/Eldrathor_AFK_Town_Lock.md` — AFK Gather/Process/Idle·Train + Town; Market under Town; 5th tab = Seam (name OPEN).
    - `docs/Eldrathor_Island_Areas_Lock.md` — **nine areas** (pins 2–10), names, tiers, bosses, lore. Supersedes design doc §5b. Terms: Island map / Route map / Rally.
    - `docs/Eldrathor_RouteMap_v2_Lock.md` — web gen, scout→engage/leave, 5 node types, rares+seal, respawns.
-   - `docs/Eldrathor_UI_Shell_Lock.md` — island zoom, Mind-view scale, ? help + ☰ menu.
+   - `docs/Eldrathor_RouteMap_v3_Travel_Lock.md` — one-tap travel with cost, node visual states, ambush-only flee, Mind-view scale numbers (supersedes UI Shell scale values).
+   - `docs/Eldrathor_UI_Shell_Lock.md` — island zoom, ? help + ☰ menu.
    - `docs/Eldrathor_Island_Path_Lock.md` — 10-pin clockwise path; spline in code; hide 4→5 behind castle.
    - `docs/Eldrathor_NodeMap_Art_Lock.md` — theme ladder + parchment biomes.
    - `docs/Eldrathor_TabBar_Lock.md` / `docs/Eldrathor_DualMode_Art_Lock.md`
