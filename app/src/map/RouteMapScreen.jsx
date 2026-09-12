@@ -7,10 +7,10 @@ import './parchment.css';
 /**
  * Route map — docs/Eldrathor_RouteMap_v2_Lock.md + docs/Eldrathor_RouteMap_v3_Travel_Lock.md
  * on the hybrid parchment surface (docs/Eldrathor_NodeMap_Art_Lock.md).
- * One-tap travel: tap any cleared node to walk there (the planned path glows gold first);
- * tap a frontier rune anywhere to walk to its nearest cleared neighbour and scout it.
- * Node states follow the v3 §2 table (shape = state, colour = type). Cards (scout / ambush /
- * seal / extract) slide up inside the viewport.
+ * §7: the map fills everything between the header and the tab bar; the run HUD is one 44 px
+ * strip overlaid at the top. §1/§6: one-tap FREE travel across cleared ground (gold path preview,
+ * hop animation, tap to skip); frontier tap = approach + scout. §2: shape = state, colour = type,
+ * ~40% larger; hit areas ≥ 44 px. Cards (scout / ambush / seal / extract) slide up inside the map.
  */
 
 /** v3 §2 palette — colour distinguishes type. */
@@ -22,6 +22,9 @@ const TYPE_COLOR = {
   boss: '#8e6bd1',
 };
 const TYPE_GLYPH = { normal: '⚔', crystal: '❖', sanctuary: '✧', rare: '☠', boss: '♛' };
+/** Default camera zoom — ~12–16 nodes visible on a phone (§7); pan for the rest. */
+const ZOOM = 0.72;
+const NODE_HIT = 56;
 const TAP_SLOP = 8;
 
 /** Keep pointer events flowing to the viewport during a drag; tolerate synthetic pointers. */
@@ -34,7 +37,7 @@ function capturePointer(el, pointerId) {
 }
 
 export default function RouteMapScreen({
-  area, territory, currentId, busy, partyHP, runVein, party, archetypes, log, logRef,
+  area, territory, currentId, busy, partyHP, runVein, party, log,
   scout, ambush, travel, onTapNode, onEngage, onLeave, onFight, onFlee, onExtract,
 }) {
   const vpRef = useRef(null);
@@ -58,6 +61,8 @@ export default function RouteMapScreen({
   }, [travel]);
   const W = territory.width;
   const H = territory.height;
+  const SW = W * ZOOM;
+  const SH = H * ZOOM;
 
   useEffect(() => {
     const el = vpRef.current;
@@ -69,13 +74,13 @@ export default function RouteMapScreen({
 
   function clampPan(p) {
     if (!vp.w || !vp.h) return p;
-    const minX = Math.min(0, vp.w - W);
-    const minY = Math.min(0, vp.h - H);
+    const minX = Math.min(0, vp.w - SW);
+    const minY = Math.min(0, vp.h - SH);
     return { x: Math.max(minX, Math.min(0, p.x)), y: Math.max(minY, Math.min(0, p.y)) };
   }
   function centerOn(node) {
     if (!node) return { x: 0, y: 0 };
-    return clampPan({ x: vp.w / 2 - node.x, y: vp.h / 2 - node.y });
+    return clampPan({ x: vp.w / 2 - node.x * ZOOM, y: vp.h / 2 - node.y * ZOOM });
   }
   const view = pan ? clampPan(pan) : centerOn(byId[currentId]);
 
@@ -93,8 +98,7 @@ export default function RouteMapScreen({
   }
   function activateNode(id) {
     const n = byId[id];
-    if (!n || busy) return;
-    if (!n.revealed) return;
+    if (!n || busy || !n.revealed) return;
     onTapNode(n);
   }
   function onPointerDown(e) {
@@ -128,31 +132,15 @@ export default function RouteMapScreen({
   }
 
   const revealed = territory.nodes.filter((n) => n.revealed);
-  const clearedCount = territory.nodes.filter((n) => n.cleared && !n.respawned).length;
+  const clearedCount = territory.nodes.filter((n) => n.cleared).length;
   const card = ambush || scout;
+  const lastLog = log.length ? log[log.length - 1] : null;
 
   return (
     <div className="eld-map-wrap" style={styles.wrap}>
-      <div style={styles.head}>
-        <div style={{ minWidth: 0 }}>
-          <div className="eld-brand-name" style={styles.title}>{area.name}</div>
-          <div style={styles.sub}>
-            Route map · {biome.label}
-            {biome.interior ? ' — rooms open as you advance' : ''}
-          </div>
-          <div style={styles.hudLine}>
-            <span style={{ color: sealed ? '#8e6bd1' : '#3d6b6e' }}>{sealed ? `♛⛓ Boss sealed · ${raresLeft} rare${raresLeft === 1 ? '' : 's'} roaming` : '♛ Seal broken — the way is lit'}</span>
-            <span style={styles.hudDim}>· {clearedCount}/{territory.nodes.length} cleared · clock {territory.clock}</span>
-          </div>
-        </div>
-        <button type="button" className="eld-btn" onClick={() => setConfirmExtract(true)} disabled={busy} style={styles.extractBtn}>
-          Extract ({runVein} ❖)
-        </button>
-      </div>
-
-      <div ref={vpRef} className="eld-route-viewport" onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}>
-        <div className={`eld-parchment-sheet${anim ? ' is-anim' : ''}`} style={{ width: W, height: H, transform: `translate(${view.x}px, ${view.y}px)` }}>
-          <svg className="eld-parchment-svg" width={W} height={H} viewBox={`0 0 ${W} ${H}`}>
+      <div ref={vpRef} className="eld-route-viewport eld-route-viewport--full" onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}>
+        <div className={`eld-parchment-sheet${anim ? ' is-anim' : ''}`} style={{ width: SW, height: SH, transform: `translate(${view.x}px, ${view.y}px)` }}>
+          <svg className="eld-parchment-svg" width={SW} height={SH} viewBox={`0 0 ${W} ${H}`}>
             <defs>
               <radialGradient id="eld-fog-hole">
                 <stop offset="0" stopColor="#000" />
@@ -201,12 +189,11 @@ export default function RouteMapScreen({
             else if (rare) state = 'is-rare';
             else if (n.type === 'boss') state = `is-boss ${bossSealed ? 'is-sealed' : 'is-unsealed'}`;
             else if (!known) state = 'is-unknown';
-            else if (n.respawned) state = n.namedRare ? 'is-named' : 'is-respawned';
             else if (n.cleared) state = 'is-cleared';
-            else state = 'is-scouted';
+            else state = n.namedRare ? 'is-named' : 'is-scouted';
             const cls = ['eld-pnode', state, canGo && 'is-reach', isWalkable(n) && 'is-walkable'].filter(Boolean).join(' ');
             const glyph = here ? '' : rare ? '☠' : !known ? 'ᚱ' : TYPE_GLYPH[n.type] || '⚔';
-            const label = here ? 'Party' : !known ? 'Unknown' : rare ? 'Rare' : bossSealed ? 'Boss (sealed)' : n.respawned ? (n.namedRare ? 'Named respawn' : 'Respawned') : n.cleared ? 'Cleared' : nodeTypeMeta[eff]?.label || 'Node';
+            const label = here ? 'Party' : !known ? 'Unknown' : rare ? 'Rare' : bossSealed ? 'Boss (sealed)' : n.cleared ? 'Cleared' : n.namedRare ? `Named ${nodeTypeMeta[eff]?.label || 'foe'}` : nodeTypeMeta[eff]?.label || 'Node';
             return (
               <button
                 key={n.id}
@@ -215,7 +202,7 @@ export default function RouteMapScreen({
                 className={cls}
                 title={label}
                 aria-label={label}
-                style={{ left: n.x - 22, top: n.y - 22, '--type': TYPE_COLOR[n.type] || TYPE_COLOR.normal }}
+                style={{ left: n.x * ZOOM - NODE_HIT / 2, top: n.y * ZOOM - NODE_HIT / 2, '--type': TYPE_COLOR[n.type] || TYPE_COLOR.normal }}
                 onClick={(e) => { if (e.detail === 0) activateNode(n.id); }}
               >
                 <span className="eld-pnode-shape" aria-hidden="true">{glyph}</span>
@@ -224,9 +211,29 @@ export default function RouteMapScreen({
             );
           })}
         </div>
-        <div className="eld-route-hint" aria-hidden="true">
-          <span>{travel ? 'Travelling… tap to skip' : 'Tap a rune to scout · tap cleared ground to travel'}</span>
+
+        {/* §7 — single 44 px run HUD strip overlaid on the map */}
+        <div className="eld-run-hud" role="status">
+          <div className="eld-run-hud-left" title={area.name}>
+            <span style={{ color: sealed ? '#b8a0e8' : '#7fd6a0' }}>{sealed ? `☠ ${raresLeft} rare${raresLeft === 1 ? '' : 's'} · ⛓ sealed` : '♛ seal broken'}</span>
+            <span className="eld-run-hud-sep">·</span>
+            <span title="nodes cleared">{clearedCount}/{territory.nodes.length}</span>
+          </div>
+          <div className="eld-run-hud-right">
+            <span className="eld-run-hud-vein">❖ {runVein}</span>
+            <button type="button" className="eld-btn eld-run-hud-extract" onClick={() => setConfirmExtract(true)} disabled={busy}>Extract</button>
+          </div>
+          {/* DESIGN-OPEN: party vitality shown as a hairline under the strip (the lock lists Worldvein, rares, Extract only) */}
+          <div className="eld-run-hud-vit" title={`Party vitality ${Math.round(partyHP * 100)}% · ${party.map((m) => m.name).join(', ')}`}>
+            <div style={{ width: `${Math.round(partyHP * 100)}%`, background: partyHP > 0.5 ? '#7fd6a0' : partyHP > 0.25 ? '#e0a04d' : '#e05d6f' }} />
+          </div>
         </div>
+
+        {lastLog && !card && !confirmExtract && (
+          <div className="eld-route-hint" aria-live="polite">
+            <span style={{ color: LOG_COLOR[lastLog.k] || undefined }}>{travel ? 'Travelling… tap to skip' : lastLog.t}</span>
+          </div>
+        )}
 
         {card && !confirmExtract && (
           <div className={`eld-scout-card eld-panel${ambush ? ' is-ambush' : ''}`} role="dialog" aria-label={ambush ? 'Ambush' : 'Scout report'}>
@@ -265,45 +272,12 @@ export default function RouteMapScreen({
           </div>
         )}
       </div>
-
-      <div style={styles.side}>
-        <div className="eld-panel" style={styles.hpBox}>
-          <div style={styles.hpLbl}>Party Vitality</div>
-          <div style={styles.hpBar}>
-            <div style={{ ...styles.hpFill, width: `${Math.round(partyHP * 100)}%`, background: partyHP > 0.5 ? '#7fd6a0' : partyHP > 0.25 ? '#e0a04d' : '#e05d6f' }} />
-          </div>
-          <div style={styles.partyMini}>
-            {party.map((m, i) => (
-              <span key={i} style={{ color: archetypes[m.archetype]?.color || '#5fc7e0', fontSize: 'var(--mv-label, 15px)', fontWeight: 600 }}>{m.name}</span>
-            ))}
-          </div>
-        </div>
-        <div className="eld-panel" style={styles.logBox} ref={logRef}>
-          {log.map((l, i) => (
-            <div key={i} style={{ ...styles.logLine, color: LOG_COLOR[l.k] || '#c8d4d8' }}>{l.t}</div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }
 
-const LOG_COLOR = { sys: '#8fb0bd', good: '#7fd6a0', bad: '#e05d6f', loot: '#e0a04d', heal: '#7fd6c0', boss: '#b58fe0', rare: '#e08a8a', n: '#c8d4d8' };
+const LOG_COLOR = { sys: '#4a3620', good: '#2f7a55', bad: '#8a2626', loot: '#8a5a14', heal: '#2f7a55', boss: '#5a3f8a', rare: '#8a2626', n: '#4a3620' };
 
 const styles = {
-  wrap: { display: 'flex', flexDirection: 'column', gap: 8, flex: 1, minHeight: 0, padding: '8px 10px 10px', textAlign: 'left' },
-  head: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 },
-  title: { fontSize: 'var(--mv-title, 26px)', fontWeight: 700, lineHeight: 1.1 },
-  sub: { fontSize: 'var(--mv-label, 15px)', color: 'var(--eld-muted, #8aa09a)', marginTop: 2, fontStyle: 'italic' },
-  hudLine: { fontSize: 'var(--mv-label, 15px)', marginTop: 4, display: 'flex', gap: 6, flexWrap: 'wrap' },
-  hudDim: { color: 'var(--eld-muted, #8aa09a)' },
-  extractBtn: { padding: '10px 12px', whiteSpace: 'nowrap', flexShrink: 0, minHeight: 'var(--mv-tap, 52px)', fontSize: 'var(--mv-label, 15px)' },
-  side: { display: 'flex', flexDirection: 'column', gap: 6 },
-  hpBox: { padding: '8px 12px' },
-  hpLbl: { fontSize: 'var(--mv-label, 15px)', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--eld-muted, #8aa09a)', marginBottom: 6 },
-  hpBar: { height: 14, background: 'rgba(0,0,0,0.35)', borderRadius: 7, overflow: 'hidden', border: '1px solid var(--eld-border, #3a5a68)' },
-  hpFill: { height: '100%', transition: 'width 0.4s, background 0.4s' },
-  partyMini: { display: 'flex', gap: 10, marginTop: 6 },
-  logBox: { padding: '8px 10px', height: 90, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 3 },
-  logLine: { fontSize: 'var(--mv-label, 15px)', lineHeight: 1.4, textAlign: 'left' },
+  wrap: { display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, padding: 0, textAlign: 'left' },
 };

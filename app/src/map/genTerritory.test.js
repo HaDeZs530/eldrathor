@@ -6,7 +6,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { genTerritory } from './genTerritory.js';
 import { mulberry32 } from '../combat/simulate.js';
-import { tickClock, clearNode, isSealed, killRare } from './routeState.js';
+import { tickClock, clearNode, isSealed, killRare, travelPath } from './routeState.js';
 
 const area = (tier) => ({ id: tier, tier });
 
@@ -66,33 +66,43 @@ test('depth: entrance 0, boss = max normalised 1, first reveal shows 2–3 front
   assert.ok(frontier.length >= 2 && frontier.length <= 3, `frontier ${frontier.length}`);
 });
 
-test('clock: rares roam every 2 ticks onto revealed uncleared nodes; seal breaks when all die; respawns after 4 ticks', () => {
+test('named variants roll at generation: 10% of Fight nodes, at least one, gold-rim state only after scouting', () => {
+  for (let seed = 1; seed <= 10; seed++) {
+    const t = genTerritory(area(1), { rng: mulberry32(seed * 11) });
+    const fights = t.nodes.filter((n) => n.type === 'normal' && n.id !== t.entranceId);
+    const named = t.nodes.filter((n) => n.namedRare);
+    assert.ok(named.length >= 1, 'at least one named node');
+    assert.ok(named.length <= Math.max(1, Math.round(fights.length * 0.1)) + 1, `named ${named.length} vs fights ${fights.length}`);
+    assert.ok(named.every((n) => n.type === 'normal'), 'named variants are Fight nodes');
+    assert.ok(!t.nodes.some((n) => 'respawned' in n), 'no respawned field anywhere');
+  }
+});
+
+test('clock: rares roam only on scout/clear actions (every 2), may step onto the party, nothing ever respawns; seal breaks when all die', () => {
   const rng = mulberry32(5);
   let t = genTerritory(area(1), { rng });
-  // reveal everything so rares have room to roam
   t = { ...t, nodes: t.nodes.map((n) => ({ ...n, revealed: true })) };
   let moved = 0;
-  for (let i = 0; i < 6; i++) {
-    const r = tickClock(t, { currentId: t.entranceId, rng });
-    t = r.territory;
-    moved += r.events.filter((e) => e.type === 'rareMoved').length;
-    for (const e of r.events) if (e.type === 'rareMoved') {
-      const n = t.nodes.find((x) => x.id === e.nodeId);
-      assert.ok(n.revealed && !n.cleared && n.type !== 'boss');
-    }
-  }
-  assert.ok(moved >= 1, 'at least one rare should roam in 6 ticks');
-  for (const r of t.rares) t = killRare(t, r.nodeId);
-  assert.ok(!isSealed(t) && t.sealBroken);
-
-  // clear many nodes then tick 4× → some respawn
-  for (const n of t.nodes) t = clearNode(t, n.id, rng);
-  let respawns = 0;
   for (let i = 0; i < 8; i++) {
     const r = tickClock(t, { currentId: t.entranceId, rng });
     t = r.territory;
-    respawns += r.events.filter((e) => e.type === 'respawn').length;
+    moved += r.events.filter((e) => e.type === 'rareMoved').length;
+    assert.ok(r.events.every((e) => e.type === 'rareMoved'), 'only rare moves — no respawn events');
+    for (const e of r.events) {
+      const n = t.nodes.find((x) => x.id === e.nodeId);
+      assert.ok(n.type !== 'boss');
+      assert.ok(e.nodeId === t.entranceId ? e.ontoParty : n.revealed && !n.cleared);
+    }
   }
-  assert.ok(respawns > 0, 'cleared nodes should respawn over 8 ticks');
-  assert.ok(t.nodes.some((n) => n.respawned && !n.cleared));
+  assert.ok(moved >= 1, 'at least one rare should roam in 8 actions');
+  for (const r of t.rares) t = killRare(t, r.nodeId);
+  assert.ok(!isSealed(t) && t.sealBroken);
+  // cleared stays cleared
+  for (const n of t.nodes) t = clearNode(t, n.id, rng);
+  const clock = t.clock;
+  for (let i = 0; i < 12; i++) t = tickClock(t, { currentId: t.entranceId, rng }).territory;
+  assert.equal(t.clock, clock + 12);
+  assert.ok(t.nodes.every((n) => n.cleared), 'nothing respawned after 12 more actions');
+  // free travel: a path exists across cleared ground to the boss
+  assert.ok(travelPath(t, t.entranceId, t.bossId)?.length > 1);
 });

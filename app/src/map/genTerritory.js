@@ -4,7 +4,8 @@
  * edge, boss at the far (north) edge with quadrant variance, cross-links so paths rejoin
  * (≥4 loops, 30–40% of non-entrance nodes with ≥3 edges), texture (quiet trails, dense
  * clusters, dead-ends, long-edge curiosity nodes), depth by BFS, five node types incl.
- * Sanctuary, 2–3 roaming rares, sealed boss. Deterministic when `opts.rng` is seeded.
+ * Sanctuary, 2–3 roaming rares, sealed boss, named variants rolled at generation (v3 §6:
+ * 10% of Fight nodes, min 1). Deterministic when `opts.rng` is seeded.
  */
 
 const WIDTH = 900;
@@ -66,7 +67,6 @@ function makeNode(id, x, y) {
     typeKnown: false,
     scouted: false,
     cleared: false,
-    respawned: false,
     namedRare: false,
     sanctuaryUsed: false,
     depth: 0,
@@ -330,6 +330,11 @@ export function genTerritory(area, opts = {}) {
   const crystalTargets = [...shuffle(rng, rest.filter((n) => !path.has(n.id))), ...shuffle(rng, rest.filter((n) => path.has(n.id)))];
   for (let i = 0; i < crystalCount && i < crystalTargets.length; i++) crystalTargets[i].type = 'crystal';
 
+  // --- named variants at generation (v3 §6): 10% of Fight nodes, at least one per map ---
+  const fightNodes = shuffle(rng, pool.filter((n) => n.type === 'normal' && !rareHostIds.has(n.id)));
+  const namedCount = Math.max(1, Math.round(fightNodes.length * 0.1));
+  for (let i = 0; i < namedCount && i < fightNodes.length; i++) fightNodes[i].namedRare = true;
+
   // --- fog: entrance cleared + 2–3 neighbours revealed (positions only) ---
   entrance.cleared = true;
   entrance.revealed = true;
@@ -351,7 +356,7 @@ export function genTerritory(area, opts = {}) {
     rares,
     clock: 0,
     sealBroken: rares.length === 0,
-    stats: { loops: loops(), deg3Share: degShare(), count: nodes.length, sanctuaries: sanctuaries.length, crystals: crystalCount },
+    stats: { loops: loops(), deg3Share: degShare(), count: nodes.length, sanctuaries: sanctuaries.length, crystals: crystalCount, named: namedCount },
   };
 }
 

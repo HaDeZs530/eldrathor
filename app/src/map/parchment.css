@@ -147,17 +147,6 @@
   font-size: 0;
 }
 
-/* Respawned — cleared dot with an amber halo ("something's back") */
-.eld-pnode.is-respawned .eld-pnode-shape {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: #3d6b6e;
-  color: transparent;
-  font-size: 0;
-  box-shadow: 0 0 0 5px rgba(217, 154, 58, 0.35), 0 0 16px 4px rgba(217, 154, 58, 0.7);
-}
-
 /* Named variant — scouted ring with a gold double rim over the type colour */
 .eld-pnode.is-named .eld-pnode-shape {
   width: 38px;
@@ -331,4 +320,157 @@
   flex: 1;
   min-height: var(--mv-tap, 52px);
   font-size: var(--mv-label, 15px);
+}
+
+/* --- v3 §7: the map fills header→tab bar; run HUD is one 44 px strip overlaid on it --- */
+.eld-route-viewport--full {
+  flex: 1 1 auto;
+  min-height: 0;
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+  margin: 0;
+}
+
+.eld-run-hud {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 44px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 10px;
+  background: linear-gradient(180deg, rgba(12, 20, 24, 0.92) 0%, rgba(12, 20, 24, 0.78) 100%);
+  border-bottom: 1px solid var(--eld-border, #3a5a68);
+  color: var(--eld-text, #e4efe8);
+  font-size: var(--mv-label, 15px);
+  z-index: 10;
+  pointer-events: none;
+}
+
+.eld-run-hud > * {
+  pointer-events: auto;
+}
+
+.eld-run-hud-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.eld-run-hud-area {
+  font-family: var(--eld-font-display, Cinzel, Georgia, serif);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.eld-run-hud-sep {
+  color: var(--eld-muted, #8aa09a);
+}
+
+.eld-run-hud-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.eld-run-hud-vein {
+  font-family: var(--eld-font-display, Cinzel, Georgia, serif);
+  font-size: var(--mv-text, 18px);
+  font-weight: 700;
+  color: #5fc7e0;
+  font-variant-numeric: tabular-nums;
+}
+
+.eld-run-hud-extract.eld-btn {
+  min-height: 34px;
+  padding: 4px 12px;
+  font-size: var(--mv-label, 15px);
+}
+
+.eld-run-hud-vit {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -3px;
+  height: 3px;
+  background: rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+}
+
+.eld-run-hud-vit > div {
+  height: 100%;
+  transition: width 0.4s, background 0.4s;
+}
+
+/* --- v3 §7: node draw size +40% (party ≈ 34 px, type icons ≈ 28 px, unknown runes ≈ 22 px); 56 px hits --- */
+.eld-pnode {
+  width: 56px;
+  height: 56px;
+}
+
+.eld-pnode.is-unknown .eld-pnode-shape {
+  width: 42px;
+  height: 42px;
+  font-size: 22px;
+}
+
+.eld-pnode.is-scouted .eld-pnode-shape,
+.eld-pnode.is-named .eld-pnode-shape {
+  width: 52px;
+  height: 52px;
+  border-width: 3px;
+  font-size: 28px;
+}
+
+.eld-pnode.is-cleared .eld-pnode-shape {
+  width: 20px;
+  height: 20px;
+}
+
+.eld-pnode.is-rare .eld-pnode-shape {
+  width: 52px;
+  height: 52px;
+  border-width: 3px;
+  font-size: 30px;
+}
+
+.eld-pnode.is-boss .eld-pnode-shape {
+  width: 54px;
+  height: 54px;
+  border-width: 3px;
+  font-size: 30px;
+}
+
+.eld-pnode-chain {
+  width: 26px;
+  height: 26px;
+  font-size: 17px;
+  bottom: -6px;
+  right: -6px;
+}
+
+.eld-pnode.is-here .eld-pnode-shape {
+  width: 34px;
+  height: 34px;
+  border-radius: 5px;
+}
+
+/* edges are drawn in map units inside a zoomed SVG — thicken to read at the default zoom */
+.eld-edge-cleared { stroke-width: 4; }
+.eld-edge-frontier { stroke-width: 3.5; stroke-dasharray: 3 10; }
+.eld-edge-plan { stroke-width: 9; }
+.eld-lit-path { stroke-width: 7; }
+
+.eld-route-hint {
+  bottom: 10px;
 }

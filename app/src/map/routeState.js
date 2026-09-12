@@ -1,15 +1,11 @@
 /**
- * Route map run state — docs/Eldrathor_RouteMap_v2_Lock.md §2, §4, §5, §6 and
- * docs/Eldrathor_RouteMap_v3_Travel_Lock.md §1, §3.
- * Pure helpers over the territory object: reveal-on-clear, node-action clock, roaming
- * rares, respawns + named variants, the boss seal, path highlighting, travel planning
- * and the ambush flee roll.
+ * Route map run state — docs/Eldrathor_RouteMap_v2_Lock.md §2, §4, §6 and
+ * docs/Eldrathor_RouteMap_v3_Travel_Lock.md §1, §3, §6 (NO respawns; free travel).
+ * Pure helpers over the territory object: reveal-on-clear, the scout/clear action clock
+ * that moves rares, the boss seal, path highlighting, travel planning and the flee roll.
  */
 
-export const RESPAWN_EVERY_TICKS = 4;
-export const RESPAWN_CHANCE = 0.25; // per cleared node per 4 ticks (tune)
-export const NAMED_CHANCE = 0.1; // share of respawns that come back named
-export const RARE_ROAM_EVERY_TICKS = 2;
+export const RARE_ROAM_EVERY_ACTIONS = 2;
 
 const shuffle = (rng, arr) => {
   const a = [...arr];
@@ -27,14 +23,6 @@ export function rareAt(t, nodeId) {
   return t.rares.find((r) => r.alive && r.nodeId === nodeId) || null;
 }
 
-/** A living rare on the node itself or on one of its neighbours (v3 §3 ambush trigger). */
-export function rareNear(t, nodeId) {
-  const map = byId(t);
-  const here = map[nodeId];
-  if (!here) return null;
-  return rareAt(t, nodeId) || here.neighbors.map((id) => rareAt(t, id)).find(Boolean) || null;
-}
-
 /** What the node fights as right now: a living rare on it overrides the underlying type. */
 export function effectiveType(t, node) {
   return rareAt(t, node.id) ? 'rare' : node.type;
@@ -45,10 +33,10 @@ export function isSealed(t) {
 }
 
 export function allCleared(t) {
-  return t.nodes.every((n) => n.cleared && !n.respawned);
+  return t.nodes.every((n) => n.cleared);
 }
 
-/** Nodes the party can tap: neighbours of the current node (revealed). */
+/** Nodes next to the party (revealed). */
 export function reachableIds(t, currentId) {
   const map = byId(t);
   const cur = map[currentId];
@@ -63,7 +51,7 @@ export function scoutNode(t, nodeId) {
 
 /**
  * A clear (fight won / sanctuary used): node cleared, its type known, 2–3 unrevealed
- * neighbours revealed (positions only), respawn flags dropped.
+ * neighbours revealed (positions only). Cleared stays cleared — forever (v3 §6).
  */
 export function clearNode(t, nodeId, rng = Math.random) {
   const map = byId(t);
@@ -75,7 +63,7 @@ export function clearNode(t, nodeId, rng = Math.random) {
   return {
     ...t,
     nodes: t.nodes.map((n) => {
-      if (n.id === nodeId) return { ...n, cleared: true, revealed: true, typeKnown: true, scouted: true, respawned: false, namedRare: false };
+      if (n.id === nodeId) return { ...n, cleared: true, revealed: true, typeKnown: true, scouted: true };
       if (reveal.has(n.id)) return { ...n, revealed: true };
       return n;
     }),
@@ -88,51 +76,38 @@ export function killRare(t, nodeId) {
 }
 
 /**
- * Node-action clock (scout, clear, travel hop, flee). Every 2 ticks living rares roam one
- * edge to a random revealed, uncleared, non-boss neighbour (or stay). Every 4 ticks each
- * cleared node (not the entrance, not where the party stands) rolls 25% to respawn; 10% of
- * those come back as a named variant.
- * @returns {{territory:object, events:Array<{type:string, nodeId:string, rareId?:string, named?:boolean}>}}
+ * Scout/clear action clock (v3 §6): travel hops never tick it. Every 2 actions each living
+ * rare moves one edge to a random revealed, uncleared, non-boss neighbour — or onto the
+ * party's node (the hunt), or stays. Nothing respawns.
+ * @returns {{territory:object, events:Array<{type:'rareMoved', rareId:string, from:string, nodeId:string, ontoParty:boolean}>}}
  */
 export function tickClock(t, { currentId, rng = Math.random } = {}) {
   const clock = t.clock + 1;
   const map = byId(t);
   const events = [];
   let rares = t.rares;
-  let nodes = t.nodes;
 
-  if (clock % RARE_ROAM_EVERY_TICKS === 0) {
+  if (clock % RARE_ROAM_EVERY_ACTIONS === 0) {
     const occupied = new Set(rares.filter((r) => r.alive).map((r) => r.nodeId));
     rares = rares.map((r) => {
       if (!r.alive) return r;
       const here = map[r.nodeId];
       const options = here.neighbors.filter((id) => {
         const n = map[id];
-        return n && n.revealed && !n.cleared && n.type !== 'boss' && id !== currentId && !occupied.has(id);
+        if (!n || occupied.has(id) || n.type === 'boss') return false;
+        return id === currentId || (n.revealed && !n.cleared);
       });
       // "or stays" — one extra slot for staying put
       const roll = Math.floor(rng() * (options.length + 1));
       if (roll >= options.length) return r;
       occupied.delete(r.nodeId);
       occupied.add(options[roll]);
-      events.push({ type: 'rareMoved', rareId: r.id, from: r.nodeId, nodeId: options[roll] });
+      events.push({ type: 'rareMoved', rareId: r.id, from: r.nodeId, nodeId: options[roll], ontoParty: options[roll] === currentId });
       return { ...r, nodeId: options[roll] };
     });
   }
 
-  if (clock % RESPAWN_EVERY_TICKS === 0) {
-    nodes = nodes.map((n) => {
-      if (!n.cleared || n.respawned || n.id === t.entranceId || n.id === currentId || n.type === 'boss' || n.type === 'sanctuary') return n;
-      if (rng() < RESPAWN_CHANCE) {
-        const named = rng() < NAMED_CHANCE;
-        events.push({ type: 'respawn', nodeId: n.id, named });
-        return { ...n, cleared: false, respawned: true, namedRare: named, typeKnown: true, scouted: true };
-      }
-      return n;
-    });
-  }
-
-  return { territory: { ...t, clock, rares, nodes }, events };
+  return { territory: { ...t, clock, rares }, events };
 }
 
 /** Shortest path over REVEALED nodes (BFS). Returns node ids or null. */
@@ -162,13 +137,10 @@ function bfsPath(t, fromId, toId, walkable) {
   return path.reverse();
 }
 
-/** Ground the party can walk over: cleared nodes, and respawned ones (which halt the trip on arrival). */
-export const isWalkable = (n) => n.cleared || n.respawned;
+/** Ground the party can walk over: cleared nodes. */
+export const isWalkable = (n) => n.cleared;
 
-/**
- * v3 §1 — planned travel path through cleared ground from the current node to a cleared
- * (or respawned) destination. Returns [current, …, dest] or null.
- */
+/** v3 §1/§6 — free travel path through cleared ground. Returns [current, …, dest] or null. */
 export function travelPath(t, fromId, toId) {
   const map = byId(t);
   if (!map[toId] || !isWalkable(map[toId])) return null;
@@ -176,7 +148,7 @@ export function travelPath(t, fromId, toId) {
 }
 
 /**
- * v3 §1 — tapping a frontier / boss node: travel to its NEAREST walkable neighbour
+ * v3 §1 — tapping a frontier / boss node: travel to its NEAREST cleared neighbour
  * (shortest cleared path), then act there. Returns the path to that neighbour or null.
  */
 export function approachPath(t, fromId, frontierId) {
