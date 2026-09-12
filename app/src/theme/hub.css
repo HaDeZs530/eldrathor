@@ -366,3 +366,19 @@
   text-overflow: ellipsis;
   max-width: 44vw;
 }
+
+/* Mind-view tabs (Player / Party / Seam) — same scale as the projection screens (v3 §4) */
+.eld-root.hub-mind .eld-btn {
+  min-height: var(--mv-tap, 52px);
+  font-size: var(--mv-label, 15px);
+}
+
+.eld-root.hub-mind select,
+.eld-root.hub-mind input {
+  font-size: var(--mv-text, 18px);
+  min-height: 44px;
+}
+
+.eld-root.hub-mind .eld-tabbar-label {
+  font-size: 11px; /* nav chrome, not screen content — TabBar lock */
+}

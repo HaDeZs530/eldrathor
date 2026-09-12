@@ -13,7 +13,8 @@ export const BASE_CSS = `
   .eld-root.hub-rpg .eld-seg { border-radius: 0; border-width: 3px; }
   .eld-seg-btn {
     flex: 1; padding: 8px 6px; border: none; background: transparent; cursor: pointer;
-    color: var(--eld-muted, #5f8494); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--eld-muted, #5f8494); font-size: var(--mv-label, 15px); letter-spacing: 0.08em; text-transform: uppercase;
+    min-height: 44px;
     border-radius: 8px; font-family: var(--eld-font-display, inherit);
   }
   .eld-root.hub-rpg .eld-seg-btn { border-radius: 0; font-size: 7px; }
@@ -25,7 +26,7 @@ export const BASE_CSS = `
     background: #e0a04d; color: #1a120a; box-shadow: 2px 2px 0 #1a120a;
   }
   .eld-progress {
-    height: 10px; border-radius: 6px; background: rgba(0,0,0,0.35);
+    height: var(--mv-bar, 14px); border-radius: 7px; background: rgba(0,0,0,0.35);
     border: 1px solid var(--eld-border, #1c3a44); overflow: hidden;
   }
   .eld-root.hub-rpg .eld-progress { border-radius: 0; border-width: 2px; }

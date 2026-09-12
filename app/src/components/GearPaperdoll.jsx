@@ -27,8 +27,9 @@ export default function GearPaperdoll({
     { id: 'gem3', label: 'Gem', glyph: '◇', sub: 'Armor' },
   ];
 
-  const size = compact ? 44 : 52;
-  const center = compact ? 88 : 110;
+  // v3 §4 scale: slots wide enough for 15 px labels beside a 100 px silhouette on a 390 px phone
+  const size = compact ? 64 : 80;
+  const center = compact ? 84 : 100;
 
   return (
     <div className="eld-panel" style={{ ...S.wrap, minHeight: compact ? 200 : 240 }}>
@@ -79,7 +80,7 @@ function Slot({ slot, size, accent }) {
       style={{
         ...S.slot,
         width: size,
-        height: size,
+        height: Math.round(size * 0.72),
         borderColor: filled ? accent : 'var(--eld-border, #1c3a44)',
         boxShadow: filled ? `0 0 10px ${accent}55` : 'none',
       }}
@@ -95,7 +96,7 @@ function Slot({ slot, size, accent }) {
 const S = {
   wrap: { padding: '10px 10px 8px', marginBottom: 12 },
   caption: {
-    fontSize: 9,
+    fontSize: 'var(--mv-label, 15px)',
     letterSpacing: '0.16em',
     textTransform: 'uppercase',
     color: 'var(--eld-muted, #5f8494)',
@@ -128,13 +129,13 @@ const S = {
   },
   glyph: { lineHeight: 1, textShadow: '0 0 18px currentColor' },
   classLbl: {
-    fontSize: 10,
+    fontSize: 'var(--mv-label, 15px)',
     letterSpacing: '0.1em',
     textTransform: 'uppercase',
     color: 'var(--eld-text, #cfe0e8)',
     fontFamily: 'var(--eld-font-display, Cinzel, Georgia, serif)',
   },
-  dressHint: { fontSize: 8, color: 'var(--eld-muted, #5f8494)', fontStyle: 'italic' },
+  dressHint: { fontSize: 'var(--mv-label, 15px)', color: 'var(--eld-muted, #5f8494)', fontStyle: 'italic' },
   slot: {
     borderRadius: 8,
     border: '1px solid',
@@ -149,10 +150,10 @@ const S = {
     color: 'inherit',
     fontFamily: 'inherit',
   },
-  slotGlyph: { fontSize: 14, lineHeight: 1 },
+  slotGlyph: { fontSize: 'var(--mv-text, 18px)', lineHeight: 1 },
   slotLbl: {
-    fontSize: 7,
-    letterSpacing: '0.04em',
+    fontSize: 'var(--mv-label, 15px)',
+    letterSpacing: '0.02em',
     textTransform: 'uppercase',
     color: 'var(--eld-muted, #5f8494)',
     maxWidth: '100%',
@@ -163,7 +164,7 @@ const S = {
   },
   foot: {
     marginTop: 8,
-    fontSize: 9,
+    fontSize: 'var(--mv-label, 15px)',
     color: 'var(--eld-muted, #5f8494)',
     fontStyle: 'italic',
     textAlign: 'center',
