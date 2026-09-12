@@ -2,7 +2,7 @@ import React from 'react';
 import { ARCHETYPES, WEAPONS, TIER_COLOR } from '../data.js';
 import { deriveDisplay } from '../combat/derive.js';
 
-export function Header({ worldvein, mode, colors, hubLabel }) {
+export function Header({ worldvein, mode, colors, hubLabel, actions }) {
   return (
     <div className="eld-header" style={S.header}>
       <div style={S.brand}>
@@ -12,10 +12,12 @@ export function Header({ worldvein, mode, colors, hubLabel }) {
           <div style={S.brandSub}>{hubLabel || (mode === 'MIND' ? 'Mind View' : 'Veinharbor')}</div>
         </div>
       </div>
-      <div className="eld-chip" style={S.vein}>
-        <span style={{ color: colors.mythros }}>❖</span>
-        <span style={S.veinNum}>{worldvein.toLocaleString()}</span>
-        <span style={S.veinLbl}>Worldvein</span>
+      <div style={S.right}>
+        <div className="eld-chip" style={S.vein} title="Worldvein" aria-label={`${worldvein} Worldvein`}>
+          <span style={{ color: colors.mythros }}>❖</span>
+          <span style={S.veinNum}>{worldvein.toLocaleString()}</span>
+        </div>
+        {actions}
       </div>
     </div>
   );
@@ -142,10 +144,11 @@ function SectionTitle({ t, sub, action }) {
 }
 
 const S = {
-  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', flexShrink: 0 },
-  brand: { display: 'flex', alignItems: 'center', gap: 10, textAlign: 'left' },
+  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, padding: '10px 12px', flexShrink: 0, minWidth: 0 },
+  brand: { display: 'flex', alignItems: 'center', gap: 8, textAlign: 'left', minWidth: 0, overflow: 'hidden' },
+  right: { display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 },
   brandSub: { fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--eld-muted, #5f8494)', marginTop: 2 },
-  vein: { display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(0,0,0,0.25)', border: '1px solid var(--eld-border, #1c3a44)', padding: '6px 10px' },
+  vein: { display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(0,0,0,0.25)', border: '1px solid var(--eld-border, #1c3a44)', padding: '5px 8px', whiteSpace: 'nowrap' },
   veinNum: { fontSize: 15, fontWeight: 700, fontVariantNumeric: 'tabular-nums' },
   veinLbl: { fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--eld-muted, #5f8494)' },
   body: { flex: 1, overflowY: 'auto', padding: '14px 14px 12px', textAlign: 'left' },

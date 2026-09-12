@@ -19,6 +19,9 @@ import LootResults from './components/LootResults.jsx';
 import SanctuaryScreen from './components/SanctuaryScreen.jsx';
 import { AFK_TICK_MS, emptyGatherSlot, tickAfk } from './afkRuntime.js';
 import { BASE_CSS } from './appChromeCss.js';
+import ScreenHeaderActions from './components/shell/ScreenHeaderActions.jsx';
+import HelpSheet from './components/shell/HelpSheet.jsx';
+import MenuSheet from './components/shell/MenuSheet.jsx';
 
 const HUB_LABELS = {
   player: 'Veinbinder',
@@ -57,6 +60,7 @@ export default function Eldrathor() {
   const [runVein, setRunVein] = useState(0);
   const [unlocked, setUnlocked] = useState(1);
   const [flash, setFlash] = useState(null);
+  const [sheet, setSheet] = useState(null); // null | 'help' | 'help+basics' | 'menu'
   const logRef = useRef(null);
   const [afk, setAfk] = useState({
     gatherSlots: [emptyGatherSlot(), emptyGatherSlot(), emptyGatherSlot()],
@@ -337,12 +341,18 @@ export default function Eldrathor() {
     setAfk((a) => { if (!a.idle.charKey) return a; const starting = !a.idle.running; return { ...a, idle: { ...a.idle, running: starting, progress: starting ? a.idle.progress : 0 } }; });
   }
 
+  // Screen id for the ? help sheet — every tab root and every drilled-in screen.
+  const screenId = tab === 'mountain'
+    ? (runStage === 'route' && scout ? 'scout' : { island: 'island', rally: 'rally', route: 'route', fight: 'fight', loot: 'results', sanctuary: 'sanctuary' }[runStage] || 'island')
+    : { player: 'player', party: 'party', town: 'town', afk: 'seam' }[tab] || 'basics';
+  const inRun = tab === 'mountain' && !!territory && runStage !== 'island' && runStage !== 'rally';
+  const canExtract = inRun && runStage === 'route'; // DESIGN-OPEN: menu Extract mid-fight/results is held until the fight resolves
   const mountainHubLabel = { island: 'The Island', rally: 'Rally', route: 'Route Map', fight: 'Combat', loot: 'Spoils', sanctuary: 'Sanctuary' }[runStage] || HUB_LABELS.mountain;
   return (
     <div style={S.root}>
       <style>{BASE_CSS}</style>
       <div className="eld-frame" style={S.frame}>
-        <Header worldvein={worldvein} mode={currentMode} colors={colors} hubLabel={tab === 'mountain' ? mountainHubLabel : HUB_LABELS[tab]} />
+        <Header worldvein={worldvein} mode={currentMode} colors={colors} hubLabel={tab === 'mountain' ? mountainHubLabel : HUB_LABELS[tab]} actions={<ScreenHeaderActions onMenu={() => setSheet('menu')} onHelp={() => setSheet('help')} />} />
         {flash && <div style={{ ...S.flash, borderColor: flash.color, color: flash.color }}>{flash.msg}</div>}
         {tab === 'town' && <TownScreen party={party} stash={stash} setStash={setStash} inventory={inventory} setInventory={setInventory} worldvein={worldvein} setWorldvein={setWorldvein} setTab={selectTab} />}
         {tab === 'party' && <PartyScreen party={party} setParty={setParty} roster={roster} setRoster={setRoster} />}
@@ -355,6 +365,19 @@ export default function Eldrathor() {
         {tab === 'mountain' && runStage === 'fight' && fightNode && fight && <FightScreen area={area} node={fightNode} party={party} fight={fight} elapsedMs={fightElapsed} speed={fightSpeed} onSpeed={setFightSpeed} onSkip={skipFight} />}
         {tab === 'mountain' && runStage === 'loot' && fight && <LootResults area={area} nodeLabel={fightNode ? (nodeTypeMeta[fightNode.type]?.label || 'Node') : null} fight={fight} onContinue={applyLootAndReturnToRoute} />}
         <TabBar activeTab={tab} onSelect={selectTab} />
+        {(sheet === 'help' || sheet === 'help+basics') && <HelpSheet screenId={screenId} showBasics={sheet === 'help+basics'} onClose={() => setSheet(null)} />}
+        {sheet === 'menu' && (
+          <MenuSheet
+            activeTab={tab}
+            inRun={inRun}
+            canExtract={canExtract}
+            runVein={runVein}
+            onNavigate={(id) => { setSheet(null); selectTab(id); }}
+            onHelp={() => setSheet('help+basics')}
+            onExtract={() => { setSheet(null); extract(); }}
+            onClose={() => setSheet(null)}
+          />
+        )}
       </div>
     </div>
   );

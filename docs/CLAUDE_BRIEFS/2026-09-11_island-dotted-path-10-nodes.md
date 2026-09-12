@@ -1,5 +1,7 @@
 # BRIEF — Island dotted path via spline (10 nodes)
 
+> **DONE (folded into the UI Shell brief, 2026-09-12)** — the Catmull-Rom spline from `app/src/map/islandPath.js` is drawn in code on the island map (PR: UI shell); pins 2–10 are the nine areas (`Eldrathor_Island_Areas_Lock.md`) and all are tappable, superseding the earlier 6-of-10 ruling.
+
 **Status:** READY for Claude  
 **Date:** 2026-09-11  
 **Author:** Boss (Grok Bot)

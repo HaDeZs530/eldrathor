@@ -3,6 +3,16 @@
 .eld-root {
   --hub-transition: background-color 380ms ease, border-color 380ms ease, color 380ms ease,
     box-shadow 380ms ease, background 380ms ease, text-shadow 380ms ease, filter 380ms ease;
+  /* Mind-view scale — docs/Eldrathor_UI_Shell_Lock.md. Body ≥16, labels ≥13, numbers 18,
+     taps ≥48 px tall, party cards ≥96 px, feed ≥15 px at 1.4 line-height. Used on the route
+     map HUD, scout card, fight, results, sanctuary and the shell sheets. */
+  --mv-text: 16px;
+  --mv-label: 13px;
+  --mv-num: 18px;
+  --mv-tap: 48px;
+  --mv-card-min: 96px;
+  --mv-feed: 15px;
+  --mv-feed-lh: 1.4;
 }
 
 .eld-root .eld-frame,
@@ -345,4 +355,12 @@
   .eld-root .eld-btn {
     transition: none !important;
   }
+}
+
+/* header brand must leave room for the Worldvein chip + ☰ ? actions on a 390 px phone */
+.eld-header .eld-brand-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 44vw;
 }

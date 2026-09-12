@@ -40,9 +40,10 @@
   background: #0e2830;
   color: #5fc7e0;
   font-family: var(--eld-font-display, Cinzel, Georgia, serif);
-  font-size: 11px;
+  font-size: var(--mv-label, 13px);
   letter-spacing: 0.06em;
-  padding: 6px 8px;
+  padding: 8px 8px;
+  min-height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -103,7 +104,8 @@
 .eld-speed-btn {
   flex: 1;
   padding: 8px 6px;
-  font-size: 11px;
+  font-size: var(--mv-label, 13px);
+  min-height: var(--mv-tap, 48px);
 }
 
 .eld-speed-btn.is-active {
@@ -111,8 +113,8 @@
 }
 
 .eld-feed-line {
-  font-size: 11px;
-  line-height: 1.4;
+  font-size: var(--mv-feed, 15px);
+  line-height: var(--mv-feed-lh, 1.4);
   color: #9fb2bd;
 }
 
