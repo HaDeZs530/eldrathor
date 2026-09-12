@@ -18,7 +18,8 @@ Eldrathor: a UI-based iOS RPG (Vite + React now; Capacitor iOS wrap later). The 
    - `docs/Eldrathor_TabBar_Lock.md` / `docs/Eldrathor_DualMode_Art_Lock.md`
    - `docs/Eldrathor_BaseStats_Lock.md` — the nine stats every system uses (LOCKED July 2026).
    - `docs/Eldrathor_ClassGemTrees_Lock.md` — full 40-pt trees for Tank/DPS/Controller/Healer (LOCKED July 2026).
-   - `docs/Eldrathor_Archetype_Seeds_DRAFT.md` — archetype base numbers (DRAFT, not for implementation yet).
+   - `docs/Eldrathor_Archetype_Seeds_DRAFT.md` — archetype base numbers (approved for build 2026-09-11).
+   - `docs/Eldrathor_Combat_v2_Lock.md` — resolver formulas, innates, enemy tiers, fight screen (LOCKED 2026-09-11).
 3. `docs/SESSION_LOG.md` — chronology + cross-cutting locks.
 4. `docs/CLAUDE_HOME_HANDOFF.md` — current queue.
 5. `docs/CLAUDE_BRIEFS/` — active tasks. `docs/Worldvein_Lore.md` — canon.

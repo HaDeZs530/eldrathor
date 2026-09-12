@@ -10,6 +10,7 @@ Active coding tasks for **Claude Code**. The **Claude Design Chat** writes these
 
 ## Queue (2026-09-11 late)
 0. `2026-09-11_loop-cleanup-and-stat-spine.md` — **READY** (first)
+0b. `2026-09-11_combat-v2.md` — **READY** (second; spec `Eldrathor_Combat_v2_Lock.md`)
 1. `2026-09-11_agent-roles-update.md` — **DONE** (pushed to main by Design Chat)
 2. `2026-09-11_playtest-ux-polish.md` — **READY**
 3. `2026-09-11_island-dotted-path-10-nodes.md` — READY if not already on main
