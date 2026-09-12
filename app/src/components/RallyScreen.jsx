@@ -3,8 +3,8 @@ import { ARCHETYPES } from '../data.js';
 
 /**
  * Rally screen — docs/Eldrathor_RouteMap_v2_Lock.md §7. Between the island pin and the
- * route map: area header, lore panel, the three fielded Adventurers (tap to swap from the
- * roster), Explore. Warns when fewer than three are fielded.
+ * route map: area header, lore panel, Back / Explore, then the three fielded Adventurers (tap
+ * to swap from the roster). Warns when fewer than three are fielded.
  * // DESIGN-OPEN: final title wording ("Rally the bond" is the working kicker).
  */
 export default function RallyScreen({ area, party, roster, onSwap, onExplore, onBack }) {
@@ -26,6 +26,16 @@ export default function RallyScreen({ area, party, roster, onSwap, onExplore, on
       <div className="eld-panel" style={S.lore}>
         <div style={S.panelLbl}>{area.character}</div>
         <div style={S.loreText}>{area.lore}</div>
+      </div>
+
+      {/* Explore sits directly under the lore, above the party (Anthony, playtest 2026-09-12) */}
+      <div style={S.actions}>
+        <button type="button" className="eld-btn eld-btn-ghost" onClick={onBack} style={S.btn}>
+          Back
+        </button>
+        <button type="button" className="eld-btn" onClick={onExplore} style={S.btn} disabled={fielded === 0}>
+          Explore
+        </button>
       </div>
 
       <div className="eld-panel" style={S.panel}>
@@ -57,15 +67,6 @@ export default function RallyScreen({ area, party, roster, onSwap, onExplore, on
           })}
         </div>
         {fielded < 3 && <div style={S.warn}>Only {fielded} of 3 fielded. The bond is weaker with fewer than three.</div>}
-      </div>
-
-      <div style={S.actions}>
-        <button type="button" className="eld-btn eld-btn-ghost" onClick={onBack} style={S.btn}>
-          Back
-        </button>
-        <button type="button" className="eld-btn" onClick={onExplore} style={S.btn} disabled={fielded === 0}>
-          Explore
-        </button>
       </div>
 
       {pickingSlot != null && (
@@ -121,7 +122,7 @@ const S = {
   memberMeta: { fontSize: 'var(--mv-label, 15px)', color: 'var(--eld-muted)', marginTop: 3 },
   swapHint: { position: 'absolute', right: 12, top: 12, color: 'var(--eld-muted)', fontSize: 'var(--mv-text, 18px)' },
   warn: { marginTop: 10, fontSize: 'var(--mv-label, 15px)', color: '#e05d6f' },
-  actions: { display: 'flex', gap: 10, marginTop: 'auto', paddingTop: 8 },
+  actions: { display: 'flex', gap: 10, flexShrink: 0 },
   btn: { flex: 1, padding: '12px 10px', minHeight: 'var(--mv-tap, 52px)', fontSize: 'var(--mv-label, 15px)' },
   sheetBackdrop: { position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'flex-end', zIndex: 30 },
   sheet: { width: '100%', maxHeight: '75%', overflowY: 'auto', padding: 14, borderRadius: '12px 12px 0 0' },
