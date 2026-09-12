@@ -55,5 +55,8 @@ Eldrathor: a UI-based iOS RPG (Vite + React now; Capacitor iOS wrap later). The 
 - Mid-build gaps: placeholder + `// DESIGN-OPEN:`. Never invent mechanics, rates, or names.
 - Doc files handed over by the Design Chat are committed verbatim unless the brief says otherwise.
 
+## "go" / "next" — Tony's standing command
+When Tony says **go**, **next**, **do next**, or **continue**, with nothing else: `git pull origin main` → read `docs/CLAUDE_HOME_HANDOFF.md` → take the **top active brief** → read its spec docs → implement on a branch → `npm run build` + tests → PR → **merge it yourself** (`gh pr merge --squash`) → mark the brief DONE, move it in the handoff and briefs README, append a DONE line to `docs/SESSION_LOG.md` → report: PR number, one-line summary, any `DESIGN-OPEN` placeholders. Then stop; don't start the next brief unless told **next** again or the handoff says "run through".
+
 ## Git workflow
 - Always `git pull` first. Clear commits. Push when done. No force-push over others.
