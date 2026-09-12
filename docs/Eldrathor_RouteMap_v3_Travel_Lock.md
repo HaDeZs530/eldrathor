@@ -65,3 +65,20 @@ The route map fills everything between the screen header and the tab bar; the ru
 
 ## 8. What the route map IS (design intent — LOCKED 2026-09-12)
 The route map is a **farm loop**, not a survival gauntlet. Enter → clear outward → hunt the rares → break the seal → kill the boss → extract → re-enter a fresh map and do it again. Pressure comes from **fight difficulty** (depth scaling, rare and boss power, the gear wall) and from **the decision of how much to clear before the boss** (full-clear bonus vs beeline speed) — never from the map fighting back. Every rule in this doc serves that loop: free travel, no respawns, scouting to choose fights, rares and the boss as the prize. When a future idea adds friction to moving around the map, it's wrong by default.
+
+## 9. Run log (RULED 2026-09-12)
+The map keeps the whole screen (§7), so the history does not live below it. A **scroll icon** in the HUD strip (top-right, left of ☰ and ?) opens the **Run log** — a Mind-view bottom sheet, scrollable, newest at the bottom, listing every run event: scouted X (type), engaged X → won in 14 s (loot line), sanctuary used (+bonus), rare slain (n remaining), seal broken, ambush (fled / fought), extracted / boss killed. A small unread-count badge on the icon when new lines have been added since it was last opened. The last event is also echoed for 3 s as a one-line toast under the HUD strip.
+
+## 10. Node scale (raise again)
+Party diamond **40 px**, type icons **34 px**, unknown runes **26 px**, edge stroke 3 px. The previous +40% landed too small on the phone. Hit areas stay ≥ 44 px.
+
+## 11. No crossing edges — the web is planar and flows outward
+- The generator must produce a **planar graph**: when adding any edge, reject it if the segment intersects an existing edge (standard segment-intersection test). Build with a Delaunay-style or gabriel/relative-neighbourhood pass over the node positions, then prune to 2–4 edges per node while keeping connectivity and the loop count from v2 §1.
+- **Always moving out:** node positions are laid out so depth increases away from the entrance (entrance at one map edge, boss at the far edge, nodes placed in rough depth bands). Cross-links connect nodes of **equal or adjacent depth** only — never a link that jumps back two or more bands. Loops therefore feel like alternate routes forward, not tangles.
+- Long-edge curiosity nodes (v2 §1) must also pass the no-crossing test.
+
+## 12. Travel pacing and camera (replaces §1 timing)
+- **350 ms per hop**, ease-in-out, marker glides along the edge (not a jump). A 12-hop trip ≈ 4 s; tap the map to skip to arrival.
+- **Camera:** on tap, the camera first **eases to centre on the party (300 ms)**, then **follows the marker** hop by hop so it stays centred, then settles. Never a cut.
+- After arrival: 200 ms pause, then the scout card / seal card / fight opens. Cards slide up in 250 ms.
+- Every camera move on the route map is eased ≥ 250 ms; no instant jumps anywhere (pan release included).

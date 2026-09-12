@@ -11,6 +11,7 @@
 
 ## Active briefs (priority)
 1. **`docs/CLAUDE_BRIEFS/2026-09-12_route-travel-visuals-flee-scale.md`** — one-tap travel with cost, node visual states, ambush flee, real Mind-view scale-up. Spec: `Eldrathor_RouteMap_v3_Travel_Lock.md`.
+2. **`docs/CLAUDE_BRIEFS/2026-09-12_route-polish-2.md`** — run log, node scale, planar outward web, travel pacing/camera. Spec: v3 lock §9–12.
 
 ## Recently DONE (don't redo)
 - PR #10 — pannable island + parchment node map
