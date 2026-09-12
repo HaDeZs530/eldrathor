@@ -19,6 +19,19 @@ const CLASS_GLYPH = {
  */
 export default function PartyScreen({ party, setParty, roster, setRoster }) {
   const [detail, setDetail] = useState(null); // { source: 'party'|'roster', index }
+  const [creating, setCreating] = useState(false);
+
+  if (creating) {
+    return (
+      <CreateCharacter
+        onCancel={() => setCreating(false)}
+        onCreate={(n) => {
+          setRoster((r) => [...r, n]);
+          setCreating(false);
+        }}
+      />
+    );
+  }
 
   if (detail) {
     const list = detail.source === 'party' ? party : roster;
@@ -59,19 +72,6 @@ export default function PartyScreen({ party, setParty, roster, setRoster }) {
     );
   }
 
-  function createCharacter() {
-    const names = ['Nyra', 'Thalen', 'Mirke', 'Sable', 'Corin', 'Elda'];
-    const archKeys = Object.keys(ARCHETYPES);
-    const weaponKeys = Object.keys(WEAPONS);
-    const n = {
-      name: names[Math.floor(Math.random() * names.length)],
-      archetype: archKeys[Math.floor(Math.random() * archKeys.length)],
-      weapon: weaponKeys[Math.floor(Math.random() * weaponKeys.length)],
-      level: 1,
-    };
-    setRoster((r) => [...r, n]);
-  }
-
   return (
     <div style={S.wrap}>
       <div style={S.kick}>Mind View · Party</div>
@@ -105,8 +105,100 @@ export default function PartyScreen({ party, setParty, roster, setRoster }) {
         ))}
       </div>
 
-      <button type="button" className="eld-btn" onClick={createCharacter} style={S.createBtn}>
+      <button type="button" className="eld-btn" onClick={() => setCreating(true)} style={S.createBtn}>
         Create new character
+      </button>
+    </div>
+  );
+}
+
+// DESIGN-OPEN: starting weapon per class — sensible defaults; weapon can be changed in detail.
+const DEFAULT_WEAPON = {
+  Bulwark: 'Sword + Shield',
+  Warden: 'Staff',
+  Striker: 'Dual Daggers',
+  Adept: 'Orb + Tome',
+  Resonator: 'Bow',
+};
+
+/**
+ * Character creation — name + class, then confirm (playtest polish brief §3).
+ * Nothing nameless or classless reaches the roster.
+ */
+function CreateCharacter({ onCancel, onCreate }) {
+  const [name, setName] = useState('');
+  const [archetype, setArchetype] = useState(null);
+  const trimmed = name.trim();
+  const ready = trimmed.length > 0 && !!archetype;
+  const a = archetype ? ARCHETYPES[archetype] : null;
+
+  return (
+    <div style={S.wrap}>
+      <button type="button" className="eld-btn eld-btn-ghost" onClick={onCancel} style={S.back}>
+        ← Party
+      </button>
+      <div style={S.kick}>Mind View · New Adventurer</div>
+      <div className="eld-brand-name" style={S.title}>Bind a new Adventurer</div>
+      <div style={S.sub}>Give them a name and choose a class. Both are required.</div>
+
+      <div className="eld-panel" style={S.createPanel}>
+        <label style={S.editLbl} htmlFor="eld-create-name">Name</label>
+        <input
+          id="eld-create-name"
+          style={S.input}
+          value={name}
+          maxLength={18}
+          placeholder="e.g. Nyra"
+          autoComplete="off"
+          onChange={(e) => setName(e.target.value)}
+        />
+
+        <div style={{ ...S.editLbl, marginTop: 12 }}>Class</div>
+        <div style={S.classList}>
+          {Object.entries(ARCHETYPES).map(([k, v]) => {
+            const active = archetype === k;
+            return (
+              <button
+                key={k}
+                type="button"
+                className="eld-card"
+                onClick={() => setArchetype(k)}
+                style={{
+                  ...S.classCard,
+                  borderLeftColor: v.color,
+                  boxShadow: active ? `0 0 0 1px ${v.color}, 0 0 16px ${v.color}55` : undefined,
+                }}
+                aria-pressed={active}
+              >
+                <div style={S.rowTop}>
+                  <span style={{ ...S.name, color: v.color }}>{CLASS_GLYPH[k]} {k}</span>
+                  <span style={S.badge}>{v.role}</span>
+                </div>
+                <div style={S.meta}>{v.blurb}</div>
+                <div style={S.weapon}>Starts with {DEFAULT_WEAPON[k]}</div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div style={S.createSummary}>
+        {ready ? (
+          <span>
+            <strong style={{ color: a.color }}>{trimmed}</strong> the {archetype} · {DEFAULT_WEAPON[archetype]} · Lv 1
+          </span>
+        ) : (
+          <span style={{ color: 'var(--eld-muted)' }}>{!trimmed ? 'Enter a name' : 'Pick a class'} to continue.</span>
+        )}
+      </div>
+      <button
+        type="button"
+        className="eld-btn"
+        disabled={!ready}
+        style={{ ...S.createBtn, opacity: ready ? 1 : 0.5 }}
+        onClick={() => ready && onCreate({ name: trimmed, archetype, weapon: DEFAULT_WEAPON[archetype], level: 1 })}
+      >
+        Confirm
       </button>
     </div>
   );
@@ -300,6 +392,10 @@ const S = {
   meta: { fontSize: 11, color: 'var(--eld-muted)', marginTop: 4 },
   weapon: { fontSize: 11, color: 'var(--eld-muted)', marginTop: 2 },
   createBtn: { marginTop: 14, width: '100%', padding: '12px 10px' },
+  createPanel: { padding: 12, marginBottom: 12 },
+  classList: { display: 'flex', flexDirection: 'column', gap: 8 },
+  classCard: { textAlign: 'left', padding: '10px 12px', borderLeft: '3px solid', width: '100%', color: 'inherit', fontFamily: 'inherit', cursor: 'pointer' },
+  createSummary: { fontSize: 12, marginTop: 4, minHeight: 18 },
   back: { marginBottom: 10, padding: '8px 12px' },
   statGrid: {
     display: 'grid',
