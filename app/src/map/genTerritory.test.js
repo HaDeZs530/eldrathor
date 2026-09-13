@@ -139,3 +139,20 @@ test('segmentsCross: proper crossings, shared endpoints, parallel segments', () 
   assert.ok(!segmentsCross(a, b, b, c), 'segments sharing an endpoint object do not cross');
   assert.ok(!segmentsCross(P(0, 0), P(10, 0), P(0, 5), P(10, 5)), 'parallel segments do not cross');
 });
+
+test('frontier never strands: exploring greedily, an unexplored node is always visible until the map is fully cleared (200 maps)', () => {
+  for (let seed = 1; seed <= 200; seed++) {
+    const rng = mulberry32(seed);
+    let t = genTerritory(area(1 + (seed % 9)), { rng });
+    for (let step = 0; step < 200; step++) {
+      const open = t.nodes.filter((n) => n.revealed && !n.cleared);
+      if (!open.length) break;
+      const pick = open[Math.floor(rng() * open.length)];
+      t = clearNode(t, pick.id, rng);
+      const done = t.nodes.every((n) => n.cleared);
+      const visible = t.nodes.some((n) => n.revealed && !n.cleared);
+      assert.ok(done || visible, `seed ${seed}: stranded after ${step + 1} clears`);
+    }
+    assert.ok(t.nodes.every((n) => n.cleared), `seed ${seed}: map never fully cleared`);
+  }
+});

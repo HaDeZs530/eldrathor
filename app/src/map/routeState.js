@@ -71,14 +71,33 @@ export function clearNode(t, nodeId, rng = Math.random) {
   const hidden = node.neighbors.filter((id) => map[id] && !map[id].revealed);
   const revealCount = Math.min(hidden.length, 2 + Math.floor(rng() * 2)); // 2–3
   const reveal = new Set(shuffle(rng, hidden).slice(0, revealCount));
-  return {
+  const next = {
     ...t,
     nodes: t.nodes.map((n) => {
-      if (n.id === nodeId) return { ...n, cleared: true, revealed: true, typeKnown: true, scouted: true };
+      if (n.id === nodeId) return { ...n, cleared: true, typeKnown: true, scouted: true, revealed: true };
       if (reveal.has(n.id)) return { ...n, revealed: true };
       return n;
     }),
   };
+  return thinFogIfStranded(next);
+}
+
+/**
+ * Frontier safety valve. The 2–3 reveal rule can leave a hidden node whose every neighbour was
+ * already cleared (its reveal rolls are spent) — with nothing unexplored on the map the run would
+ * be unwinnable. When no unexplored node is visible and hidden nodes remain, the fog thins: every
+ * hidden neighbour of a revealed node is shown.
+ * // DESIGN-OPEN: safety valve only (never fires while an unexplored node is visible) — Design Chat to rule on the wording/feel.
+ */
+export function thinFogIfStranded(t) {
+  const anyUnexplored = t.nodes.some((n) => n.revealed && !n.scouted && !n.cleared);
+  const anyHidden = t.nodes.some((n) => !n.revealed);
+  if (anyUnexplored || !anyHidden) return t;
+  const map = byId(t);
+  const show = new Set();
+  for (const n of t.nodes) if (n.revealed) for (const id of n.neighbors) if (map[id] && !map[id].revealed) show.add(id);
+  if (!show.size) return t;
+  return { ...t, nodes: t.nodes.map((n) => (show.has(n.id) ? { ...n, revealed: true } : n)) };
 }
 
 export function killRare(t, nodeId) {
