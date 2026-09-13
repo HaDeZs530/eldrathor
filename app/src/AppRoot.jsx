@@ -175,8 +175,10 @@ export default function Eldrathor() {
 
   // ---------- node-action clock ----------
   /** Scout/clear action clock (v3 §6): rares may roam — onto the party's node = ambush. Returns the new territory. */
+  const lastClockEvents = useRef([]);
   function advanceClock(t, curId) {
     const { territory: next, events } = tickClock(t, { currentId: curId, rng: runRng.current });
+    lastClockEvents.current = events;
     for (const e of events) {
       if (e.type === 'rareMoved') {
         if (e.ontoParty) pushLog('☠ A rare falls upon the party!', 'rare');
@@ -185,11 +187,17 @@ export default function Eldrathor() {
     }
     return next;
   }
-  /** After an action: a rare that roamed onto the party's node ambushes (v3 §3/§6). */
-  function maybeAmbush(t, curId, prev) {
+  /**
+   * After an action: a rare that ROAMED onto the party's node ambushes (v3 §3/§6/§15 — the flee roll
+   * applies only then). `movedOnly` ignores a rare that was already standing on the node the party
+   * just explored onto: that node reveals as a rare with a free Flee instead.
+   */
+  function maybeAmbush(t, curId, prev, { movedOnly = false } = {}) {
     const r = rareAt(t, curId);
-    if (r) window.setTimeout(() => openAmbush(t, { kind: 'rare', nodeId: curId, rareId: r.id, prevId: prev }), 0);
-    return !!r;
+    if (!r) return false;
+    if (movedOnly && !lastClockEvents.current.some((e) => e.type === 'rareMoved' && e.ontoParty && e.rareId === r.id)) return false;
+    window.setTimeout(() => openAmbush(t, { kind: 'rare', nodeId: curId, rareId: r.id, prevId: prev }), 0);
+    return true;
   }
 
   // ---------- scout → engage / leave ----------
@@ -229,13 +237,12 @@ export default function Eldrathor() {
     else { body = `${count} enem${count === 1 ? 'y' : 'ies'}${named ? ' — named, ×1.3 stats, +1 loot roll' : ''}.`; }
     const alive = t.rares.filter((r) => r.alive).length;
     if (sealedBoss) {
-      return { kind: 'seal', nodeId: n.id, type: 'boss', glyph: '⛓', title: `${area.boss} — sealed`, body: `Rares remaining: ${alive}. Hunt them to break the seal. The party steps back.`, yieldText: null, threat: null, enemies, actions: [{ id: 'stepBack', label: 'Fall back' }] };
+      return { kind: 'seal', nodeId: n.id, onNode, type: 'boss', glyph: '⛓', title: `${area.boss} — sealed`, body: `Rares remaining: ${alive}. Hunt them to break the seal. The party steps back.`, yieldText: null, threat: null, enemies, actions: [{ id: 'stepBack', label: 'Fall back' }] };
     }
     if (eff === 'sanctuary') {
-      return { kind: 'reveal', nodeId: n.id, type: eff, glyph: TYPE_GLYPH[eff], title, body, yieldText, threat: null, enemies, actions: [{ id: 'leave', label: 'Leave', ghost: true }, { id: 'use', label: 'Use' }] };
+      return { kind: 'reveal', nodeId: n.id, onNode, type: eff, glyph: TYPE_GLYPH[eff], title, body, yieldText, threat: null, enemies, actions: [{ id: 'leave', label: 'Leave', ghost: true }, { id: 'use', label: 'Use' }] };
     }
-    const onIt = onNode;
-    return { kind: 'reveal', nodeId: n.id, type: eff, glyph: TYPE_GLYPH[eff], title, body, yieldText, threat, enemies, onNode: onIt, actions: [{ id: 'flee', label: 'Flee', ghost: true }, { id: 'fight', label: 'Fight' }] };
+    return { kind: 'reveal', nodeId: n.id, onNode, type: eff, glyph: TYPE_GLYPH[eff], title, body, yieldText, threat, enemies, actions: [{ id: 'flee', label: 'Flee', ghost: true }, { id: 'fight', label: 'Fight' }] };
   }
   /** §15 explore card: rune, "Unexplored", hops away — Explore / Cancel. Nothing moves until Explore. */
   function buildExplore(n, hops) {
@@ -268,7 +275,9 @@ export default function Eldrathor() {
   }
   /** Arrival: the node the party now stands on becomes Revealed and its card opens. */
   function runAfter(t, curId, after) {
-    if (!after || after.type !== 'arrive') return;
+    if (!after) return;
+    if (after.type === 'settle') { maybeAmbush(t, curId, null); return; }
+    if (after.type !== 'arrive') return;
     const n = t.nodes.find((x) => x.id === after.nodeId);
     if (!n) return;
     revealOnArrival(t, curId, n);
@@ -282,7 +291,7 @@ export default function Eldrathor() {
       const nn = next.nodes.find((x) => x.id === n.id);
       const eff = effectiveType(next, nn);
       pushLog(`👁 Explored: a ${NODE_LABEL[eff] || 'node'} node${nn.namedRare && eff === 'normal' ? ' (named)' : ''}.`, 'sys');
-      if (maybeAmbush(next, curId, prevId)) return;
+      if (maybeAmbush(next, curId, prevId, { movedOnly: true })) return;
       setCard(buildReveal(next, nn, { onNode: true }));
       return;
     }
@@ -312,6 +321,9 @@ export default function Eldrathor() {
   }
   /** One handler for every card button (§15). */
   function onCardAction(id) {
+    // the ambush card is derived from `ambush`, not `card` — route its buttons first (a null `card` must not swallow them)
+    if (id === 'ambushFight') { onAmbushFight(); return; }
+    if (id === 'ambushFlee') { onAmbushFlee(); return; }
     const c = card; if (!c || !territory) return;
     const n = territory.nodes.find((x) => x.id === c.nodeId); if (!n) return;
     switch (id) {
@@ -333,7 +345,7 @@ export default function Eldrathor() {
       }
       case 'stepBack': {
         setCard(null);
-        if (prevId && prevId !== currentId) beginTrip([currentId, prevId], null);
+        if (c.onNode && prevId && prevId !== currentId) beginTrip([currentId, prevId], null);
         return;
       }
       case 'fight': {
@@ -349,9 +361,14 @@ export default function Eldrathor() {
         setFightNode(n); setRunStage('sanctuary'); enterMindView();
         return;
       }
-      case 'leave': setCard(null); pushLog('✧ The crystal is left unused — it stays revealed.', 'sys'); return;
-      case 'ambushFight': onAmbushFight(); return;
-      case 'ambushFlee': onAmbushFlee(); return;
+      case 'leave': {
+        // Leave = the same free step back as a chosen Flee: the crystal stays revealed and adjacent, so it can be
+        // used later from the reveal card. (Standing on it would dead-end the party — the party node tap does nothing.)
+        setCard(null);
+        pushLog('✧ The crystal is left unused — it stays revealed.', 'sys');
+        if (c.onNode && prevId && prevId !== currentId) beginTrip([currentId, prevId], null);
+        return;
+      }
       default:
     }
   }
@@ -394,10 +411,11 @@ export default function Eldrathor() {
     if (runRng.current() < a.fleeChance) {
       setAmbush(null);
       const back = a.prevId && a.prevId !== currentId ? a.prevId : currentId;
-      setCurrentId(back); setPrevId(null);
       setTerritory(advanceClock(territory, back)); // costs one node-action; the ambusher stays
       pushLog(`↩ Fled (${pct}%). The party falls back.`, 'good');
       doFlash('Fled', colors.mindGood);
+      // every movement is a pan (one eased hop), never a jump; a rare that roamed onto `back` ambushes on arrival
+      if (back !== currentId) beginTrip([currentId, back], { type: 'settle' });
       return;
     }
     pushLog(`✖ Flee failed (${pct}%) — they strike first.`, 'bad');

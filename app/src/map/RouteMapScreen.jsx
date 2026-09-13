@@ -45,6 +45,36 @@ function marginFor(vp) {
 }
 const TOAST_MS = 3000;
 
+/** The camera eases from its current position into "follow the marker" over this long at trip start (§17: ≥ 250 ms, never a cut). */
+const CAMERA_BLEND_MS = 350;
+
+/** The sheet's CURRENT on-screen translate (mid-transition included), from the computed transform matrix. */
+function readSheetPan(el) {
+  if (!el) return null;
+  const m = window.getComputedStyle(el).transform;
+  if (!m || m === 'none') return null;
+  const parts = m.match(/matrix\(([^)]+)\)/);
+  if (!parts) return null;
+  const v = parts[1].split(',').map(Number);
+  return v.length === 6 && v.every((x) => Number.isFinite(x)) ? { x: v[4], y: v[5] } : null;
+}
+
+/**
+ * Frame scheduler: requestAnimationFrame while the page is visible; a coarse timer while it is
+ * hidden (rAF pauses in a backgrounded tab / app, which would stall a trip until the player
+ * returns — the trip is time-based, so it still lands on time and on the exact node).
+ */
+const HIDDEN_TICK_MS = 50;
+function schedule(step) {
+  if (typeof document !== 'undefined' && document.hidden) return { t: window.setTimeout(() => step(performance.now()), HIDDEN_TICK_MS) };
+  return { r: window.requestAnimationFrame(step) };
+}
+function cancelScheduled(h) {
+  if (!h) return;
+  if (h.r) window.cancelAnimationFrame(h.r);
+  if (h.t) window.clearTimeout(h.t);
+}
+
 /** Keep pointer events flowing to the viewport during a drag; tolerate synthetic pointers. */
 function capturePointer(el, pointerId) {
   try {
@@ -113,6 +143,10 @@ export default function RouteMapScreen({
     const dest = points[points.length - 1];
     const t0 = travel.startTs;
     const dur = Math.max(1, travel.duration);
+    // §17 never a cut: the camera BLENDS from wherever it is (a framed far node, a half-finished
+    // ease, a drag) into the follow position over the first CAMERA_BLEND_MS of the trip.
+    const startPan = readSheetPan(sheetRef.current) || pan;
+    const blendT0 = performance.now();
     tween.current = { active: true, pos: points[0], pan: null, skipFrom: null, skipAt: null, raf: null };
     let done = false;
     const step = (now) => {
@@ -134,7 +168,9 @@ export default function RouteMapScreen({
       }
       if (finished) pos = { ...dest };
       tw.pos = pos;
-      tw.pan = centerOn(pos, vp, sheet, MARGIN);
+      const follow = centerOn(pos, vp, sheet, MARGIN);
+      const b = finished ? 1 : easeInOut(Math.min(1, (now - blendT0) / CAMERA_BLEND_MS), 0.5);
+      tw.pan = { x: startPan.x + (follow.x - startPan.x) * b, y: startPan.y + (follow.y - startPan.y) * b };
       if (markerRef.current) { markerRef.current.style.left = `${pos.x}px`; markerRef.current.style.top = `${pos.y}px`; }
       if (sheetRef.current) sheetRef.current.style.transform = `translate(${tw.pan.x}px, ${tw.pan.y}px)`;
       if (finished) {
@@ -145,10 +181,10 @@ export default function RouteMapScreen({
         onTravelEnd();
         return;
       }
-      tw.raf = window.requestAnimationFrame(step);
+      tw.raf = schedule(step);
     };
-    tween.current.raf = window.requestAnimationFrame(step);
-    return () => { done = true; if (tween.current.raf) window.cancelAnimationFrame(tween.current.raf); };
+    tween.current.raf = schedule(step);
+    return () => { done = true; cancelScheduled(tween.current.raf); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [travel?.startTs]);
 
