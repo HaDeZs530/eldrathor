@@ -1,12 +1,21 @@
 /**
- * Route map camera + travel tween — docs/Eldrathor_RouteMap_v3_Travel_Lock.md §12–§14.
+ * Route map camera + travel tween — docs/Eldrathor_RouteMap_v3_Travel_Lock.md §12–§17.
  * Pure math so it can be tested: pan clamping, centring on a map point, the continuous
- * polyline tween (450 ms per hop, ease-in-out at the ends only) and the camera reducer,
- * which is deliberately a no-op for fight/results/sanctuary events (§13: no recentring on return).
+ * polyline tween (§16: 600 ms per hop, ease-in-out at the ends only), camera *framing*
+ * requests (§17: far node in the upper 60 %, adjacent = party + node, recentre on the party
+ * under the overlay before it fades) and the camera reducer.
+ *
+ * The camera is `{ pan, motion, focus }`. `focus` is a framing request that the map resolves
+ * to a pan at render time with `resolveFocus` (it needs the viewport + sheet size); a drag or
+ * the end of a travel tween replaces it with a concrete pan.
  */
 
-export const HOP_MS = 450;
-export const SKIP_MS = 200;
+export const HOP_MS = 600;
+export const SKIP_MS = 250;
+/** §17 — "upper 60 % of the map viewport": the framed point sits at 30 % of the viewport height. */
+export const FRAME_TOP_FRAC = 0.3;
+/** §17 — every camera ease is ≥ 250 ms; framing eases take 300 ms (CSS `.is-anim`). */
+export const FRAME_EASE_MS = 300;
 export const CARD_PAUSE_MS = 200;
 export const OVERLAY_FADE_MS = 350;
 
@@ -22,6 +31,24 @@ export function clampPan(pan, vp, sheet) {
 export function centerOn(pt, vp, sheet, margin) {
   const midY = (margin.top + (vp.h - margin.bottom)) / 2;
   return clampPan({ x: vp.w / 2 - pt.x, y: midY - pt.y }, vp, sheet);
+}
+
+/** Pan that puts a sheet-space point at 30 % of the viewport height (§17 "upper 60 %"), card below. */
+export function frameTop(pt, vp, sheet) {
+  return clampPan({ x: vp.w / 2 - pt.x, y: vp.h * FRAME_TOP_FRAC - pt.y }, vp, sheet);
+}
+
+/**
+ * Resolve a framing request to a pan. `focus = { ids, mode }`:
+ *  - mode 'centre': centre the (centroid of the) node(s) in the HUD/card band (party recentre);
+ *  - mode 'top': put the centroid at 30 % height — a far node alone, or party + adjacent node.
+ * `ptOf(id)` maps a node id to its sheet-space point (unknown ids are skipped).
+ */
+export function resolveFocus(focus, ptOf, vp, sheet, margin) {
+  const pts = (focus?.ids || []).map(ptOf).filter(Boolean);
+  if (!pts.length) return null;
+  const c = pts.reduce((a, p) => ({ x: a.x + p.x / pts.length, y: a.y + p.y / pts.length }), { x: 0, y: 0 });
+  return focus.mode === 'top' ? frameTop(c, vp, sheet) : centerOn(c, vp, sheet, margin);
 }
 
 /**
@@ -65,22 +92,26 @@ export function polylinePointAt(points, u) {
 }
 
 /**
- * Camera reducer — the camera is explicit run state. Drag moves it, release clamps it (eased by
- * the view), travel frames set it directly, and fight / results / sanctuary events leave it
- * untouched (§13).
+ * Camera reducer — the camera is explicit run state (§13: it lives outside the map component and
+ * never resets). Drag moves it, release clamps it (eased by the view), a travel tween ends by
+ * setting it, and framing requests (§17) set `focus`:
+ *  - 'tapFar'      → the tapped node at 30 % height, card below;
+ *  - 'tapAdjacent' → party + node framed together in the upper 60 %;
+ *  - 'overlayClose'→ centre on the party's CURRENT node while the overlay is still up.
+ * Fight start never touches the camera.
  */
 export function cameraReducer(cam, action) {
+  const base = cam || { pan: null, motion: 'none', focus: null };
   switch (action.type) {
-    case 'set': return { pan: action.pan, motion: action.motion || 'none' };
-    case 'drag': return { pan: { x: (cam.pan?.x ?? 0) + action.dx, y: (cam.pan?.y ?? 0) + action.dy }, motion: 'none' };
-    case 'release': return { pan: clampPan(cam.pan || { x: 0, y: 0 }, action.vp, action.sheet), motion: 'ease' };
-    case 'center': return { pan: centerOn(action.pt, action.vp, action.sheet, action.margin), motion: action.motion || 'ease' };
-    case 'frame': return { pan: action.pan, motion: 'none' };
-    case 'fightStart':
-    case 'fightEnd':
-    case 'resultsContinue':
-    case 'sanctuary':
-      return cam; // §13: overlays never touch the camera
-    default: return cam;
+    case 'set': return { pan: action.pan, motion: action.motion || 'none', focus: null };
+    case 'drag': return { pan: { x: action.basePan.x + action.dx, y: action.basePan.y + action.dy }, motion: 'none', focus: null };
+    case 'release': return { pan: clampPan(base.pan || { x: 0, y: 0 }, action.vp, action.sheet), motion: 'ease', focus: null };
+    case 'runStart': return { pan: null, motion: 'none', focus: { ids: [action.partyId], mode: 'centre' } };
+    case 'tapFar': return { ...base, motion: 'ease', focus: { ids: [action.nodeId], mode: 'top' } };
+    case 'tapAdjacent': return { ...base, motion: 'ease', focus: { ids: [action.partyId, action.nodeId], mode: 'top' } };
+    case 'overlayClose': return { ...base, motion: 'ease', focus: { ids: [action.partyId], mode: 'centre' } };
+    case 'travelEnd': return { pan: action.pan, motion: 'none', focus: null };
+    case 'fightStart': return base; // the overlay opens over the map exactly as it was
+    default: return base;
   }
 }

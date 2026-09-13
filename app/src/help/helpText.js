@@ -28,15 +28,16 @@ export const HELP = {
   route: {
     title: 'Route map',
     bullets: [
-      'You see only what you’ve reached. Tap an unknown node to scout it, then Engage or Leave.',
-      'Every scout or clear moves the clock: cleared nodes can repopulate, and rares roam.',
+      'Every unexplored node looks the same. Tap one for Explore / Cancel — nothing moves until you Explore.',
+      'On arrival the node reveals itself: Fight / Flee (a chosen Flee steps back for free). Completed nodes do nothing.',
+      'Every explore or clear moves the clock: rares roam the unexplored, and one walking onto you is an ambush.',
       'Kill all rares to break the boss seal.',
       'Extract any time to bank what you have — the map is gone when you leave.',
     ],
   },
   scout: {
-    title: 'Scout card',
-    bullets: ['What’s on this node and how it measures against your party.', 'Leave costs nothing but time.'],
+    title: 'Node card',
+    bullets: ['Explore commits the party to travel there; Cancel moves nothing.', 'Once there: what’s on the node and how it measures against your party. Flee is free — the node stays revealed.'],
   },
   fight: {
     title: 'Fight',

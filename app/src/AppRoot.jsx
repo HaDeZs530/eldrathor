@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useReducer, useCallback } from 'react';
 import { useTheme } from './theme/ThemeProvider.jsx';
 import { frame, colors, nodeTypeMeta } from './theme/tokens.js';
 import { genTerritory } from './map/genTerritory.js';
-import { rareAt, effectiveType, isSealed, allCleared, scoutNode, clearNode, killRare, tickClock, threatBand, travelPath, approachPath, isWalkable, fleeChance } from './map/routeState.js';
+import { rareAt, effectiveType, isSealed, allCleared, scoutNode, clearNode, killRare, tickClock, threatBand, explorePath, isAdjacent, nodeState, fleeChance } from './map/routeState.js';
 import RouteMapScreen from './map/RouteMapScreen.jsx';
 import { DEFAULT_PARTY, AREAS } from './data.js';
 import { simulateFight, spawnEnemies, rollRewards, deriveStats, mulberry32 } from './combat.js';
@@ -23,7 +23,7 @@ import ScreenHeaderActions from './components/shell/ScreenHeaderActions.jsx';
 import HelpSheet from './components/shell/HelpSheet.jsx';
 import MenuSheet from './components/shell/MenuSheet.jsx';
 import RunLogSheet from './map/RunLogSheet.jsx';
-import { travelDuration, CARD_PAUSE_MS, OVERLAY_FADE_MS } from './map/camera.js';
+import { travelDuration, cameraReducer, CARD_PAUSE_MS, OVERLAY_FADE_MS, FRAME_EASE_MS } from './map/camera.js';
 
 const HUB_LABELS = {
   player: 'Veinbinder',
@@ -40,6 +40,7 @@ const PLAYBACK_TICK_MS = 100;
 const RESULTS_HOLD_MS = 900; // pause on the final event before Spoils
 const THREAT_DRY_RUNS = 6; // DESIGN-OPEN: quick-estimate sample size for the scout card
 const NODE_LABEL = { normal: 'Fight', crystal: 'Crystal', sanctuary: 'Sanctuary', rare: 'Rare', boss: 'Boss' };
+const TYPE_GLYPH = { normal: '⚔', crystal: '❖', sanctuary: '✧', rare: '☠', boss: '♛' };
 
 export default function Eldrathor() {
   const { enterMindView, exitMindView, currentMode, setHubSkinForTab } = useTheme();
@@ -75,10 +76,11 @@ export default function Eldrathor() {
     idle: { charKey: null, running: false, progress: 0 },
   });
   // --- run state (route map v2) ---
-  const [scout, setScout] = useState(null); // ScoutCard data for the tapped node
   const [ambush, setAmbush] = useState(null); // AmbushCard (v3 §3): { nodeId, prevId, kind, enemies, fleeChance, ... }
   const [travel, setTravel] = useState(null); // §14 trip: { path, startTs, duration, after, skipAt? }
-  const [camera, setCamera] = useState({ pan: null, motion: 'none' }); // §13 explicit run camera — overlays never touch it
+  const [camera, dispatchCamera] = useReducer(cameraReducer, { pan: null, motion: 'none', focus: null }); // §13/§17 explicit run camera
+  const [card, setCard] = useState(null); // §15 the one card under the map: explore / reveal / seal / ambush
+  const leavingRef = useRef(false); // Continue / sanctuary choice already taken (camera easing under the overlay)
   const [overlayLeaving, setOverlayLeaving] = useState(null); // snapshot of the last overlay while it fades out (350 ms)
   const overlayTimer = useRef(null);
   const [prevId, setPrevId] = useState(null); // node the party came from (flee steps back here)
@@ -143,8 +145,8 @@ export default function Eldrathor() {
   function resetRunToIsland() {
     clearFightTimers(); exitMindView(); setRunStage('island'); setSelectedArea(null);
     setTerritory(null); setArea(null); setCurrentId(null); setRunVein(0); setFightNode(null);
-    setFight(null); setFightElapsed(0); setFightSpeed(1); setRunHpFrac(null); setScout(null);
-    clearTravel(); setTravel(null); setAmbush(null); setPrevId(null); setCamera({ pan: null, motion: 'none' }); setOverlayLeaving(null);
+    setFight(null); setFightElapsed(0); setFightSpeed(1); setRunHpFrac(null);
+    clearTravel(); setTravel(null); setAmbush(null); setCard(null); setPrevId(null); dispatchCamera({ type: 'set', pan: null }); setOverlayLeaving(null); leavingRef.current = false;
     setRunMods({ dmgMult: 1, mitAdd: 0 }); setBusy(false);
   }
 
@@ -164,9 +166,10 @@ export default function Eldrathor() {
     runRng.current = mulberry32(runSeed.current);
     fightIndex.current = 0;
     const t = genTerritory(a, { rng: runRng.current });
-    setArea(a); setTerritory(t); setCurrentId(t.entranceId);
+    setArea(a); setTerritory(t); setCurrentId(t.entranceId); setCard(null);
+    dispatchCamera({ type: 'runStart', partyId: t.entranceId }); // the only centring of a run: its first frame
     setLog([{ t: `You unroll the route map. ${a.name} lies unexplored beyond the entry — ${t.rares.length} rares roam it and the boss is sealed.`, k: 'sys' }]);
-    setRunHpFrac(null); setRunMods({ dmgMult: 1, mitAdd: 0 }); setScout(null); setLogSeen(0);
+    setRunHpFrac(null); setRunMods({ dmgMult: 1, mitAdd: 0 }); setLogSeen(0);
     setPartyHP(1); setRunVein(0); setRunStage('route');
   }
 
@@ -175,7 +178,10 @@ export default function Eldrathor() {
   function advanceClock(t, curId) {
     const { territory: next, events } = tickClock(t, { currentId: curId, rng: runRng.current });
     for (const e of events) {
-      if (e.type === 'rareMoved') pushLog(e.ontoParty ? '☠ A rare falls upon the party!' : '☠ A rare moves through the fog.', 'rare');
+      if (e.type === 'rareMoved') {
+        if (e.ontoParty) pushLog('☠ A rare falls upon the party!', 'rare');
+        else if (e.visible) pushLog('☠ A rare prowls onto a node you have seen.', 'rare'); // §15: the icon changes only on a revealed node
+      }
     }
     return next;
   }
@@ -193,7 +199,8 @@ export default function Eldrathor() {
     if (eff === 'sanctuary') return [];
     return spawnEnemies(area.tier, eff, false, { rng, bossName: area.boss, depthMult: eff === 'rare' || eff === 'boss' ? 1 : depthMultFor(n), named: !!n.namedRare });
   }
-  function buildScout(t, n) {
+  /** §15 reveal card: type, enemy count, threat band, yield — Fight / Flee (Sanctuary: Use / Leave; sealed boss: seal card). */
+  function buildReveal(t, n, { onNode }) {
     const eff = effectiveType(t, n);
     const sealedBoss = n.type === 'boss' && isSealed(t);
     const rng = mulberry32((runSeed.current ^ Math.imul(Number(n.id.slice(1)) + 1, 0x85ebca6b)) >>> 0);
@@ -220,21 +227,32 @@ export default function Eldrathor() {
     else if (eff === 'rare') { body = `A roaming rare${named ? ' — named, ×1.3 stats' : ''}. Big loot; may drop a class gem.`; }
     else if (eff === 'boss') { body = `${area.boss} waits. The seal is broken.`; }
     else { body = `${count} enem${count === 1 ? 'y' : 'ies'}${named ? ' — named, ×1.3 stats, +1 loot roll' : ''}.`; }
-    return { nodeId: n.id, type: eff, title, body, yieldText, threat, count, enemies, named: !!named, engageDisabled: sealedBoss, engageLabel: eff === 'sanctuary' ? 'Rest' : 'Engage' };
+    const alive = t.rares.filter((r) => r.alive).length;
+    if (sealedBoss) {
+      return { kind: 'seal', nodeId: n.id, type: 'boss', glyph: '⛓', title: `${area.boss} — sealed`, body: `Rares remaining: ${alive}. Hunt them to break the seal. The party steps back.`, yieldText: null, threat: null, enemies, actions: [{ id: 'stepBack', label: 'Fall back' }] };
+    }
+    if (eff === 'sanctuary') {
+      return { kind: 'reveal', nodeId: n.id, type: eff, glyph: TYPE_GLYPH[eff], title, body, yieldText, threat: null, enemies, actions: [{ id: 'leave', label: 'Leave', ghost: true }, { id: 'use', label: 'Use' }] };
+    }
+    const onIt = onNode;
+    return { kind: 'reveal', nodeId: n.id, type: eff, glyph: TYPE_GLYPH[eff], title, body, yieldText, threat, enemies, onNode: onIt, actions: [{ id: 'flee', label: 'Flee', ghost: true }, { id: 'fight', label: 'Fight' }] };
   }
-  // ---------- v3 §1 travel: one tap to anywhere you've cleared ----------
+  /** §15 explore card: rune, "Unexplored", hops away — Explore / Cancel. Nothing moves until Explore. */
+  function buildExplore(n, hops) {
+    return { kind: 'explore', nodeId: n.id, type: null, color: '#5b6a8a', glyph: 'ᚱ', title: nodeState(n) === 'revealed' ? 'Revealed — not adjacent' : 'Unexplored', tag: `${hops} hop${hops === 1 ? '' : 's'} away`, body: nodeState(n) === 'revealed' ? 'The party must travel there before acting on it.' : 'Nothing is known until the party stands on it. Explore commits the party to travel there.', yieldText: null, threat: null, actions: [{ id: 'cancel', label: 'Cancel', ghost: true }, { id: 'explore', label: 'Explore' }] };
+  }
+  // ---------- §15/§16 travel: Explore commits the party; the trip is one continuous tween ----------
   function clearTravel() {
     if (travelTimer.current) { window.clearTimeout(travelTimer.current); travelTimer.current = null; }
   }
   /**
-   * §14: the trip is ONE continuous tween run by RouteMapScreen (450 ms/hop, eased at the ends).
-   * Travel is FREE (§6): no clock ticks, no interruptions. On arrival the party is placed on the
+   * §16: the trip is ONE continuous tween run by RouteMapScreen (600 ms/hop, eased at the ends).
+   * Travel is FREE (§6): no clock ticks, no interruptions. On arrival the party stands on the
    * destination, then (§12) a 200 ms pause before the card opens.
    */
   function beginTrip(path, after) {
     if (!path || path.length < 2) { if (after) runAfter(territory, currentId, after); return; }
-    setScout(null); setAmbush(null);
-    pushLog(`→ Travelling ${path.length - 1} hop${path.length - 1 === 1 ? '' : 's'} (free).`, 'sys');
+    setCard(null); setAmbush(null);
     setTravel({ path, startTs: performance.now(), duration: travelDuration(path.length - 1), after, skipAt: null });
   }
   function onTravelEnd() {
@@ -248,45 +266,94 @@ export default function Eldrathor() {
   function skipTrip() {
     setTravel((tr) => (tr && tr.skipAt == null ? { ...tr, skipAt: performance.now() } : tr));
   }
-  /** What to do on arrival: scout the frontier / boss node we were heading for. */
+  /** Arrival: the node the party now stands on becomes Revealed and its card opens. */
   function runAfter(t, curId, after) {
-    if (!after || after.type !== 'scout') return;
+    if (!after || after.type !== 'arrive') return;
     const n = t.nodes.find((x) => x.id === after.nodeId);
     if (!n) return;
-    const r = rareAt(t, n.id);
-    if (r && !n.scouted) { openAmbush(t, { kind: 'rare', nodeId: n.id, rareId: r.id, prevId: curId }); return; }
-    doScout(t, curId, n);
+    revealOnArrival(t, curId, n);
   }
-  function doScout(t, curId, n) {
+  function revealOnArrival(t, curId, n) {
     if (!n.scouted) {
-      // scouting is a node-action: the clock ticks
+      // exploring is a node-action: the clock ticks (rares may roam — onto the party = ambush)
       let next = scoutNode(t, n.id);
       next = advanceClock(next, curId);
       setTerritory(next);
       const nn = next.nodes.find((x) => x.id === n.id);
-      pushLog(`👁 Scouted a ${NODE_LABEL[effectiveType(next, nn)] || 'node'}${nn.namedRare && effectiveType(next, nn) === 'normal' ? ' (named)' : ''} node.`, 'sys');
+      const eff = effectiveType(next, nn);
+      pushLog(`👁 Explored: a ${NODE_LABEL[eff] || 'node'} node${nn.namedRare && eff === 'normal' ? ' (named)' : ''}.`, 'sys');
       if (maybeAmbush(next, curId, prevId)) return;
-      setScout(buildScout(next, nn));
+      setCard(buildReveal(next, nn, { onNode: true }));
       return;
     }
-    setScout(buildScout(t, n));
+    setCard(buildReveal(t, n, { onNode: true }));
   }
+  /**
+   * §15 tap: never moves the party. Party node / completed node → nothing. Unexplored, or revealed
+   * but not adjacent → frame it, Explore / Cancel. Revealed + adjacent → the reveal card directly.
+   */
   function onTapNode(n) {
     if (busy || !territory) return;
-    if (travel) { skipTrip(); return; } // tap again = skip the animation
+    if (travel) { skipTrip(); return; } // tap anywhere while travelling = eased skip
     if (!n || n.id === currentId || ambush) return;
     const t = territory;
-    if (isWalkable(n)) {
-      const path = travelPath(t, currentId, n.id);
-      if (path && path.length > 1) beginTrip(path, null);
+    const st = nodeState(n);
+    if (st === 'completed') return;
+    const adjacent = isAdjacent(t, currentId, n.id);
+    if (st === 'revealed' && adjacent) {
+      dispatchCamera({ type: 'tapAdjacent', partyId: currentId, nodeId: n.id });
+      setCard(buildReveal(t, n, { onNode: false }));
       return;
     }
-    // frontier rune / scouted node / boss: travel to its nearest cleared neighbour, then scout it
-    const path = approachPath(t, currentId, n.id);
+    const path = explorePath(t, currentId, n.id);
     if (!path) return;
-    const after = { type: 'scout', nodeId: n.id };
-    if (path.length === 1) runAfter(t, currentId, after);
-    else beginTrip(path, after);
+    dispatchCamera(adjacent ? { type: 'tapAdjacent', partyId: currentId, nodeId: n.id } : { type: 'tapFar', nodeId: n.id });
+    setCard(buildExplore(n, path.length - 1));
+  }
+  /** One handler for every card button (§15). */
+  function onCardAction(id) {
+    const c = card; if (!c || !territory) return;
+    const n = territory.nodes.find((x) => x.id === c.nodeId); if (!n) return;
+    switch (id) {
+      case 'cancel': setCard(null); pushLog('· Cancelled — the party holds.', 'sys'); return;
+      case 'explore': {
+        const path = explorePath(territory, currentId, n.id); if (!path) { setCard(null); return; }
+        pushLog(`→ Explore: ${path.length - 1} hop${path.length - 1 === 1 ? '' : 's'} to a${nodeState(n) === 'revealed' ? ' revealed' : 'n unexplored'} node.`, 'sys');
+        beginTrip(path, { type: 'arrive', nodeId: n.id });
+        return;
+      }
+      case 'flee': {
+        setCard(null);
+        if (c.onNode && prevId && prevId !== currentId) {
+          // chosen flee: a free step back to the previous node, no roll, node stays Revealed
+          pushLog('↩ Flee — the party steps back. The node stays revealed.', 'good');
+          beginTrip([currentId, prevId], null);
+        } else pushLog('↩ Flee — the party holds its ground.', 'good');
+        return;
+      }
+      case 'stepBack': {
+        setCard(null);
+        if (prevId && prevId !== currentId) beginTrip([currentId, prevId], null);
+        return;
+      }
+      case 'fight': {
+        setCard(null);
+        pushLog(`⚔ Fight — ${c.title}.`, 'sys');
+        if (!c.onNode) { setPrevId(currentId); setCurrentId(n.id); } // adjacent revealed node: Fight moves the party onto it
+        startFight(n, { enemies: c.enemies });
+        return;
+      }
+      case 'use': {
+        setCard(null);
+        if (!c.onNode) { setPrevId(currentId); setCurrentId(n.id); }
+        setFightNode(n); setRunStage('sanctuary'); enterMindView();
+        return;
+      }
+      case 'leave': setCard(null); pushLog('✧ The crystal is left unused — it stays revealed.', 'sys'); return;
+      case 'ambushFight': onAmbushFight(); return;
+      case 'ambushFlee': onAmbushFlee(); return;
+      default:
+    }
   }
 
   // ---------- v3 §3 ambush + flee ----------
@@ -298,7 +365,7 @@ export default function Eldrathor() {
     const enemies = enemiesFor(t, node, rng);
     const chance = fleeChance(party, isRare);
     const count = enemies.length;
-    setScout(null);
+    setCard(null);
     setAmbush({
       nodeId: node.id, prevId: halt.prevId, kind: halt.kind, enemies, fleeChance: chance,
       type: isRare ? 'rare' : effectiveType(t, node),
@@ -310,6 +377,10 @@ export default function Eldrathor() {
     });
     pushLog(isRare ? '☠ Ambush — a rare is on you!' : '✦ Ambush!', 'rare');
   }
+  const ambushCard = ambush ? {
+    kind: 'ambush', nodeId: ambush.nodeId, type: ambush.type, glyph: '☠', title: ambush.title, body: ambush.body, yieldText: ambush.yieldText, threat: null, enemies: ambush.enemies,
+    actions: [{ id: 'ambushFlee', label: `Flee (${Math.round(ambush.fleeChance * 100)}%)`, ghost: true }, { id: 'ambushFight', label: 'Fight' }],
+  } : null;
   function onAmbushFight() {
     const a = ambush; if (!a || !territory) return;
     const n = territory.nodes.find((x) => x.id === a.nodeId); if (!n) return;
@@ -334,17 +405,15 @@ export default function Eldrathor() {
     setAmbush(null);
     startFight(n, { enemies: a.enemies, ambush: true, enemyFirst: true });
   }
-  function onLeave() { setScout(null); }
-  function onEngage() {
-    const s = scout; if (!s || !territory) return;
-    const n = territory.nodes.find((x) => x.id === s.nodeId); if (!n) return;
-    setScout(null);
-    if (effectiveType(territory, n) === 'sanctuary') { setFightNode(n); setRunStage('sanctuary'); enterMindView(); return; }
-    startFight(n, { enemies: s.enemies });
-  }
-
   // ---------- sanctuary ----------
   function onSanctuaryChoose(bonusId) {
+    const n = fightNode; if (!n || !territory || leavingRef.current) return;
+    // §17: ease the camera onto the party's node while the overlay is still up, then apply + fade
+    leavingRef.current = true;
+    dispatchCamera({ type: 'overlayClose', partyId: n.id });
+    overlayTimer.current = window.setTimeout(() => { leavingRef.current = false; applySanctuary(bonusId); }, FRAME_EASE_MS);
+  }
+  function applySanctuary(bonusId) {
     const n = fightNode; if (!n || !territory) return;
     const pouch = 10 * area.tier; // DESIGN-OPEN: pouch size
     if (bonusId === 'dmg') { setRunMods((m) => ({ ...m, dmgMult: m.dmgMult + 0.1 })); pushLog('✧ Sanctuary: the bond strikes +10% harder this run.', 'heal'); }
@@ -356,7 +425,8 @@ export default function Eldrathor() {
     t = clearNode(t, n.id, runRng.current);
     t = advanceClock(t, n.id);
     fadeOutOverlay('sanctuary');
-    setTerritory(t); setPrevId(currentId); setCurrentId(n.id); setFightNode(null); setRunStage('route');
+    setTerritory(t); setFightNode(null); setRunStage('route'); setCard(null);
+    maybeAmbush(t, n.id, prevId);
   }
 
   // ---------- fights ----------
@@ -367,7 +437,7 @@ export default function Eldrathor() {
   }, []);
   function startFight(n, opts = {}) {
     if (busy || !territory) return;
-    clearFightTimers(); setBusy(true); setScout(null); setAmbush(null); clearTravel(); setTravel(null);
+    clearFightTimers(); setBusy(true); setCard(null); setAmbush(null); clearTravel(); setTravel(null);
     const t = { ...territory, nodes: territory.nodes.map((x) => (x.id === n.id ? { ...x, typeKnown: true, scouted: true } : x)) };
     setTerritory(t);
     const eff = effectiveType(t, n);
@@ -407,6 +477,15 @@ export default function Eldrathor() {
     if (overlayTimer.current) window.clearTimeout(overlayTimer.current);
     overlayTimer.current = window.setTimeout(() => setOverlayLeaving(null), OVERLAY_FADE_MS);
   }
+  function onResultsContinue() {
+    const f = fight; const n = fightNode;
+    if (!f || !n || !territory || leavingRef.current) { if (!leavingRef.current) applyLootAndReturnToRoute(); return; }
+    if (!f.result.win || f.eff === 'boss') { applyLootAndReturnToRoute(); return; } // wipe / area clear: no map to return to
+    // §17: ease the camera onto the party's node (= the fought node) while Results is still up
+    leavingRef.current = true;
+    dispatchCamera({ type: 'overlayClose', partyId: n.id });
+    overlayTimer.current = window.setTimeout(() => { leavingRef.current = false; applyLootAndReturnToRoute(); }, FRAME_EASE_MS);
+  }
   function applyLootAndReturnToRoute() {
     const f = fight; const n = fightNode;
     if (f && n && territory && f.result.win && f.eff !== 'boss') fadeOutOverlay('loot');
@@ -422,13 +501,13 @@ export default function Eldrathor() {
     t = clearNode(t, n.id, runRng.current);
     const sealJustBroke = f.rare && !isSealed(t) && isSealed(territory);
     t = advanceClock(t, n.id);
-    setTerritory(t); setPrevId(currentId); setCurrentId(n.id);
+    setTerritory(t);
     setPartyHP(res.hpPct); setRunHpFrac(res.partyHpFrac);
     setRunVein((v) => v + (rewards?.worldvein || 0));
     pushLog(`✔ Cleared in ${res.durationSec}s. +${rewards?.worldvein || 0} Worldvein.${f.eff === 'crystal' ? ' The deposit splinters — ×2 harvest.' : ''}`, 'good');
     for (const g of rewards?.gears || []) { setStash((s) => [...s, g]); pushLog(`  ⬥ Loot: ${g.name} (${g.rating}/100)`, 'loot'); }
     if (f.rare) pushLog(`☠ Rare slain. ${t.rares.filter((r) => r.alive).length} remain.`, 'rare');
-    if (sealJustBroke) { pushLog('♛ The seal breaks — the boss node pulses and the way is lit.', 'boss'); doFlash('Seal broken', colors.mythros); }
+    if (sealJustBroke) { pushLog('♛ The seal is broken.', 'boss'); doFlash('Seal broken', colors.mythros); } // §15: nothing on the map changes until the boss node is found
     if (f.eff === 'boss') {
       pushLog(`${area.boss} is defeated. ${area.name} is cleared.${f.mapClear ? ' Every node cleared — map-clear bonus!' : ''}`, 'boss');
       doFlash(`${area.name} cleared!`, area.accent);
@@ -437,8 +516,8 @@ export default function Eldrathor() {
       clearFightTimers(); setFightNode(null); setFight(null);
       resetRunToIsland(); setTab('mountain'); setHubSkinForTab('mountain'); return;
     }
-    clearFightTimers(); setFightNode(null); setFight(null); setBusy(false); setRunStage('route');
-    maybeAmbush(t, n.id, currentId);
+    clearFightTimers(); setFightNode(null); setFight(null); setBusy(false); setRunStage('route'); setCard(null);
+    maybeAmbush(t, n.id, prevId);
   }
   function extract() {
     pushLog(`⇱ Extracted with ${runVein} Worldvein banked.`, 'good');
@@ -465,7 +544,7 @@ export default function Eldrathor() {
 
   // Screen id for the ? help sheet — every tab root and every drilled-in screen.
   const screenId = tab === 'mountain'
-    ? (runStage === 'route' && (scout || ambush) ? 'scout' : { island: 'island', rally: 'rally', route: 'route', fight: 'fight', loot: 'results', sanctuary: 'sanctuary' }[runStage] || 'island')
+    ? (runStage === 'route' && (card || ambush) ? 'scout' : { island: 'island', rally: 'rally', route: 'route', fight: 'fight', loot: 'results', sanctuary: 'sanctuary' }[runStage] || 'island')
     : { player: 'player', party: 'party', town: 'town', afk: 'seam' }[tab] || 'basics';
   const inRun = tab === 'mountain' && !!territory && runStage !== 'island' && runStage !== 'rally';
   const canExtract = inRun && runStage === 'route'; // DESIGN-OPEN: menu Extract mid-fight/results is held until the fight resolves
@@ -484,12 +563,12 @@ export default function Eldrathor() {
         {tab === 'mountain' && runStage === 'rally' && selectedArea && <RallyScreen area={selectedArea} party={party} roster={roster} onSwap={onRallySwap} onExplore={onRallyExplore} onBack={onRallyBack} />}
         {tab === 'mountain' && RUN_STAGES.has(runStage) && area && territory && (
           <div className="eld-stage">
-            <RouteMapScreen area={area} territory={territory} currentId={currentId} busy={busy} partyHP={partyHP} runVein={runVein} party={party} log={log} logUnread={Math.max(0, log.length - logSeen)} onOpenLog={() => { setSheet('runlog'); setLogSeen(log.length); }} camera={camera} setCamera={setCamera} travel={travel} onTravelEnd={onTravelEnd} scout={scout} ambush={ambush} onTapNode={onTapNode} onEngage={onEngage} onLeave={onLeave} onFight={onAmbushFight} onFlee={onAmbushFlee} onExtract={extract} />
+            <RouteMapScreen area={area} territory={territory} currentId={currentId} busy={busy} partyHP={partyHP} runVein={runVein} party={party} log={log} logUnread={Math.max(0, log.length - logSeen)} onOpenLog={() => { setSheet('runlog'); setLogSeen(log.length); }} camera={camera} setCamera={dispatchCamera} travel={travel} onTravelEnd={onTravelEnd} card={ambushCard || card} onTapNode={onTapNode} onCardAction={onCardAction} onExtract={extract} />
             {MIND_STAGES.has(runStage) && (
               <div className="eld-overlay" key={fightIndex.current}>
                 {runStage === 'sanctuary' && fightNode && <SanctuaryScreen area={area} party={party} runHpFrac={runHpFrac} pouch={10 * area.tier} onChoose={onSanctuaryChoose} />}
                 {runStage === 'fight' && fightNode && fight && <FightScreen area={area} node={fightNode} party={party} fight={fight} elapsedMs={fightElapsed} speed={fightSpeed} onSpeed={setFightSpeed} onSkip={skipFight} />}
-                {runStage === 'loot' && fight && <LootResults area={area} nodeLabel={fightNode ? (nodeTypeMeta[fightNode.type]?.label || 'Node') : null} fight={fight} onContinue={applyLootAndReturnToRoute} />}
+                {runStage === 'loot' && fight && <LootResults area={area} nodeLabel={fightNode ? (nodeTypeMeta[fightNode.type]?.label || 'Node') : null} fight={fight} onContinue={onResultsContinue} />}
               </div>
             )}
             {!MIND_STAGES.has(runStage) && overlayLeaving && (
