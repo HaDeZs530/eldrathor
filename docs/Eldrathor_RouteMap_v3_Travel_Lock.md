@@ -92,3 +92,22 @@ Party diamond **40 px**, type icons **34 px**, unknown runes **26 px**, edge str
 - **450 ms per hop.** The marker's motion is a **single continuous path animation** across all hops (one tween along the polyline with ease-in-out at the start and end only), not per-hop tweens — so there's no hitch between hops and **no jump on the last hop**. Arrival lands exactly on the destination node position; the marker never snaps.
 - Camera follows the marker every frame using the same tween, so the marker stays centred without lag or a final correction. Tap to skip → 200 ms ease to the destination, not a cut.
 - The 200 ms pause before a card opens stands.
+
+## 15. Explore is the commitment — the interaction model (RULED 2026-09-13, supersedes §1 and v2 §2)
+Tapping never moves the party by itself. Movement only happens as part of **exploring an unknown node**.
+- **Tap an unknown node** (anywhere on the map): camera frames it (§17), a card opens: node rune, "Unexplored", distance in hops, and **Explore / Cancel**. Cancel closes the card; nothing moves.
+- **Explore:** the party travels (§16) to that node — through cleared territory to its nearest cleared neighbour, then onto the node itself — and **scouts it on arrival**: the rune resolves into its type, and the card returns with the reveal: type, enemy count, threat band (Easy/Even/Hard/Deadly), yield, and **Fight / Flee**.
+- **Fight:** the fight overlay opens at that node. **Flee** (chosen, not ambushed): the party steps back to the neighbour it came from — **no roll, no penalty**; the node stays revealed and uncleared. (The ambush-flee roll in §3 applies only when a roaming rare walks onto the party.)
+- Sanctuary and Crystal nodes reveal the same way; Sanctuary's card offers **Use / Leave**.
+- **Tap a cleared node:** camera frames it, a small info card shows what it was (type, cleared, log line). No movement. **Tap the party node:** nothing.
+- **Tap the sealed boss:** camera frames it, seal card ("Rares remaining: n"). Unsealed boss behaves like an unknown node whose reveal is the boss card (Fight / Flee).
+- Exploration outward is therefore always: choose a frontier node → commit → travel → see what's there → fight or step back. Cleared territory is passed through on the way; it is never a destination.
+
+## 16. Travel speed (replaces §14 timing)
+**600 ms per hop**, one continuous tween, camera tied to it, no last-hop snap (§14 rules stand). Skip = 250 ms ease.
+
+## 17. Camera framing rules
+- **Far node tapped (not adjacent to the party):** camera eases (300 ms) to centre that node in the upper 60% of the map viewport, leaving room for the card below. 
+- **Adjacent node tapped:** camera eases to frame **both** the party and the node — centre on the midpoint, keep both inside the upper 60%.
+- **Before any overlay closes (Results → map, Sanctuary → map):** while the overlay is still up, the camera eases to centre on the party's current node (300 ms). The overlay then fades. The map is never revealed off-party. (Fixes the "party moved but map stayed" case: the party's node changes on Fight, so recentre happens under the overlay, not after.)
+- All eases ≥ 250 ms, never a cut.

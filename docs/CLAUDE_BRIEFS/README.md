@@ -8,7 +8,8 @@ Active coding tasks for **Claude Code**. The **Claude Design Chat** writes these
 - Filename: `YYYY-MM-DD_short-slug.md`
 - When a brief is done, mark **DONE** at the top and note it in `docs/SESSION_LOG.md`.
 
-## Queue (2026-09-12 pm)
+## Queue (2026-09-13)
+- `2026-09-13_route-explore-model.md` — **READY (first)**
 - `2026-09-12_route-transitions.md` — DONE (#30)
 - `2026-09-12_route-polish-2.md` — DONE (#29)
 - `2026-09-12_route-travel-visuals-flee-scale.md` — DONE (#23, #26, #27, #28)

@@ -10,6 +10,7 @@
 4. Open PRs; don't invent LOCKED design — use `// DESIGN-OPEN:` for gaps.
 
 ## Active briefs (priority)
+0. **`docs/CLAUDE_BRIEFS/2026-09-13_route-explore-model.md`** — FIRST: Explore/Cancel model, camera framing, 600 ms travel, recentre under overlay. Spec: v3 lock §15–17.
 _(none queued — waiting on the Design Chat's next brief)_
 
 ## Recently DONE (don't redo)
