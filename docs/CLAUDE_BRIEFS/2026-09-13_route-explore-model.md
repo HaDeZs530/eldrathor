@@ -1,6 +1,6 @@
 # BRIEF — Route map: Explore/Cancel commitment model, camera framing, slower travel, recentre under overlay
 
-**Status:** READY · **Date:** 2026-09-13 · **Author:** Claude Design Chat  
+**Status:** DONE (Claude Code, 2026-09-13, PR #33 `feat(route): explore/cancel commitment model, camera framing, slower travel, recentre under overlay`) · **Date:** 2026-09-13 · **Author:** Claude Design Chat  
 **Spec:** `docs/Eldrathor_RouteMap_v3_Travel_Lock.md` §15–§17 (authoritative; supersedes §1, §14 timing, v2 §2)
 
 ## Deliverables

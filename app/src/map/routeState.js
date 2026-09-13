@@ -1,9 +1,22 @@
 /**
  * Route map run state — docs/Eldrathor_RouteMap_v2_Lock.md §2, §4, §6 and
- * docs/Eldrathor_RouteMap_v3_Travel_Lock.md §1, §3, §6 (NO respawns; free travel).
- * Pure helpers over the territory object: reveal-on-clear, the scout/clear action clock
- * that moves rares, the boss seal, path highlighting, travel planning and the flee roll.
+ * docs/Eldrathor_RouteMap_v3_Travel_Lock.md §3, §6, §15 (NO respawns; free travel; the
+ * explore commitment model with exactly three node states).
+ * Pure helpers over the territory object: node state, reveal-on-clear, the scout/clear action
+ * clock that moves rares, the boss seal, explore-path planning and the ambush flee roll.
  */
+
+/**
+ * §15 — exactly three node states. A node the fog hasn't shown yet is not on the map at all.
+ *  - 'unexplored': never been there (identical rune for every type — nothing is auto-marked)
+ *  - 'revealed':   explored, not completed (fled, sanctuary left unused, or the boss is sealed)
+ *  - 'completed':  cleared / used
+ */
+export function nodeState(n) {
+  if (n.cleared) return 'completed';
+  if (n.scouted) return 'revealed';
+  return 'unexplored';
+}
 
 export const RARE_ROAM_EVERY_ACTIONS = 2;
 
@@ -36,12 +49,10 @@ export function allCleared(t) {
   return t.nodes.every((n) => n.cleared);
 }
 
-/** Nodes next to the party (revealed). */
-export function reachableIds(t, currentId) {
-  const map = byId(t);
-  const cur = map[currentId];
-  if (!cur) return new Set();
-  return new Set(cur.neighbors.filter((id) => map[id]?.revealed));
+/** Is `id` one edge from the party? */
+export function isAdjacent(t, currentId, id) {
+  const cur = byId(t)[currentId];
+  return !!cur && cur.neighbors.includes(id);
 }
 
 /** Mark a node scouted (type resolves). Returns a new territory. */
@@ -76,9 +87,10 @@ export function killRare(t, nodeId) {
 }
 
 /**
- * Scout/clear action clock (v3 §6): travel hops never tick it. Every 2 actions each living
- * rare moves one edge to a random revealed, uncleared, non-boss neighbour — or onto the
- * party's node (the hunt), or stays. Nothing respawns.
+ * Scout/clear action clock (v3 §6/§15): travel hops never tick it. Every 2 actions each living
+ * rare moves one edge to a random unexplored-or-revealed (never completed, never boss)
+ * neighbour — or onto the party's node (the hunt = ambush), or stays. Nothing respawns.
+ * Rares are hidden on unexplored nodes; only a move onto a revealed node is visible.
  * @returns {{territory:object, events:Array<{type:'rareMoved', rareId:string, from:string, nodeId:string, ontoParty:boolean}>}}
  */
 export function tickClock(t, { currentId, rng = Math.random } = {}) {
@@ -95,24 +107,19 @@ export function tickClock(t, { currentId, rng = Math.random } = {}) {
       const options = here.neighbors.filter((id) => {
         const n = map[id];
         if (!n || occupied.has(id) || n.type === 'boss') return false;
-        return id === currentId || (n.revealed && !n.cleared);
+        return id === currentId || !n.cleared;
       });
       // "or stays" — one extra slot for staying put
       const roll = Math.floor(rng() * (options.length + 1));
       if (roll >= options.length) return r;
       occupied.delete(r.nodeId);
       occupied.add(options[roll]);
-      events.push({ type: 'rareMoved', rareId: r.id, from: r.nodeId, nodeId: options[roll], ontoParty: options[roll] === currentId });
+      events.push({ type: 'rareMoved', rareId: r.id, from: r.nodeId, nodeId: options[roll], ontoParty: options[roll] === currentId, visible: !!map[options[roll]].scouted });
       return { ...r, nodeId: options[roll] };
     });
   }
 
   return { territory: { ...t, clock, rares }, events };
-}
-
-/** Shortest path over REVEALED nodes (BFS). Returns node ids or null. */
-export function revealedPath(t, fromId, toId) {
-  return bfsPath(t, fromId, toId, (n) => n.revealed);
 }
 
 function bfsPath(t, fromId, toId, walkable) {
@@ -137,33 +144,20 @@ function bfsPath(t, fromId, toId, walkable) {
   return path.reverse();
 }
 
-/** Ground the party can walk over: cleared nodes. */
+/** Ground the party can walk over: completed nodes. */
 export const isWalkable = (n) => n.cleared;
 
-/** v3 §1/§6 — free travel path through cleared ground. Returns [current, …, dest] or null. */
-export function travelPath(t, fromId, toId) {
+/**
+ * §15 Explore — the party travels through completed nodes and ARRIVES ON the target (any
+ * unexplored / revealed node the fog has shown). Returns [current, …, target] or null.
+ * (Also exported as `travelPath` for the generator test: the boss is always reachable this way.)
+ */
+export function explorePath(t, fromId, toId) {
   const map = byId(t);
-  if (!map[toId] || !isWalkable(map[toId])) return null;
+  if (!map[toId] || !map[toId].revealed) return null;
   return bfsPath(t, fromId, toId, isWalkable);
 }
-
-/**
- * v3 §1 — tapping a frontier / boss node: travel to its NEAREST cleared neighbour
- * (shortest cleared path), then act there. Returns the path to that neighbour or null.
- */
-export function approachPath(t, fromId, frontierId) {
-  const map = byId(t);
-  const target = map[frontierId];
-  if (!target) return null;
-  let best = null;
-  for (const id of target.neighbors) {
-    const n = map[id];
-    if (!n || !isWalkable(n)) continue;
-    const p = id === fromId ? [fromId] : bfsPath(t, fromId, id, isWalkable);
-    if (p && (!best || p.length < best.length)) best = p;
-  }
-  return best;
-}
+export const travelPath = explorePath;
 
 /**
  * v3 §3 — flee chance: 65% base, 45% if the ambusher is a rare, +5% per Striker or Adept

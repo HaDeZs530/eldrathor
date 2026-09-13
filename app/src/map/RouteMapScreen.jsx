@@ -1,21 +1,25 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { nodeTypeMeta } from '../theme/tokens.js';
 import { biomeForArea, renderBiomeLayer } from './biomeStamps.jsx';
-import { rareAt, effectiveType, isSealed, reachableIds, revealedPath, isWalkable } from './routeState.js';
-import { clampPan, centerOn, easeInOut, easeOut, polylinePointAt, SKIP_MS } from './camera.js';
+import { rareAt, isSealed, isWalkable, nodeState } from './routeState.js';
+import { centerOn, resolveFocus, easeInOut, easeOut, polylinePointAt, SKIP_MS } from './camera.js';
 import './parchment.css';
 
 /**
  * Route map — docs/Eldrathor_RouteMap_v2_Lock.md + docs/Eldrathor_RouteMap_v3_Travel_Lock.md
  * on the hybrid parchment surface (docs/Eldrathor_NodeMap_Art_Lock.md).
- * §13: this screen stays mounted for the whole run; fights/results/sanctuary render as overlays
- * above it and never touch the camera. The camera is explicit run state (`camera` prop) — never
- * derived from the party's node, so nothing recentres on return. §14: travel is ONE continuous
- * requestAnimationFrame tween along the polyline (450 ms/hop, eased at the ends only); the camera
- * follows the marker every frame; tap-to-skip eases 200 ms to the destination; no snaps.
+ *
+ * §15 three node states only: unexplored (identical rune for every type — nothing is auto-marked),
+ * revealed (type icon; skull if a rare stands there; crown + chains for a sealed boss) and
+ * completed (dim dot, tap = nothing). Tapping never moves the party: the cards below the map
+ * (Explore / Cancel, Fight / Flee, Use / Leave, seal, ambush) carry every commitment.
+ * §13: this screen stays mounted for the whole run; fights render as overlays above it.
+ * §17: the camera is explicit run state (`camera` prop = { pan, motion, focus }); a `focus` is a
+ * framing request resolved here at render time — never a recentre on mount or return.
+ * §16: travel is ONE continuous requestAnimationFrame tween along the polyline (600 ms/hop,
+ * eased at the ends only); the camera follows the marker every frame; tap-to-skip eases 250 ms.
  */
 
-/** v3 §2 palette — colour distinguishes type. */
+/** v3 §2 palette — colour distinguishes type (only once a node is revealed). */
 const TYPE_COLOR = {
   normal: '#a9b4c7',
   crystal: '#4fa3ff',
@@ -24,12 +28,21 @@ const TYPE_COLOR = {
   boss: '#8e6bd1',
 };
 const TYPE_GLYPH = { normal: '⚔', crystal: '❖', sanctuary: '✧', rare: '☠', boss: '♛' };
+const TYPE_LABEL = { normal: 'Fight', crystal: 'Crystal', sanctuary: 'Sanctuary', rare: 'Rare', boss: 'Boss' };
 /** Default camera zoom — ~12–16 nodes visible on a phone (§7); pan for the rest. */
 const ZOOM = 0.72;
 const NODE_HIT = 64;
 const TAP_SLOP = 8;
-/** Fogged parchment margin (screen px) so rim nodes can be centred clear of the HUD and cards. */
-const MARGIN = { top: 56, bottom: 96, side: 48 };
+/**
+ * Fogged parchment margin (screen px) around the map so ANY node — rim nodes included — can be
+ * centred or framed at 30 % height (§17). Grows with the viewport: a node at the map's bottom edge
+ * needs ~½ a screen of margin below it to reach the centre band; the margin is fog-covered
+ * parchment, never the desk.
+ */
+const MARGIN_MIN = { top: 56, bottom: 96, side: 48 };
+function marginFor(vp) {
+  return { top: Math.max(MARGIN_MIN.top, Math.ceil(vp.h * 0.5)), bottom: Math.max(MARGIN_MIN.bottom, Math.ceil(vp.h * 0.55)), side: Math.max(MARGIN_MIN.side, Math.ceil(vp.w * 0.5)) };
+}
 const TOAST_MS = 3000;
 
 /** Keep pointer events flowing to the viewport during a drag; tolerate synthetic pointers. */
@@ -44,21 +57,19 @@ function capturePointer(el, pointerId) {
 export default function RouteMapScreen({
   area, territory, currentId, busy, partyHP, runVein, party, log, logUnread = 0, onOpenLog,
   camera, setCamera, travel, onTravelEnd,
-  scout, ambush, onTapNode, onEngage, onLeave, onFight, onFlee, onExtract,
+  card, onTapNode, onCardAction, onExtract,
 }) {
   const vpRef = useRef(null);
   const sheetRef = useRef(null);
   const markerRef = useRef(null);
   const [vp, setVp] = useState({ w: 0, h: 0 });
   const [confirmExtract, setConfirmExtract] = useState(false);
-  const gesture = useRef({ active: false, dist: 0, moved: false, target: null, last: null });
+  const gesture = useRef({ active: false, dist: 0, moved: false, target: null, start: null, basePan: null });
 
   const byId = useMemo(() => Object.fromEntries(territory.nodes.map((n) => [n.id, n])), [territory.nodes]);
-  const reachable = reachableIds(territory, currentId);
   const biome = biomeForArea(area);
   const sealed = isSealed(territory);
   const raresLeft = territory.rares.filter((r) => r.alive).length;
-  const litPath = useMemo(() => (sealed ? null : revealedPath(territory, currentId, territory.bossId)), [territory, currentId, sealed]);
   const planEdges = useMemo(() => {
     const s = new Set();
     const p = travel?.path;
@@ -67,6 +78,7 @@ export default function RouteMapScreen({
   }, [travel]);
   const W = territory.width;
   const H = territory.height;
+  const MARGIN = marginFor(vp);
   const M = { x: MARGIN.side / ZOOM, top: MARGIN.top / ZOOM, bottom: MARGIN.bottom / ZOOM };
   const VW = W + 2 * M.x;
   const VH = H + M.top + M.bottom;
@@ -74,6 +86,7 @@ export default function RouteMapScreen({
   const sx = (x) => (x + M.x) * ZOOM; // map → sheet px
   const sy = (y) => (y + M.top) * ZOOM;
   const sheetPt = (n) => ({ x: sx(n.x), y: sy(n.y) });
+  const ptOf = (id) => (byId[id] ? sheetPt(byId[id]) : null);
 
   useEffect(() => {
     const el = vpRef.current;
@@ -83,17 +96,14 @@ export default function RouteMapScreen({
     return () => ro.disconnect();
   }, []);
 
-  // First measurement of a fresh run: put the camera on the party once. After that the camera
-  // is only ever moved by drag, travel, or an explicit tap — never by a node change (§13).
+  // §17: a pending framing request resolves to a pan here, at render time (needs vp + sheet).
+  // Nothing else ever derives the camera from the party's node — no recentre on mount or return.
   const cur = byId[currentId];
-  const [initialised, setInitialised] = useState(false);
-  if (!initialised && vp.w && vp.h && cur) {
-    setInitialised(true);
-    if (!camera?.pan) setCamera({ pan: centerOn(sheetPt(cur), vp, sheet, MARGIN), motion: 'none' });
-  }
-  const pan = camera?.pan || { x: 0, y: 0 };
+  const measured = vp.w > 0 && vp.h > 0;
+  const focusPan = measured && camera?.focus ? resolveFocus(camera.focus, ptOf, vp, sheet, MARGIN) : null;
+  const pan = focusPan || camera?.pan || { x: 0, y: 0 };
 
-  // ---------- §14 continuous travel tween (rAF; writes the marker + sheet directly) ----------
+  // ---------- §16 continuous travel tween (rAF; writes the marker + sheet directly) ----------
   const tween = useRef({ active: false, pos: null, pan: null, skipFrom: null, skipAt: null, raf: null });
   const travelRef = useRef(travel);
   useEffect(() => { travelRef.current = travel; });
@@ -131,7 +141,7 @@ export default function RouteMapScreen({
         done = true;
         tw.active = false;
         // the camera is now exactly where the tween left it — no correction, no snap
-        setCamera({ pan: tw.pan, motion: 'none' });
+        setCamera({ type: 'travelEnd', pan: tw.pan });
         onTravelEnd();
         return;
       }
@@ -141,6 +151,15 @@ export default function RouteMapScreen({
     return () => { done = true; if (tween.current.raf) window.cancelAnimationFrame(tween.current.raf); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [travel?.startTs]);
+
+  // A re-render mid-trip (toast, HUD) must not reset the DOM to the pre-trip pose: re-apply the
+  // tween's latest frame synchronously after every commit while it is running.
+  useLayoutEffect(() => {
+    const tw = tween.current;
+    if (!tw.active || !tw.pos || !tw.pan) return;
+    if (markerRef.current) { markerRef.current.style.left = `${tw.pos.x}px`; markerRef.current.style.top = `${tw.pos.y}px`; }
+    if (sheetRef.current) sheetRef.current.style.transform = `translate(${tw.pan.x}px, ${tw.pan.y}px)`;
+  });
 
   // §9: 3 s toast of the latest log line under the HUD strip
   const last = log.length ? log[log.length - 1] : null;
@@ -168,7 +187,7 @@ export default function RouteMapScreen({
   function onPointerDown(e) {
     const g = gesture.current;
     if (g.active) return;
-    g.active = true; g.dist = 0; g.moved = false; g.last = localPt(e);
+    g.active = true; g.dist = 0; g.moved = false; g.start = localPt(e); g.basePan = pan;
     g.target = e.target.closest?.('[data-node]')?.dataset.node || null;
     capturePointer(vpRef.current, e.pointerId);
   }
@@ -176,40 +195,30 @@ export default function RouteMapScreen({
     const g = gesture.current;
     if (!g.active || travel) return;
     const p = localPt(e);
-    const dx = p.x - g.last.x;
-    const dy = p.y - g.last.y;
-    g.last = p;
-    g.dist += Math.abs(dx) + Math.abs(dy);
+    const dx = p.x - g.start.x;
+    const dy = p.y - g.start.y;
+    g.dist = Math.abs(dx) + Math.abs(dy);
     if (g.dist > TAP_SLOP) g.moved = true;
     // the sheet follows the finger unclamped; release eases it back inside the bounds (§12)
-    setCamera((c) => ({ pan: { x: (c?.pan?.x ?? 0) + dx, y: (c?.pan?.y ?? 0) + dy }, motion: 'none' }));
+    if (g.moved) setCamera({ type: 'drag', basePan: g.basePan, dx, dy });
   }
   function onPointerUp() {
     const g = gesture.current;
     if (!g.active) return;
     g.active = false;
     if (!g.moved) {
-      if (travel) onTapNode(null); // tap anywhere while travelling = 200 ms eased skip
+      if (travel) onTapNode(null); // tap anywhere while travelling = eased skip
       else if (g.target) activateNode(g.target);
     } else if (!travel) {
-      setCamera((c) => ({ pan: clampPan(c?.pan || { x: 0, y: 0 }, vp, sheet), motion: 'ease' }));
+      setCamera({ type: 'release', vp, sheet });
     }
     g.target = null;
   }
 
   const revealed = territory.nodes.filter((n) => n.revealed);
-  const clearedCount = territory.nodes.filter((n) => n.cleared).length;
-  const card = ambush || scout;
+  const completedCount = territory.nodes.filter((n) => n.cleared).length;
   const markerPos = cur ? sheetPt(cur) : { x: 0, y: 0 };
   const sheetMotion = !travel && camera?.motion === 'ease' ? ' is-anim' : '';
-  // A re-render mid-trip (toast, HUD) must not reset the DOM to the pre-trip pose: re-apply the
-  // tween's latest frame synchronously after every commit while it is running.
-  useLayoutEffect(() => {
-    const tw = tween.current;
-    if (!tw.active || !tw.pos || !tw.pan) return;
-    if (markerRef.current) { markerRef.current.style.left = `${tw.pos.x}px`; markerRef.current.style.top = `${tw.pos.y}px`; }
-    if (sheetRef.current) sheetRef.current.style.transform = `translate(${tw.pan.x}px, ${tw.pan.y}px)`;
-  });
 
   return (
     <div className="eld-map-wrap" style={styles.wrap}>
@@ -233,7 +242,7 @@ export default function RouteMapScreen({
               </mask>
             </defs>
             {renderBiomeLayer({ territory, byId, biome })}
-            {/* edges by state (v3 §2) */}
+            {/* edges: completed trail vs frontier; the planned trip lights up gold while travelling (§15: no lit path to the boss) */}
             <g>
               {territory.edges.map(([a, b]) => {
                 const na = byId[a];
@@ -241,8 +250,7 @@ export default function RouteMapScreen({
                 if (!na || !nb || (!na.revealed && !nb.revealed)) return null;
                 const bothWalkable = isWalkable(na) && isWalkable(nb);
                 const planned = planEdges.has(`${a}|${b}`) || planEdges.has(`${b}|${a}`);
-                const lit = litPath && litPath.includes(a) && litPath.includes(b) && Math.abs(litPath.indexOf(a) - litPath.indexOf(b)) === 1;
-                const cls = planned ? 'eld-edge-plan' : lit ? 'eld-lit-path' : bothWalkable ? 'eld-edge-cleared' : 'eld-edge-frontier';
+                const cls = planned ? 'eld-edge-plan' : bothWalkable ? 'eld-edge-cleared' : 'eld-edge-frontier';
                 return <line key={`${a}-${b}`} x1={na.x} y1={na.y} x2={nb.x} y2={nb.y} className={cls} fill="none" />;
               })}
             </g>
@@ -254,21 +262,22 @@ export default function RouteMapScreen({
 
           {revealed.map((n) => {
             const here = n.id === currentId;
-            const canGo = reachable.has(n.id);
-            const rare = rareAt(territory, n.id);
-            const known = n.typeKnown || n.cleared;
-            const eff = effectiveType(territory, n);
-            const bossSealed = n.type === 'boss' && sealed;
-            let state;
-            if (here) state = 'is-here';
-            else if (rare) state = 'is-rare';
-            else if (n.type === 'boss') state = `is-boss ${bossSealed ? 'is-sealed' : 'is-unsealed'}`;
-            else if (!known) state = 'is-unknown';
-            else if (n.cleared) state = 'is-cleared';
-            else state = n.namedRare ? 'is-named' : 'is-scouted';
-            const cls = ['eld-pnode', state, canGo && 'is-reach', isWalkable(n) && 'is-walkable'].filter(Boolean).join(' ');
-            const glyph = here ? '' : rare ? '☠' : !known ? 'ᚱ' : TYPE_GLYPH[n.type] || '⚔';
-            const label = here ? 'Party' : !known ? 'Unknown' : rare ? 'Rare' : bossSealed ? 'Boss (sealed)' : n.cleared ? 'Cleared' : n.namedRare ? `Named ${nodeTypeMeta[eff]?.label || 'foe'}` : nodeTypeMeta[eff]?.label || 'Node';
+            const st = nodeState(n);
+            // §15: on an unexplored node NOTHING is known — same rune, same colour, no chains, no skulls.
+            let state = 'is-unknown';
+            let glyph = 'ᚱ';
+            let label = 'Unexplored';
+            let color = TYPE_COLOR.normal;
+            if (st === 'completed') { state = 'is-cleared'; glyph = ''; label = 'Completed'; }
+            else if (st === 'revealed') {
+              const rare = rareAt(territory, n.id);
+              const bossSealed = n.type === 'boss' && sealed;
+              color = TYPE_COLOR[n.type] || TYPE_COLOR.normal;
+              if (rare) { state = 'is-rare'; glyph = '☠'; label = 'Rare'; }
+              else if (n.type === 'boss') { state = `is-boss ${bossSealed ? 'is-sealed' : 'is-unsealed'}`; glyph = '♛'; label = bossSealed ? 'Boss (sealed)' : 'Boss'; }
+              else { state = n.namedRare ? 'is-named' : 'is-scouted'; glyph = TYPE_GLYPH[n.type] || '⚔'; label = `${n.namedRare ? 'Named ' : ''}${TYPE_LABEL[n.type] || 'Node'}`; }
+            }
+            const cls = ['eld-pnode', state, here && 'is-here', st !== 'completed' && !here && 'is-tappable'].filter(Boolean).join(' ');
             return (
               <button
                 key={n.id}
@@ -276,17 +285,17 @@ export default function RouteMapScreen({
                 data-node={n.id}
                 className={cls}
                 title={label}
-                aria-label={label}
-                style={{ left: sx(n.x) - NODE_HIT / 2, top: sy(n.y) - NODE_HIT / 2, '--type': TYPE_COLOR[n.type] || TYPE_COLOR.normal }}
+                aria-label={here ? `${label} (party here)` : label}
+                style={{ left: sx(n.x) - NODE_HIT / 2, top: sy(n.y) - NODE_HIT / 2, '--type': color }}
                 onClick={(e) => { if (e.detail === 0) activateNode(n.id); }}
               >
                 <span className="eld-pnode-shape" aria-hidden="true">{glyph}</span>
-                {n.type === 'boss' && bossSealed && <span className="eld-pnode-chain" aria-hidden="true">⛓</span>}
+                {state.startsWith('is-boss') && sealed && <span className="eld-pnode-chain" aria-hidden="true">⛓</span>}
               </button>
             );
           })}
 
-          {/* §14 the party marker glides along the polyline in one continuous tween */}
+          {/* the party marker sits on top of whichever node the party occupies; §16 it glides along the polyline */}
           {cur && <div ref={markerRef} className="eld-party-marker" style={{ left: markerPos.x, top: markerPos.y }} aria-hidden="true" />}
         </div>
 
@@ -295,7 +304,7 @@ export default function RouteMapScreen({
           <div className="eld-run-hud-left" title={area.name}>
             <span style={{ color: sealed ? '#b8a0e8' : '#7fd6a0' }}>{sealed ? `☠ ${raresLeft} rare${raresLeft === 1 ? '' : 's'} · ⛓ sealed` : '♛ seal broken'}</span>
             <span className="eld-run-hud-sep">·</span>
-            <span title="nodes cleared">{clearedCount}/{territory.nodes.length}</span>
+            <span title="nodes completed">{completedCount}/{territory.nodes.length}</span>
           </div>
           <div className="eld-run-hud-right">
             <span className="eld-run-hud-vein">❖ {runVein}</span>
@@ -317,28 +326,24 @@ export default function RouteMapScreen({
           </div>
         )}
 
+        {/* §15 cards — every commitment happens here; the map itself never moves the party */}
         {card && !confirmExtract && (
-          <div className={`eld-scout-card eld-panel${ambush ? ' is-ambush' : ''}`} role="dialog" aria-label={ambush ? 'Ambush' : 'Scout report'}>
+          <div className={`eld-scout-card eld-panel${card.kind === 'ambush' ? ' is-ambush' : ''}${card.kind === 'explore' ? ' is-explore' : ''}`} role="dialog" aria-label={card.ariaLabel || card.title}>
             <div className="eld-scout-top">
-              <span className="eld-scout-type" style={{ color: ambush ? '#c0392b' : TYPE_COLOR[card.type] || undefined }}>
-                {ambush ? '☠ Ambush!' : `${TYPE_GLYPH[card.type] || ''} ${card.title}`}
+              <span className="eld-scout-type" style={{ color: card.color || TYPE_COLOR[card.type] || undefined }}>
+                {card.glyph ? `${card.glyph} ` : ''}{card.title}
               </span>
               {card.threat && <span className="eld-scout-threat" style={{ color: card.threat.color, borderColor: card.threat.color }}>{card.threat.label}</span>}
+              {card.tag && !card.threat && <span className="eld-scout-threat" style={{ color: '#5b6a8a', borderColor: '#5b6a8a' }}>{card.tag}</span>}
             </div>
             <div className="eld-scout-body">{card.body}</div>
             {card.yieldText && <div className="eld-scout-yield">{card.yieldText}</div>}
             <div className="eld-scout-actions">
-              {ambush ? (
-                <>
-                  <button type="button" className="eld-btn eld-btn-ghost" onClick={onFlee} disabled={busy}>Flee ({Math.round(ambush.fleeChance * 100)}%)</button>
-                  <button type="button" className="eld-btn" onClick={onFight} disabled={busy}>Fight</button>
-                </>
-              ) : (
-                <>
-                  <button type="button" className="eld-btn eld-btn-ghost" onClick={onLeave}>Leave</button>
-                  <button type="button" className="eld-btn" onClick={onEngage} disabled={card.engageDisabled || busy}>{card.engageLabel || 'Engage'}</button>
-                </>
-              )}
+              {card.actions.map((a) => (
+                <button key={a.id} type="button" className={`eld-btn${a.ghost ? ' eld-btn-ghost' : ''}`} onClick={() => onCardAction(a.id)} disabled={a.disabled || (busy && !a.ghost)}>
+                  {a.label}
+                </button>
+              ))}
             </div>
           </div>
         )}
