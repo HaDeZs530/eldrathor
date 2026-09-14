@@ -487,7 +487,6 @@ export function genTerritory(area, opts = {}) {
     bossDepth,
     rares,
     clock: 0,
-    sealBroken: rares.length === 0,
     stats: { loops: loops(), deg3Share: degShare(), count: nodes.length, sanctuaries: sanctuaries.length, crystals: crystalCount, named: namedCount },
   };
 }

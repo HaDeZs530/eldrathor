@@ -172,7 +172,7 @@
   box-shadow: 0 0 12px rgba(192, 57, 43, 0.45);
 }
 
-/* Boss — violet crown with a violet pulse (never sealed: the boss is always fightable) */
+/* Boss — violet crown with a violet pulse (always fightable) */
 .eld-pnode.is-boss .eld-pnode-shape {
   width: 40px;
   height: 40px;
@@ -184,7 +184,7 @@
   position: relative;
 }
 
-.eld-pnode.is-boss.is-unsealed .eld-pnode-shape::after {
+.eld-pnode.is-boss .eld-pnode-shape::after {
   content: '';
   position: absolute;
   inset: -3px;
@@ -211,19 +211,7 @@
   justify-content: center;
 }
 
-/* Party (current) — gold diamond on a white core with a bright ring; never red */
-.eld-pnode.is-here .eld-pnode-shape {
-  width: 26px;
-  height: 26px;
-  transform: rotate(45deg);
-  border-radius: 4px;
-  background: radial-gradient(circle at 50% 50%, #fffdf5 0%, #fffdf5 28%, #e8c46a 32%, #e8c46a 100%);
-  border: 2px solid #fff8e1;
-  color: transparent;
-  font-size: 0;
-  box-shadow: 0 0 0 4px rgba(232, 196, 106, 0.55), 0 0 18px 4px rgba(232, 196, 106, 0.75);
-}
-
+/* Party (current) — §18: the node under the party keeps its own icon; the gold RING marker frames it */
 .eld-pnode.is-here {
   z-index: 5;
   cursor: default;
@@ -263,7 +251,7 @@
   padding: 3px 10px;
 }
 
-/* --- cards (scout / ambush / seal / extract) — bottom sheet inside the viewport --- */
+/* --- cards (explore / reveal / ambush / extract) — bottom sheet inside the viewport --- */
 .eld-scout-card {
   position: absolute;
   left: 8px;
@@ -466,11 +454,6 @@
   right: -6px;
 }
 
-.eld-pnode.is-here .eld-pnode-shape {
-  width: 34px;
-  height: 34px;
-  border-radius: 5px;
-}
 
 /* edges are drawn in map units inside a zoomed SVG — thicken to read at the default zoom */
 .eld-edge-cleared { stroke-width: 4; }
@@ -512,33 +495,52 @@
   height: 22px;
 }
 
-.eld-pnode.is-here .eld-pnode-shape {
-  width: 22px;
-  height: 22px;
-  background: #3d6b6e;
-  border: none;
-  box-shadow: none;
-  transform: none;
-  border-radius: 50%;
-}
 
 /* the party marker is its own element so it can glide between nodes (v3 §12) */
+/*
+ * §18: the party marker is a GOLD RING around the occupied node — 44 px, 3 px stroke, soft glow —
+ * so the node's own icon (skull, shard, blades, crown, dim dot) stays visible inside it. A small gold
+ * pennant floats 10 px above and bobs 2 px on a 2 s loop (compositor-only: transform on a pseudo-element).
+ * Positioned by transform (translate3d) so the travel tween never triggers layout or a sheet repaint.
+ */
 .eld-party-marker {
   position: absolute;
   left: 0;
   top: 0;
-  width: 40px;
-  height: 40px;
-  margin: -20px 0 0 -20px;
-  border-radius: 6px;
-  /* positioned by transform (translate3d + rotate) so the tween never triggers layout or a sheet repaint */
+  width: 44px;
+  height: 44px;
+  margin: -22px 0 0 -22px;
+  border-radius: 50%;
+  box-sizing: border-box;
+  border: 3px solid #e8c46a;
+  background: transparent;
+  box-shadow: 0 0 0 1px rgba(255, 248, 225, 0.55), 0 0 14px 3px rgba(232, 196, 106, 0.6), inset 0 0 6px rgba(232, 196, 106, 0.35);
   will-change: transform;
-  transform: translate3d(0, 0, 0) rotate(45deg);
-  background: radial-gradient(circle at 50% 50%, #fffdf5 0%, #fffdf5 28%, #e8c46a 32%, #e8c46a 100%);
-  border: 2px solid #fff8e1;
-  box-shadow: 0 0 0 5px rgba(232, 196, 106, 0.55), 0 0 22px 6px rgba(232, 196, 106, 0.75);
+  transform: translate3d(0, 0, 0);
   pointer-events: none;
   z-index: 6;
+}
+
+.eld-party-marker::after {
+  content: '▲';
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  margin-left: -8px;
+  margin-bottom: 7px; /* pennant 10 px above the ring (3 px stroke + 7 px gap) */
+  width: 16px;
+  text-align: center;
+  font-size: 14px;
+  line-height: 1;
+  color: #e8c46a;
+  text-shadow: 0 0 6px rgba(232, 196, 106, 0.9), 0 1px 0 rgba(0, 0, 0, 0.35);
+  animation: eld-pennant-bob 2s ease-in-out infinite;
+  will-change: transform;
+}
+
+@keyframes eld-pennant-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
 }
 
 /* §14: no CSS transition on the marker — one requestAnimationFrame polyline tween drives it */

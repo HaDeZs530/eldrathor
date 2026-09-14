@@ -1,6 +1,6 @@
 # BRIEF — Party marker as a gold ring around the node icon
 
-**Status:** READY · **Date:** 2026-09-14 · **Author:** Claude Design Chat  
+**Status:** DONE (Claude Code, 2026-09-14, PR #47 `feat(route): gold ring party marker, seal cleanup`) · **Date:** 2026-09-14 · **Author:** Claude Design Chat  
 **Spec:** `docs/Eldrathor_RouteMap_v3_Travel_Lock.md` §18 (and §19 for doc cleanup)
 
 ## Deliverables
