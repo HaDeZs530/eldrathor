@@ -10,7 +10,7 @@ Active coding tasks for **Claude Code**. The **Claude Design Chat** writes these
 
 ## Queue (2026-09-14)
 - `2026-09-14_style-bible-chrome.md` — DONE (#52)
-- M1: `2026-09-14_m1a-save-and-ids.md` (DONE #50) → `m1b-progression-chain` (DONE #51) → `m1c-afk-true-idle` → `m1d-engineering-hygiene` — **READY** (after bugfix-pass-1 and ring marker)
+- M1: `2026-09-14_m1a-save-and-ids.md` (DONE #50) → `m1b-progression-chain` (DONE #51) → `m1c-afk-true-idle` (DONE #53) → `m1d-engineering-hygiene` — **READY** (after bugfix-pass-1 and ring marker)
 - `2026-09-14_bugfix-pass-1.md` — DONE (#46)
 - `2026-09-14_party-ring-marker.md` — DONE (#47)
 - `2026-09-13_route-explore-model.md` — DONE (#33)
