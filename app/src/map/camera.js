@@ -10,12 +10,13 @@
  * the end of a travel tween replaces it with a concrete pan.
  */
 
-export const HOP_MS = 600;
-export const SKIP_MS = 250;
+// Anthony 2026-09-13: "slow down the movement of the party and the panning speed of the map" — amends §16's 600 ms/hop.
+export const HOP_MS = 900;
+export const SKIP_MS = 300;
 /** §17 — "upper 60 % of the map viewport": the framed point sits at 30 % of the viewport height. */
 export const FRAME_TOP_FRAC = 0.3;
-/** Every camera ease is ≥ 250 ms; framing pans take 450 ms (CSS `.is-anim`) — never a cut. */
-export const FRAME_EASE_MS = 450;
+/** Every camera ease is ≥ 250 ms; framing pans take 700 ms (CSS `.is-anim`) — never a cut. */
+export const FRAME_EASE_MS = 700;
 export const CARD_PAUSE_MS = 200;
 export const OVERLAY_FADE_MS = 350;
 
