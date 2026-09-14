@@ -144,7 +144,8 @@ function SectionTitle({ t, sub, action }) {
 }
 
 const S = {
-  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, padding: '10px 12px', flexShrink: 0, minWidth: 0 },
+  // top safe-area inset is added here, once (the tab bar adds the bottom one); 0 until viewport-fit=cover applies
+  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, padding: 'calc(10px + env(safe-area-inset-top, 0px)) 12px 10px', flexShrink: 0, minWidth: 0 },
   brand: { display: 'flex', alignItems: 'center', gap: 8, textAlign: 'left', minWidth: 0, overflow: 'hidden' },
   right: { display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 },
   brandSub: { fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--eld-muted, #5f8494)', marginTop: 2 },

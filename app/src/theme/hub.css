@@ -239,6 +239,23 @@
   border-width: 2px;
 }
 
+/* ---- page / frame viewport budget (Veinharbor pass §1) ----
+   Large preview viewports keep the decorative 12 px vertical page padding and the frame height accounts
+   for it; compact / phone viewports drop the padding so the whole app fits 100svh with no document scroll.
+   Safe-area insets are added exactly once: top inside the header, bottom inside the tab bar. */
+.eld-page {
+  --eld-page-pad: 12px;
+  padding: var(--eld-page-pad) 0;
+}
+
+.eld-page .eld-frame {
+  max-height: calc(100svh - 2 * var(--eld-page-pad));
+}
+
+@media (max-width: 500px), (max-height: 900px) {
+  .eld-page { --eld-page-pad: 0px; }
+}
+
 /* Tab bar chrome */
 .eld-tabbar {
   display: flex;
