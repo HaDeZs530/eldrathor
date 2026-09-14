@@ -3,40 +3,40 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { cameraReducer, resolveFocus, centerOn, frameTop, clampPan, easeInOut, polylinePointAt, travelDuration, HOP_MS, SKIP_MS, FRAME_TOP_FRAC } from './camera.js';
+import { cameraReducer, resolveFocus, keepInFrame, centerOn, clampPan, easeInOut, polylinePointAt, travelDuration, HOP_MS, SKIP_MS, SAFE_FRAME } from './camera.js';
 
 const vp = { w: 372, h: 670 };
 const sheet = { w: 744, h: 1160 };
 const margin = { top: 56, bottom: 96, side: 48 };
 const nodes = { entrance: { x: 300, y: 500 }, next: { x: 380, y: 560 }, far: { x: 600, y: 620 } };
 const ptOf = (id) => nodes[id];
-const resolve = (cam) => (cam.focus ? resolveFocus(cam.focus, ptOf, vp, sheet, margin) : cam.pan);
+const resolve = (cam) => (cam.focus ? resolveFocus(cam.focus, ptOf, vp, sheet, margin, cam.pan) : cam.pan);
 
-test('§13/§17: the fight never moves the camera; after Continue it is centred on the party (its NEW node)', () => {
+test('§13: the fight never moves the camera; after Continue the camera stays put when the party is already in frame', () => {
   // the party explored onto `next` and tapped Fight; the camera is wherever the tween left it
   const before = cameraReducer(null, { type: 'travelEnd', pan: centerOn(nodes.next, vp, sheet, margin) });
   const duringFight = cameraReducer(before, { type: 'fightStart' });
   assert.equal(duringFight, before);
-  // Results → Continue: recentre on the party's current node (= the fought node) under the overlay
-  const partyId = 'next';
-  const closing = cameraReducer(duringFight, { type: 'overlayClose', partyId });
+  // Results → Continue: minimal keep-in-frame — the party is in frame, so the pan is unchanged (no auto-centre)
+  const closing = cameraReducer(duringFight, { type: 'overlayClose', partyId: 'next' });
   assert.equal(closing.motion, 'ease');
-  assert.deepEqual(resolve(closing), centerOn(nodes[partyId], vp, sheet, margin));
+  assert.deepEqual(resolve(closing), before.pan);
 });
 
-test('§17: a far node frames at 30 % height; an adjacent node frames party + node together; run start centres the party', () => {
-  const far = cameraReducer(null, { type: 'tapFar', nodeId: 'far' });
-  const pan = resolve(far);
-  assert.deepEqual(pan, frameTop(nodes.far, vp, sheet));
-  assert.equal(Math.round(pan.y + nodes.far.y), Math.round(vp.h * FRAME_TOP_FRAC));
-  const adj = cameraReducer(far, { type: 'tapAdjacent', partyId: 'entrance', nodeId: 'next' });
-  const mid = { x: (nodes.entrance.x + nodes.next.x) / 2, y: (nodes.entrance.y + nodes.next.y) / 2 };
-  assert.deepEqual(resolve(adj), frameTop(mid, vp, sheet));
+test('dead-zone camera: a node already on screen → no move; a node outside the safe frame → the minimal pan that brings it in', () => {
+  const base = centerOn(nodes.entrance, vp, sheet, margin);
+  // `next` is 80 px right / 60 px below the centred entrance → inside the safe frame → identical pan object
+  assert.equal(keepInFrame(nodes.next, base, vp, sheet), base);
+  // a point below the safe frame comes up by exactly the overflow, and no further
+  const lowPt = { x: nodes.entrance.x, y: nodes.entrance.y + 300 };
+  const moved = keepInFrame(lowPt, base, vp, sheet);
+  assert.equal(Math.round(lowPt.y + moved.y), Math.round(vp.h * SAFE_FRAME.bottom));
+  assert.equal(moved.x, base.x);
+  // run start is the only centring of a run
   const start = cameraReducer(null, { type: 'runStart', partyId: 'entrance' });
   assert.deepEqual(resolve(start), centerOn(nodes.entrance, vp, sheet, margin));
   // a drag replaces any pending framing with a concrete pan
-  const base = resolve(adj);
-  const dragged = cameraReducer(adj, { type: 'drag', basePan: base, dx: 10, dy: -20 });
+  const dragged = cameraReducer(start, { type: 'drag', basePan: base, dx: 10, dy: -20 });
   assert.equal(dragged.focus, null);
   assert.deepEqual(dragged.pan, { x: base.x + 10, y: base.y - 20 });
 });

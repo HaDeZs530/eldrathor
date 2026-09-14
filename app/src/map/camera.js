@@ -13,8 +13,15 @@
 // Anthony 2026-09-13: "slow down the movement of the party and the panning speed of the map" — amends §16's 600 ms/hop.
 export const HOP_MS = 900;
 export const SKIP_MS = 300;
-/** §17 — "upper 60 % of the map viewport": the framed point sits at 30 % of the viewport height. */
-export const FRAME_TOP_FRAC = 0.3;
+/**
+ * Dead-zone camera (Anthony 2026-09-13: "never auto center … slight quick jump … centers back on
+ * the party and follows it"). The camera never moves to put something at a fixed spot; it pans the
+ * MINIMUM needed to keep the point of interest inside this safe frame (fractions of the viewport;
+ * the bottom stays above the card zone). A node that is already on screen means no camera move.
+ */
+export const SAFE_FRAME = { left: 0.18, right: 0.82, top: 0.2, bottom: 0.58 };
+/** Follow smoothing during travel: time constant of the exponential lag (ms) — fluid, never a snap. */
+export const FOLLOW_TAU_MS = 220;
 /** Every camera ease is ≥ 250 ms; framing pans take 700 ms (CSS `.is-anim`) — never a cut. */
 export const FRAME_EASE_MS = 700;
 export const CARD_PAUSE_MS = 200;
@@ -34,22 +41,36 @@ export function centerOn(pt, vp, sheet, margin) {
   return clampPan({ x: vp.w / 2 - pt.x, y: midY - pt.y }, vp, sheet);
 }
 
-/** Pan that puts a sheet-space point at 30 % of the viewport height (§17 "upper 60 %"), card below. */
-export function frameTop(pt, vp, sheet) {
-  return clampPan({ x: vp.w / 2 - pt.x, y: vp.h * FRAME_TOP_FRAC - pt.y }, vp, sheet);
+/**
+ * The smallest pan change that brings a sheet-space point inside the safe frame. Returns `basePan`
+ * itself (same object) when the point is already inside — so callers can skip a no-op move.
+ */
+export function keepInFrame(pt, basePan, vp, sheet, safe = SAFE_FRAME) {
+  if (!vp.w || !vp.h || !basePan) return basePan;
+  const sx = pt.x + basePan.x; // screen position under the current pan
+  const sy = pt.y + basePan.y;
+  const L = vp.w * safe.left; const R = vp.w * safe.right;
+  const T = vp.h * safe.top; const B = vp.h * safe.bottom;
+  let dx = 0; let dy = 0;
+  if (sx < L) dx = L - sx; else if (sx > R) dx = R - sx;
+  if (sy < T) dy = T - sy; else if (sy > B) dy = B - sy;
+  if (!dx && !dy) return basePan;
+  return clampPan({ x: basePan.x + dx, y: basePan.y + dy }, vp, sheet);
 }
 
 /**
  * Resolve a framing request to a pan. `focus = { ids, mode }`:
- *  - mode 'centre': centre the (centroid of the) node(s) in the HUD/card band (party recentre);
- *  - mode 'top': put the centroid at 30 % height — a far node alone, or party + adjacent node.
+ *  - mode 'centre': centre the node in the HUD/card band — used ONCE, on the first frame of a run;
+ *  - mode 'keep': the minimal pan (from `basePan`) that keeps the node inside the safe frame — used
+ *    when an overlay closes (usually no move at all: the party is where it was).
  * `ptOf(id)` maps a node id to its sheet-space point (unknown ids are skipped).
  */
-export function resolveFocus(focus, ptOf, vp, sheet, margin) {
+export function resolveFocus(focus, ptOf, vp, sheet, margin, basePan = null) {
   const pts = (focus?.ids || []).map(ptOf).filter(Boolean);
   if (!pts.length) return null;
   const c = pts.reduce((a, p) => ({ x: a.x + p.x / pts.length, y: a.y + p.y / pts.length }), { x: 0, y: 0 });
-  return focus.mode === 'top' ? frameTop(c, vp, sheet) : centerOn(c, vp, sheet, margin);
+  if (focus.mode === 'keep') return basePan ? keepInFrame(c, basePan, vp, sheet) : centerOn(c, vp, sheet, margin);
+  return centerOn(c, vp, sheet, margin);
 }
 
 /**
@@ -95,10 +116,8 @@ export function polylinePointAt(points, u) {
 /**
  * Camera reducer — the camera is explicit run state (§13: it lives outside the map component and
  * never resets). Drag moves it, release clamps it (eased by the view), a travel tween ends by
- * setting it, and framing requests (§17) set `focus`:
- *  - 'tapFar'      → the tapped node at 30 % height, card below;
- *  - 'tapAdjacent' → party + node framed together in the upper 60 %;
- *  - 'overlayClose'→ centre on the party's CURRENT node while the overlay is still up.
+ * setting it, a tap sets a concrete minimal pan ('set' with motion 'ease', computed by the map
+ * with keepInFrame), and 'overlayClose' asks for the minimal pan that keeps the party in frame.
  * Fight start never touches the camera.
  */
 export function cameraReducer(cam, action) {
@@ -108,9 +127,7 @@ export function cameraReducer(cam, action) {
     case 'drag': return { pan: { x: action.basePan.x + action.dx, y: action.basePan.y + action.dy }, motion: 'none', focus: null };
     case 'release': return { pan: clampPan(base.pan || { x: 0, y: 0 }, action.vp, action.sheet), motion: 'ease', focus: null };
     case 'runStart': return { pan: null, motion: 'none', focus: { ids: [action.partyId], mode: 'centre' } };
-    case 'tapFar': return { ...base, motion: 'ease', focus: { ids: [action.nodeId], mode: 'top' } };
-    case 'tapAdjacent': return { ...base, motion: 'ease', focus: { ids: [action.partyId, action.nodeId], mode: 'top' } };
-    case 'overlayClose': return { ...base, motion: 'ease', focus: { ids: [action.partyId], mode: 'centre' } };
+    case 'overlayClose': return { ...base, motion: 'ease', focus: { ids: [action.partyId], mode: 'keep' } };
     case 'travelEnd': return { pan: action.pan, motion: 'none', focus: null };
     case 'fightStart': return base; // the overlay opens over the map exactly as it was
     default: return base;
