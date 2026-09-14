@@ -12,18 +12,18 @@ const nodes = { entrance: { x: 300, y: 500 }, next: { x: 380, y: 560 }, far: { x
 const ptOf = (id) => nodes[id];
 const resolve = (cam) => (cam.focus ? resolveFocus(cam.focus, ptOf, vp, sheet, margin, cam.pan) : cam.pan);
 
-test('§13: the fight never moves the camera; after Continue the camera stays put when the party is already in frame', () => {
+test('§13: the fight never moves the camera; on Continue the camera pans (eased) to centre on the party', () => {
   // the party explored onto `next` and tapped Fight; the camera is wherever the tween left it
-  const before = cameraReducer(null, { type: 'travelEnd', pan: centerOn(nodes.next, vp, sheet, margin) });
+  const before = cameraReducer(null, { type: 'travelEnd', pan: { x: -120, y: -300 } });
   const duringFight = cameraReducer(before, { type: 'fightStart' });
   assert.equal(duringFight, before);
-  // Results → Continue: minimal keep-in-frame — the party is in frame, so the pan is unchanged (no auto-centre)
+  // Results → Continue: a slow pan (motion 'ease') that ends centred on the party's node
   const closing = cameraReducer(duringFight, { type: 'overlayClose', partyId: 'next' });
   assert.equal(closing.motion, 'ease');
-  assert.deepEqual(resolve(closing), before.pan);
+  assert.deepEqual(resolve(closing), centerOn(nodes.next, vp, sheet, margin));
 });
 
-test('dead-zone camera: a node already on screen → no move; a node outside the safe frame → the minimal pan that brings it in', () => {
+test('keepInFrame helper: a point inside the safe frame → same pan; outside → the minimal pan that brings it in; run start centres', () => {
   const base = centerOn(nodes.entrance, vp, sheet, margin);
   // `next` is 80 px right / 60 px below the centred entrance → inside the safe frame → identical pan object
   assert.equal(keepInFrame(nodes.next, base, vp, sheet), base);
