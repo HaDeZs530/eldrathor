@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { biomeForArea, renderBiomeLayer } from './biomeStamps.jsx';
 import { rareAt, isSealed, isWalkable, nodeState } from './routeState.js';
-import { resolveFocus, keepInFrame, easeInOut, easeOut, polylinePointAt, SKIP_MS, FOLLOW_TAU_MS } from './camera.js';
+import { resolveFocus, centerOn, easeInOut, easeOut, polylinePointAt, SKIP_MS, FOLLOW_TAU_MS } from './camera.js';
 import './parchment.css';
 
 /**
@@ -152,15 +152,20 @@ export default function RouteMapScreen({
     const dest = points[points.length - 1];
     const t0 = travel.startTs;
     const dur = Math.max(1, travel.duration);
-    // Dead-zone follow: the camera starts EXACTLY where it is (a framed node, a half-finished ease, a
-    // drag) and only drifts, smoothly, when the marker would leave the safe frame. No swing back to
-    // the party, no recentre, no cut.
+    // Pan-to-centre follow: the camera starts EXACTLY where it is (a framed node, a half-finished
+    // ease, a drag) and glides toward "centred on the marker" with a slow exponential lag, so it
+    // arrives centred without ever snapping or cutting.
     const startPan = readSheetPan(sheetRef.current) || pan;
     let lastTs = null;
     tween.current = { active: true, pos: points[0], pan: startPan, skipFrom: null, skipAt: null, raf: null };
     let done = false;
     const sheetEl = sheetRef.current;
-    if (sheetEl) sheetEl.style.transition = 'none'; // from here on the tween owns the transform, frame by frame
+    if (sheetEl) {
+      // from here on the tween owns the transform, frame by frame. Removing the transition alone would
+      // show the ease's END value until the first frame (a one-frame flash) — so pin the start pose NOW.
+      sheetEl.style.transition = 'none';
+      sheetEl.style.transform = sheetTransform(startPan);
+    }
     const step = (now) => {
       if (done) return;
       const tw = tween.current;
@@ -180,27 +185,25 @@ export default function RouteMapScreen({
       }
       if (finished) pos = { ...dest };
       tw.pos = pos;
-      const target = keepInFrame(pos, tw.pan, vp, sheet); // minimal pan that keeps the marker in the safe frame
-      if (target !== tw.pan) {
-        const dt = lastTs == null ? 16 : Math.min(100, now - lastTs);
-        const k = 1 - Math.exp(-dt / FOLLOW_TAU_MS); // exponential lag — fluid, frame-rate independent
-        tw.pan = { x: tw.pan.x + (target.x - tw.pan.x) * k, y: tw.pan.y + (target.y - tw.pan.y) * k };
-      }
+      const target = centerOn(pos, vp, sheet, MARGIN); // where "centred on the party" is right now
+      const dt = lastTs == null ? 16 : Math.min(100, now - lastTs);
+      const k = 1 - Math.exp(-dt / FOLLOW_TAU_MS); // slow exponential lag — fluid, frame-rate independent
+      tw.pan = { x: tw.pan.x + (target.x - tw.pan.x) * k, y: tw.pan.y + (target.y - tw.pan.y) * k };
       lastTs = now;
       if (markerRef.current) markerRef.current.style.transform = markerTransform(pos);
       if (sheetRef.current) sheetRef.current.style.transform = sheetTransform(tw.pan);
       if (finished) {
         done = true;
         onTravelEnd(); // the party is placed on arrival; the camera may still be drifting
-        // settle: keep the same smooth follow until the marker rests inside the safe frame (or ~700 ms), then hand
-        // the camera back exactly where the drift left it — no correction, no snap
+        // settle: keep the same slow glide until the camera rests centred on the marker (≤ 1.5 s), then hand
+        // the camera back exactly where the glide left it — no correction, no snap
         const settleT0 = now;
         let lastSettle = now;
         const settle = (t) => {
           const dt = Math.min(100, t - lastSettle); lastSettle = t;
-          const target = keepInFrame(tw.pos, tw.pan, vp, sheet);
-          const dist = target === tw.pan ? 0 : Math.hypot(target.x - tw.pan.x, target.y - tw.pan.y);
-          if (dist > 0.5 && t - settleT0 < 700) {
+          const target = centerOn(tw.pos, vp, sheet, MARGIN);
+          const dist = Math.hypot(target.x - tw.pan.x, target.y - tw.pan.y);
+          if (dist > 0.5 && t - settleT0 < 1500) {
             const k = 1 - Math.exp(-dt / FOLLOW_TAU_MS);
             tw.pan = { x: tw.pan.x + (target.x - tw.pan.x) * k, y: tw.pan.y + (target.y - tw.pan.y) * k };
             if (sheetRef.current) sheetRef.current.style.transform = sheetTransform(tw.pan);
@@ -251,11 +254,10 @@ export default function RouteMapScreen({
   function activateNode(id) {
     const n = byId[id];
     if (!n || busy || !n.revealed) return;
-    // dead-zone framing: a tapped node that is on screen means NO camera move; one under the card zone
-    // or off the edge comes in by the minimum, eased (700 ms)
+    // pan to centre, slowly: the tapped node glides to the centre of the HUD/card band (900 ms ease)
     if (measured && n.id !== currentId && !n.cleared) {
-      const target = keepInFrame(sheetPt(n), pan, vp, sheet);
-      if (target !== pan) setCamera({ type: 'set', pan: target, motion: 'ease' });
+      const target = centerOn(sheetPt(n), vp, sheet, MARGIN);
+      if (Math.abs(target.x - pan.x) > 0.5 || Math.abs(target.y - pan.y) > 0.5) setCamera({ type: 'set', pan: target, motion: 'ease' });
     }
     onTapNode(n);
   }

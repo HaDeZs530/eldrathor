@@ -14,16 +14,16 @@
 export const HOP_MS = 900;
 export const SKIP_MS = 300;
 /**
- * Dead-zone camera (Anthony 2026-09-13: "never auto center … slight quick jump … centers back on
- * the party and follows it"). The camera never moves to put something at a fixed spot; it pans the
- * MINIMUM needed to keep the point of interest inside this safe frame (fractions of the viewport;
- * the bottom stays above the card zone). A node that is already on screen means no camera move.
+ * Camera rule (Anthony 2026-09-14: "pan to centre, slowly"). Every move ENDS centred on the point
+ * of interest — the tapped node, or the party during and after travel — and always GETS there by a
+ * slow, smooth pan from wherever the camera is. Never a snap, never a cut.
  */
+/** Follow smoothing during travel: time constant of the exponential lag (ms) — slow and fluid. */
+export const FOLLOW_TAU_MS = 450;
+/** Safe frame kept for `keepInFrame` (drag-release helpers / tests); no longer the tap rule. */
 export const SAFE_FRAME = { left: 0.18, right: 0.82, top: 0.2, bottom: 0.58 };
-/** Follow smoothing during travel: time constant of the exponential lag (ms) — fluid, never a snap. */
-export const FOLLOW_TAU_MS = 220;
-/** Every camera ease is ≥ 250 ms; framing pans take 700 ms (CSS `.is-anim`) — never a cut. */
-export const FRAME_EASE_MS = 700;
+/** Every camera ease is ≥ 250 ms; pans to centre take 900 ms (CSS `.is-anim`) — never a cut. */
+export const FRAME_EASE_MS = 900;
 export const CARD_PAUSE_MS = 200;
 export const OVERLAY_FADE_MS = 350;
 
@@ -60,9 +60,9 @@ export function keepInFrame(pt, basePan, vp, sheet, safe = SAFE_FRAME) {
 
 /**
  * Resolve a framing request to a pan. `focus = { ids, mode }`:
- *  - mode 'centre': centre the node in the HUD/card band — used ONCE, on the first frame of a run;
- *  - mode 'keep': the minimal pan (from `basePan`) that keeps the node inside the safe frame — used
- *    when an overlay closes (usually no move at all: the party is where it was).
+*  - mode 'centre': centre the node in the HUD/card band — run start, and the slow pan onto the
+ *    party as a Results / Sanctuary overlay closes;
+ *  - mode 'keep': the minimal pan (from `basePan`) that keeps the node inside the safe frame.
  * `ptOf(id)` maps a node id to its sheet-space point (unknown ids are skipped).
  */
 export function resolveFocus(focus, ptOf, vp, sheet, margin, basePan = null) {
@@ -127,7 +127,7 @@ export function cameraReducer(cam, action) {
     case 'drag': return { pan: { x: action.basePan.x + action.dx, y: action.basePan.y + action.dy }, motion: 'none', focus: null };
     case 'release': return { pan: clampPan(base.pan || { x: 0, y: 0 }, action.vp, action.sheet), motion: 'ease', focus: null };
     case 'runStart': return { pan: null, motion: 'none', focus: { ids: [action.partyId], mode: 'centre' } };
-    case 'overlayClose': return { ...base, motion: 'ease', focus: { ids: [action.partyId], mode: 'keep' } };
+    case 'overlayClose': return { ...base, motion: 'ease', focus: { ids: [action.partyId], mode: 'centre' } };
     case 'travelEnd': return { pan: action.pan, motion: 'none', focus: null };
     case 'fightStart': return base; // the overlay opens over the map exactly as it was
     default: return base;

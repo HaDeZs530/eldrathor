@@ -316,7 +316,7 @@ export default function Eldrathor() {
     }
     const path = explorePath(t, currentId, n.id);
     if (!path) return;
-    // camera: the map itself pans the minimum (if any) to keep the tapped node in frame — never a fixed framing
+    // camera: the map itself pans slowly to centre the tapped node (never a snap)
     setCard(buildExplore(n, path.length - 1));
   }
   /** One handler for every card button (§15). */
@@ -427,7 +427,7 @@ export default function Eldrathor() {
   // ---------- sanctuary ----------
   function onSanctuaryChoose(bonusId) {
     const n = fightNode; if (!n || !territory) return;
-    // never auto-centre: only the minimal pan (usually none) that keeps the party in frame as the overlay fades
+    // pan to centre, slowly: the camera glides onto the party as the overlay fades (never a snap)
     dispatchCamera({ type: 'overlayClose', partyId: n.id });
     applySanctuary(bonusId);
   }
@@ -498,7 +498,7 @@ export default function Eldrathor() {
   function onResultsContinue() {
     const f = fight; const n = fightNode;
     if (f && n && territory && f.result.win && f.eff !== 'boss') {
-      // never auto-centre: only the minimal pan (usually none) that keeps the party in frame as Results fades
+      // pan to centre, slowly: the camera glides onto the party as Results fades (never a snap)
       dispatchCamera({ type: 'overlayClose', partyId: n.id });
     }
     applyLootAndReturnToRoute();
