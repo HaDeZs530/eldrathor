@@ -13,21 +13,22 @@ const SUBS = [
 
 /** AFK tab (Seam working label). Timers live in App. DESIGN-OPEN: final name; Process art; persistence/offline. */
 export default function AfkScreen({
-  unlocked, party, roster, inventory, afk,
+  unlocked, party, roster, inventory, afk, deployedIds = [],
   onUpdateGatherSlot, onToggleGather, onUpdateProcess, onToggleProcess, onUpdateIdle, onToggleIdle, worldvein,
 }) {
+  const deployed = new Set(deployedIds);
   const [sub, setSub] = useState('gather');
   const areas = AREAS.filter((w) => w.id <= unlocked);
   // keys are stable character ids (bug-fix pass 1 §8) — swaps/promotions never move an assignment
   const bench = [
-    ...party.map((m, i) => ({ key: m.id || `party:${i}`, source: 'party', index: i, ...m })),
-    ...roster.map((m, i) => ({ key: m.id || `roster:${i}`, source: 'roster', index: i, ...m })),
+    ...party.map((m, i) => ({ key: m.id || `party:${i}`, source: 'party', index: i, ...m, deployed: deployed.has(m.id) })),
+    ...roster.map((m, i) => ({ key: m.id || `roster:${i}`, source: 'roster', index: i, ...m, deployed: deployed.has(m.id) })),
   ];
   return (
     <div style={S.wrap} className={sub === 'process' ? 'eld-afk-process' : ''}>
       <div style={S.kick}>Mind View · Seam (AFK)</div>
       <div className="eld-display eld-screen-title" style={S.title}>The Seam</div>
-      <div style={S.sub}>Park Adventurers who aren't on the Mountain into a job. Jobs keep running while you're on other tabs. Each Adventurer can hold one job at a time.</div>
+      <div style={S.sub}>Park Adventurers who aren't on the Mountain into a job. Jobs run on real time — while you're on other tabs, and while the app is closed; you'll get a summary when you come back. Each Adventurer can hold one job at a time; a job pauses while its Adventurer is on the Mountain.</div>
       <div className="eld-seg" role="tablist" aria-label="AFK jobs">
         {SUBS.map((s) => (
           <button key={s.id} type="button" role="tab" aria-selected={sub === s.id}
@@ -71,13 +72,13 @@ function GatherPanel({ slots, areas, bench, skillXp, inventory, onUpdate, onTogg
         return (
           <div key={i} className="eld-card" style={S.card}>
             <div style={S.row}><span style={S.h}>Gather slot {i + 1}</span>
-              <span style={slot.running ? S.live : S.dim}>{slot.running ? 'Running' : 'Stopped'}</span></div>
+              <span style={slot.running && !slot.suspended ? S.live : S.dim}>{jobStatus(slot)}</span></div>
             <label style={S.lbl}>Adventurer</label>
             <select style={S.sel} value={slot.charKey || ''} disabled={slot.running}
               onChange={(e) => onUpdate(i, { charKey: e.target.value || null })}>
               <option value="">— assign —</option>
               {bench.map((b) => (
-                <option key={b.key} value={b.key}>{b.name} · Lv {b.level} ({b.source === 'party' ? 'party' : 'bench'})</option>
+                <option key={b.key} value={b.key} disabled={b.deployed}>{b.name} · Lv {b.level} ({b.deployed ? 'on the Mountain' : b.source === 'party' ? 'party' : 'bench'})</option>
               ))}
             </select>
             <label style={S.lbl}>Area</label>
@@ -95,7 +96,7 @@ function GatherPanel({ slots, areas, bench, skillXp, inventory, onUpdate, onTogg
               ))}
             </div>
             <Bar value={slot.progress} accent={area?.accent || 'var(--eld-accent)'} />
-            <div style={S.meta}>Cycle {Math.round((slot.progress || 0) * 100)}% · {area?.name || '—'} · {slot.family}</div>
+            <div style={S.meta}>Cycle {Math.round((slot.progress || 0) * 100)}% · {area?.name || '—'} · {slot.family}{slot.running && slot.startedAt ? ` · since ${since(slot.startedAt)}` : ''}</div>
             {char && <div style={S.ok}>{char.name} · {ARCHETYPES[char.archetype]?.role}</div>}
             <button type="button" className="eld-btn" style={S.wide} disabled={!slot.charKey} onClick={() => onToggle(i)}>
               {slot.running ? 'Stop' : 'Start gather'}
@@ -137,12 +138,12 @@ function ProcessPanel({ process, bench, inventory, worldvein, skillXp, onUpdate,
       </div>
       <div className="eld-card" style={{ ...S.card, borderColor: 'rgba(224,120,60,0.45)' }}>
         <div style={S.row}><span style={S.h}>Infusion berth</span>
-          <span style={process.running ? S.live : S.dim}>{process.running ? 'Infusing' : 'Idle'}</span></div>
+          <span style={process.running && !process.suspended ? S.live : S.dim}>{jobStatus(process, 'Infusing')}</span></div>
         <label style={S.lbl}>Processor</label>
         <select style={S.sel} value={process.charKey || ''} disabled={process.running}
           onChange={(e) => onUpdate({ charKey: e.target.value || null })}>
           <option value="">— assign —</option>
-          {bench.map((b) => <option key={b.key} value={b.key}>{b.name} · Lv {b.level}</option>)}
+          {bench.map((b) => <option key={b.key} value={b.key} disabled={b.deployed}>{b.name} · Lv {b.level}{b.deployed ? ' · on the Mountain' : ''}</option>)}
         </select>
         <label style={S.lbl}>Recipe</label>
         <div style={S.recipeList}>
@@ -198,13 +199,13 @@ function IdlePanel({ idle, bench, party, roster, unlocked, onUpdate, onToggle })
       </div>
       <div className="eld-card" style={S.card}>
         <div style={S.row}><span style={S.h}>Training berth</span>
-          <span style={idle.running ? S.live : S.dim}>{idle.running ? 'Training' : 'Stopped'}</span></div>
+          <span style={idle.running && !idle.suspended ? S.live : S.dim}>{jobStatus(idle, 'Training')}</span></div>
         <label style={S.lbl}>Trainee</label>
         <select style={S.sel} value={idle.charKey || ''} disabled={idle.running}
           onChange={(e) => onUpdate({ charKey: e.target.value || null })}>
           <option value="">— assign —</option>
           {bench.map((b) => (
-            <option key={b.key} value={b.key}>{b.name} · Lv {b.level}</option>
+            <option key={b.key} value={b.key} disabled={b.deployed}>{b.name} · Lv {b.level}{b.deployed ? ' · on the Mountain' : ''}</option>
           ))}
         </select>
         <Bar value={idle.progress} accent="#7fd6a0" />
@@ -216,6 +217,16 @@ function IdlePanel({ idle, bench, party, roster, unlocked, onUpdate, onToggle })
       </div>
     </div>
   );
+}
+
+/** Running / Paused (on the Mountain) / Stopped — §6 suspended jobs are kept but paused. */
+function jobStatus(job, runningLabel = 'Running') {
+  if (!job.running) return 'Stopped';
+  return job.suspended ? 'Paused — on the Mountain' : runningLabel;
+}
+function since(ts) {
+  const d = new Date(ts);
+  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
 function Bar({ value, accent }) {
