@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { biomeForArea, renderBiomeLayer } from './biomeStamps.jsx';
 import { rareAt, isSealed, isWalkable, nodeState } from './routeState.js';
-import { resolveFocus, centerOn, easeInOut, easeOut, polylinePointAt, SKIP_MS, FOLLOW_TAU_MS } from './camera.js';
+import { resolveFocus, centerOn, clampPan, easeInOut, easeOut, polylinePointAt, SKIP_MS, FOLLOW_TAU_MS, FRAME_EASE_MS } from './camera.js';
 import { trace, isTraceOn } from '../debug/trace.js';
 import './parchment.css';
 
@@ -14,8 +14,11 @@ import './parchment.css';
  * completed (dim dot, tap = nothing). Tapping never moves the party: the cards below the map
  * (Explore / Cancel, Fight / Flee, Use / Leave, seal, ambush) carry every commitment.
  * §13: this screen stays mounted for the whole run; fights render as overlays above it.
- * §17: the camera is explicit run state (`camera` prop = { pan, motion, focus }); a `focus` is a
- * framing request resolved here at render time — never a recentre on mount or return.
+* Camera: ONE JS controller owns the sheet transform. Every move — tap pan, overlay-close pan,
+ * drag release, the travel glide — starts from the controller's exact current pan and is stepped
+ * frame by frame here (no CSS transitions, nothing ever read back from the DOM), so a move can
+ * never start from a stale or mis-read position. `camera` (prop) holds the committed pan + pending
+ * framing requests; the controller commits back when a move finishes.
  * §16 (amended 2026-09-13, slower): travel is ONE continuous requestAnimationFrame tween along the
  * polyline (900 ms/hop, eased at the ends only); the camera follows the marker every frame; tap-to-skip eases 300 ms.
  */
@@ -46,19 +49,6 @@ function marginFor(vp) {
 }
 const TOAST_MS = 3000;
 
-
-/** The sheet's CURRENT on-screen translate (mid-transition included), from the computed transform matrix. */
-function readSheetPan(el) {
-  if (!el) return null;
-  const m = window.getComputedStyle(el).transform;
-  if (!m || m === 'none') return null;
-  const m3 = m.match(/matrix3d\(([^)]+)\)/);
-  if (m3) { const v = m3[1].split(',').map(Number); return v.length === 16 ? { x: v[12], y: v[13] } : null; }
-  const parts = m.match(/matrix\(([^)]+)\)/);
-  if (!parts) return null;
-  const v = parts[1].split(',').map(Number);
-  return v.length === 6 && v.every((x) => Number.isFinite(x)) ? { x: v[4], y: v[5] } : null;
-}
 
 /**
  * Frame scheduler: requestAnimationFrame while the page is visible; a coarse timer while it is
@@ -136,40 +126,64 @@ export default function RouteMapScreen({
     vpRO.current = ro;
   }, []);
 
-  // §17: a pending framing request resolves to a pan here, at render time (needs vp + sheet).
-  // Nothing else ever derives the camera from the party's node — no recentre on mount or return.
   const cur = byId[currentId];
   const measured = vp.w > 0 && vp.h > 0;
-  const focusPan = measured && camera?.focus ? resolveFocus(camera.focus, ptOf, vp, sheet, MARGIN, camera.pan) : null;
-  const pan = focusPan || camera?.pan || { x: 0, y: 0 };
+  const pan = camera?.pan || { x: 0, y: 0 }; // committed pan — the initial paint only; the controller owns the rest
 
-  // ---------- §16 continuous travel tween (rAF; writes the marker + sheet directly) ----------
-  const tween = useRef({ active: false, pos: null, pan: null, skipFrom: null, skipAt: null, raf: null });
+  // ---------- camera controller (single owner of the sheet transform) ----------
+  // the controller's mutable state lives in a ref; it is only ever touched from handlers, effects and frame callbacks
+  const cam = useRef({ pan: { x: pan.x, y: pan.y }, anim: null, raf: null });
+  const writeSheet = () => { if (sheetRef.current) sheetRef.current.style.transform = sheetTransform(cam.current.pan); };
+  const stopCameraAnim = () => { const c = cam.current; if (c.raf) cancelScheduled(c.raf); c.raf = null; c.anim = null; };
+  /** Eased pan from the controller's CURRENT pan to `target` over `ms` (0 = immediate); commits when done. */
+  const panTo = (target, ms, cause, extra = {}) => {
+    const c = cam.current;
+    stopCameraAnim();
+    const px = Math.hypot(target.x - c.pan.x, target.y - c.pan.y);
+    trace('pan', { cause, from: [c.pan.x, c.pan.y], to: [target.x, target.y], px, ms, ...extra });
+    if (px < 0.5 || ms <= 0) { c.pan = { ...target }; writeSheet(); setCamera({ type: 'set', pan: c.pan }); return; }
+    c.anim = { from: { ...c.pan }, to: { ...target }, t0: performance.now(), ms };
+    const step = (now) => {
+      const a = c.anim; if (!a) return;
+      const u = Math.min(1, (now - a.t0) / a.ms);
+      const k = easeInOut(u, 0.5); // soft in and out
+      c.pan = { x: a.from.x + (a.to.x - a.from.x) * k, y: a.from.y + (a.to.y - a.from.y) * k };
+      writeSheet();
+      if (u >= 1) { c.anim = null; c.raf = null; setCamera({ type: 'set', pan: c.pan }); return; }
+      c.raf = schedule(step);
+    };
+    c.raf = schedule(step);
+  };
+
+  // Framing requests (run start = immediate centre; overlay close = slow pan onto the party) resolve
+  // once the viewport is measured, from the controller's exact current pan.
+  useLayoutEffect(() => {
+    if (!measured || !camera?.focus) return;
+    const target = resolveFocus(camera.focus, ptOf, vp, sheet, MARGIN, cam.current.pan);
+    if (!target) return;
+    panTo(target, camera.motion === 'ease' ? FRAME_EASE_MS : 0, camera.focus.mode === 'centre' && camera.motion !== 'ease' ? 'runStart' : 'overlayClose');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [camera?.focus, vp.w, vp.h]);
+
+  // ---------- §16 continuous travel tween (rAF; the marker + the camera glide, frame by frame) ----------
+  const tween = useRef({ active: false, pos: null, skipFrom: null, skipAt: null, raf: null });
   const travelRef = useRef(travel);
   useEffect(() => { travelRef.current = travel; });
   useEffect(() => {
     if (!travel) { tween.current.active = false; return undefined; }
+    const c = cam.current;
+    stopCameraAnim(); // the trip takes over from wherever the camera is — exactly, no read-back
+    cancelScheduled(tween.current.raf); // a previous trip still settling hands over here
     const points = travel.path.map((id) => sheetPt(byId[id]));
     const dest = points[points.length - 1];
     const t0 = travel.startTs;
     const dur = Math.max(1, travel.duration);
-    // Pan-to-centre follow: the camera starts EXACTLY where it is (a framed node, a half-finished
-    // ease, a drag) and glides toward "centred on the marker" with a slow exponential lag, so it
-    // arrives centred without ever snapping or cutting.
-    const startPan = readSheetPan(sheetRef.current) || pan;
     const stat = { frames: 0, maxStep: 0, camPx: 0, t0: performance.now() }; // per-trip camera summary for the debug trace
-    trace('tween', { start: [startPan.x, startPan.y], marker: [points[0].x, points[0].y], hops: points.length - 1, ms: dur });
+    trace('tween', { start: [c.pan.x, c.pan.y], marker: [points[0].x, points[0].y], hops: points.length - 1, ms: dur });
     let lastTs = null;
-    let prevPan = startPan;
-    tween.current = { active: true, pos: points[0], pan: startPan, skipFrom: null, skipAt: null, raf: null };
+    let prevPan = c.pan;
+    tween.current = { active: true, pos: points[0], skipFrom: null, skipAt: null, raf: null };
     let done = false;
-    const sheetEl = sheetRef.current;
-    if (sheetEl) {
-      // from here on the tween owns the transform, frame by frame. Removing the transition alone would
-      // show the ease's END value until the first frame (a one-frame flash) — so pin the start pose NOW.
-      sheetEl.style.transition = 'none';
-      sheetEl.style.transform = sheetTransform(startPan);
-    }
     const step = (now) => {
       if (done) return;
       const tw = tween.current;
@@ -189,38 +203,37 @@ export default function RouteMapScreen({
       }
       if (finished) pos = { ...dest };
       tw.pos = pos;
-      const target = centerOn(pos, vp, sheet, MARGIN); // where "centred on the party" is right now
+      // pan-to-centre follow: glide toward "centred on the marker" with a slow exponential lag
+      const target = centerOn(pos, vp, sheet, MARGIN);
       const dt = lastTs == null ? 16 : Math.min(100, now - lastTs);
-      const k = 1 - Math.exp(-dt / FOLLOW_TAU_MS); // slow exponential lag — fluid, frame-rate independent
-      tw.pan = { x: tw.pan.x + (target.x - tw.pan.x) * k, y: tw.pan.y + (target.y - tw.pan.y) * k };
+      const k = 1 - Math.exp(-dt / FOLLOW_TAU_MS);
+      c.pan = { x: c.pan.x + (target.x - c.pan.x) * k, y: c.pan.y + (target.y - c.pan.y) * k };
       lastTs = now;
       if (markerRef.current) markerRef.current.style.transform = markerTransform(pos);
-      if (sheetRef.current) sheetRef.current.style.transform = sheetTransform(tw.pan);
-      if (isTraceOn()) { const st = Math.hypot(tw.pan.x - prevPan.x, tw.pan.y - prevPan.y); stat.frames += 1; stat.camPx += st; if (st > stat.maxStep) stat.maxStep = st; if (st > 40) trace('camjump', { px: st, frameMs: dt, at: Math.round(now - stat.t0) }); }
-      prevPan = tw.pan;
+      writeSheet();
+      if (isTraceOn()) { const st = Math.hypot(c.pan.x - prevPan.x, c.pan.y - prevPan.y); stat.frames += 1; stat.camPx += st; if (st > stat.maxStep) stat.maxStep = st; if (st > 40) trace('camjump', { px: st, frameMs: dt, at: Math.round(now - stat.t0) }); }
+      prevPan = c.pan;
       if (finished) {
         done = true;
         trace('tween', { arrived: true, elapsed: Math.round(now - stat.t0), frames: stat.frames, camPx: stat.camPx, maxStep: stat.maxStep, skipped: trv?.skipAt != null });
-        onTravelEnd(); // the party is placed on arrival; the camera may still be drifting
-        // settle: keep the same slow glide until the camera rests centred on the marker (≤ 1.5 s), then hand
-        // the camera back exactly where the glide left it — no correction, no snap
+        onTravelEnd(); // the party is placed on arrival; the camera may still be gliding
+        // settle: same slow glide until the camera rests centred on the marker (≤ 1.5 s), then commit — no snap
         const settleT0 = now;
         let lastSettle = now;
         const settle = (t) => {
-          const dt = Math.min(100, t - lastSettle); lastSettle = t;
-          const target = centerOn(tw.pos, vp, sheet, MARGIN);
-          const dist = Math.hypot(target.x - tw.pan.x, target.y - tw.pan.y);
+          const sdt = Math.min(100, t - lastSettle); lastSettle = t;
+          const tgt = centerOn(tw.pos, vp, sheet, MARGIN);
+          const dist = Math.hypot(tgt.x - c.pan.x, tgt.y - c.pan.y);
           if (dist > 0.5 && t - settleT0 < 1500) {
-            const k = 1 - Math.exp(-dt / FOLLOW_TAU_MS);
-            tw.pan = { x: tw.pan.x + (target.x - tw.pan.x) * k, y: tw.pan.y + (target.y - tw.pan.y) * k };
-            if (sheetRef.current) sheetRef.current.style.transform = sheetTransform(tw.pan);
+            const kk = 1 - Math.exp(-sdt / FOLLOW_TAU_MS);
+            c.pan = { x: c.pan.x + (tgt.x - c.pan.x) * kk, y: c.pan.y + (tgt.y - c.pan.y) * kk };
+            writeSheet();
             tw.raf = schedule(settle);
             return;
           }
           tw.active = false;
-          if (sheetEl) sheetEl.style.transition = '';
-          trace('tween', { settled: true, settleMs: Math.round(t - settleT0), pan: [tw.pan.x, tw.pan.y], restPx: dist });
-          setCamera({ type: 'travelEnd', pan: tw.pan });
+          trace('tween', { settled: true, settleMs: Math.round(t - settleT0), pan: [c.pan.x, c.pan.y], restPx: dist });
+          setCamera({ type: 'travelEnd', pan: c.pan });
         };
         tw.raf = schedule(settle);
         return;
@@ -228,17 +241,18 @@ export default function RouteMapScreen({
       tw.raf = schedule(step);
     };
     tween.current.raf = schedule(step);
-    return () => { done = true; cancelScheduled(tween.current.raf); if (sheetEl) sheetEl.style.transition = ''; };
+    // cleanup cancels only a trip still in flight; once arrived, the settle glide must run to its end
+    // (travel state clears on arrival, which re-runs this effect)
+    return () => { if (!done) { done = true; cancelScheduled(tween.current.raf); } };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [travel?.startTs]);
 
-  // A re-render mid-trip (toast, HUD) must not reset the DOM to the pre-trip pose: re-apply the
-  // tween's latest frame synchronously after every commit while it is running.
+  // After EVERY commit the DOM shows the controller's pan (React's style prop is only the first paint),
+  // and the marker its tween position while a trip runs.
   useLayoutEffect(() => {
+    writeSheet();
     const tw = tween.current;
-    if (!tw.active || !tw.pos || !tw.pan) return;
-    if (markerRef.current) markerRef.current.style.transform = markerTransform(tw.pos);
-    if (sheetRef.current) sheetRef.current.style.transform = sheetTransform(tw.pan);
+    if (tw.active && tw.pos && markerRef.current) markerRef.current.style.transform = markerTransform(tw.pos);
   });
 
   // §9: 3 s toast of the latest log line under the HUD strip
@@ -262,19 +276,14 @@ export default function RouteMapScreen({
   function activateNode(id) {
     const n = byId[id];
     if (!n || busy || !n.revealed) return;
-    // pan to centre, slowly: the tapped node glides to the centre of the HUD/card band (900 ms ease)
-    if (measured && n.id !== currentId && !n.cleared) {
-      const target = centerOn(sheetPt(n), vp, sheet, MARGIN);
-      const px = Math.hypot(target.x - pan.x, target.y - pan.y);
-      if (px > 0.5) { trace('pan', { cause: 'tap', node: n.id, from: [pan.x, pan.y], to: [target.x, target.y], px, ms: 900 }); setCamera({ type: 'set', pan: target, motion: 'ease' }); }
-      else trace('pan', { cause: 'tap', node: n.id, px: 0 });
-    }
+    // pan to centre, slowly: the tapped node glides to the centre of the HUD/card band
+    if (measured && n.id !== currentId && !n.cleared) panTo(centerOn(sheetPt(n), vp, sheet, MARGIN), FRAME_EASE_MS, 'tap', { node: n.id });
     onTapNode(n);
   }
   function onPointerDown(e) {
     const g = gesture.current;
     if (g.active) return;
-    g.active = true; g.dist = 0; g.moved = false; g.start = localPt(e); g.basePan = pan;
+    g.active = true; g.dist = 0; g.moved = false; g.start = localPt(e); g.basePan = { ...cam.current.pan };
     g.target = e.target.closest?.('[data-node]')?.dataset.node || null;
     capturePointer(vpEl.current, e.pointerId);
   }
@@ -286,8 +295,8 @@ export default function RouteMapScreen({
     const dy = p.y - g.start.y;
     g.dist = Math.abs(dx) + Math.abs(dy);
     if (g.dist > TAP_SLOP) g.moved = true;
-    // the sheet follows the finger unclamped; release eases it back inside the bounds (§12)
-    if (g.moved) setCamera({ type: 'drag', basePan: g.basePan, dx, dy });
+    // the sheet follows the finger unclamped (controller only — no React state per move); release eases it back
+    if (g.moved) { stopCameraAnim(); cam.current.pan = { x: g.basePan.x + dx, y: g.basePan.y + dy }; writeSheet(); }
   }
   function onPointerUp() {
     const g = gesture.current;
@@ -299,7 +308,7 @@ export default function RouteMapScreen({
       else trace('gesture', { tap: 'empty' });
     } else if (!travel) {
       trace('gesture', { drag: [g.start.x, g.start.y], px: g.dist });
-      setCamera({ type: 'release', vp, sheet });
+      panTo(clampPan(cam.current.pan, vp, sheet), 500, 'release');
     }
     g.target = null;
   }
@@ -307,14 +316,11 @@ export default function RouteMapScreen({
   const revealed = territory.nodes.filter((n) => n.revealed);
   const completedCount = territory.nodes.filter((n) => n.cleared).length;
   const markerPos = cur ? sheetPt(cur) : { x: 0, y: 0 };
-  // the ease class stays on during a trip: the tween disables the CSS transition INLINE on its first frame
-  // (dropping the class at trip start would snap a half-finished ease to its target before the tween's first write)
-  const sheetMotion = camera?.motion === 'ease' ? ' is-anim' : '';
 
   return (
     <div className="eld-map-wrap" style={styles.wrap}>
       <div ref={vpRef} className="eld-route-viewport eld-route-viewport--full" onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}>
-        <div ref={sheetRef} className={`eld-parchment-sheet${sheetMotion}`} style={{ width: sheet.w, height: sheet.h, transform: sheetTransform(pan) }}>
+        <div ref={sheetRef} className="eld-parchment-sheet" style={{ width: sheet.w, height: sheet.h, transform: sheetTransform(pan) }}>
           <svg className="eld-parchment-svg" width={sheet.w} height={sheet.h} viewBox={`${-M.x} ${-M.top} ${VW} ${VH}`}>
             <defs>
               <radialGradient id="eld-fog-hole">
