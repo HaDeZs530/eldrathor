@@ -19,7 +19,7 @@ import RallyScreen from './components/RallyScreen.jsx';
 import FightScreen from './components/FightScreen.jsx';
 import LootResults from './components/LootResults.jsx';
 import SanctuaryScreen from './components/SanctuaryScreen.jsx';
-import { AFK_TICK_MS, emptyGatherSlot, tickAfk, assignJob } from './afkRuntime.js';
+import { AFK_TICK_MS, reconcileAfk, assignJob, toggleJob, suspendJobs, resumeJobs, normalizeAfk, wantsOfflineSummary } from './afkRuntime.js';
 import { BASE_CSS } from './appChromeCss.js';
 import ScreenHeaderActions from './components/shell/ScreenHeaderActions.jsx';
 import HelpSheet from './components/shell/HelpSheet.jsx';
@@ -30,6 +30,7 @@ import { trace, isTraceOn } from './debug/trace.js';
 import { travelDuration, cameraReducer, CARD_PAUSE_MS, OVERLAY_FADE_MS } from './map/camera.js';
 import { createStore, createSaver, countedRng } from './save/save.js';
 import SettingsSheet from './components/shell/SettingsSheet.jsx';
+import OfflineSheet from './components/shell/OfflineSheet.jsx';
 
 // ---------- save & resume (Progression Loop Lock §1 / M1a) ----------
 // One store + one debounced saver per page. The save is read once, before the first render, and every
@@ -97,13 +98,10 @@ export default function Eldrathor() {
   const [flash, setFlash] = useState(null);
   const [sheet, setSheet] = useState(null); // null | 'help' | 'help+basics' | 'menu' | 'runlog'
   const logRef = useRef(null);
-  const [afk, setAfk] = useState(() => S0.afk || {
-    gatherSlots: [emptyGatherSlot(), emptyGatherSlot(), emptyGatherSlot()],
-    gatherSkillXp: { wood: 0, metal: 0, hunt: 0 },
-    process: { charKey: null, family: 'wood', running: false, progress: 0 },
-    processSkillXp: 0,
-    idle: { charKey: null, running: false, progress: 0 },
-  });
+  // M1c §6: jobs carry timestamps; a loaded save is normalised so a legacy running job counts time away
+  // from the save's own afkSavedAt. The first tick after boot reconciles the whole absence (→ Offline sheet).
+  const [afk, setAfk] = useState(() => normalizeAfk(S0.afk, { savedAt: S0.afkSavedAt ?? null, now: Date.now() }));
+  const [offline, setOffline] = useState(null); // summary for the "While you were away" sheet
   // --- run state (route map v2) ---
   const [ambush, setAmbush] = useState(null); // AmbushCard (v3 §3): { nodeId, prevId, kind, enemies, fleeChance, ... }
   const [travel, setTravel] = useState(null); // §14 trip: { path, startTs, duration, after, skipAt? }
@@ -175,20 +173,28 @@ export default function Eldrathor() {
     return () => SAVER.flush();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  // §6 true idle: reconcile wall-clock time on every tick, on app resume (visibilitychange) and on open
+  // (the first tick). A span longer than 60 s with anything accrued opens the Offline summary sheet.
   useEffect(() => {
-    const id = window.setInterval(() => {
-      const patch = tickAfk({
+    const reconcile = () => {
+      const patch = reconcileAfk({
         state: afkRef.current, inventory: inventoryRef.current, worldvein: worldveinRef.current,
-        party: partyRef.current, roster: rosterRef.current, unlocked: unlockedRef.current, dt: AFK_TICK_MS,
+        party: partyRef.current, roster: rosterRef.current, unlocked: unlockedRef.current, now: Date.now(),
       });
       if (!patch) return;
+      afkRef.current = patch.next; // the next tick must not re-run this span before React commits
       setAfk(patch.next);
-      if (patch.inv !== inventoryRef.current) setInventory(patch.inv);
-      if (patch.vein !== worldveinRef.current) setWorldvein(patch.vein);
-      if (patch.partyNext) setParty(patch.partyNext);
-      if (patch.rosterNext) setRoster(patch.rosterNext);
-    }, AFK_TICK_MS);
-    return () => window.clearInterval(id);
+      if (patch.inv !== inventoryRef.current) { inventoryRef.current = patch.inv; setInventory(patch.inv); }
+      if (patch.vein !== worldveinRef.current) { worldveinRef.current = patch.vein; setWorldvein(patch.vein); }
+      if (patch.partyNext) { partyRef.current = patch.partyNext; setParty(patch.partyNext); }
+      if (patch.rosterNext) { rosterRef.current = patch.rosterNext; setRoster(patch.rosterNext); }
+      if (wantsOfflineSummary(patch.summary)) setOffline(patch.summary);
+    };
+    reconcile();
+    const id = window.setInterval(reconcile, AFK_TICK_MS);
+    const onVis = () => { if (!document.hidden) reconcile(); };
+    document.addEventListener('visibilitychange', onVis);
+    return () => { window.clearInterval(id); document.removeEventListener('visibilitychange', onVis); };
   }, []);
   useEffect(() => {
     setHubSkinForTab(tab);
@@ -213,6 +219,7 @@ export default function Eldrathor() {
     setFight(null); setFightElapsed(0); setFightSpeed(1); setRunHp(null); setRunParty(null); extractingRef.current = false;
     clearTravel(); setTravel(null); setAmbush(null); setCard(null); setPrevId(null); dispatchCamera({ type: 'set', pan: null }); setOverlayLeaving(null);
     setRunMods({ dmgMult: 1, mitAdd: 0 }); setBusy(false);
+    setAfk((s) => resumeJobs(s, Date.now())); // §6: back from the run — suspended jobs resume from now
   }
 
   // ---------- island → rally → route ----------
@@ -236,6 +243,7 @@ export default function Eldrathor() {
     dispatchCamera({ type: 'runStart', partyId: t.entranceId }); // the only centring of a run: its first frame
     setLog([{ t: `You unroll the route map. ${a.name} lies unexplored beyond the entry — ${t.rares.length} rares roam it (optional hunts, big loot) and ${a.boss} waits at the far end.`, k: 'sys' }]);
     setRunHp(null); setRunParty(party.map((m) => ({ ...m }))); setRunMods({ dmgMult: 1, mitAdd: 0 }); setLogSeen(0);
+    setAfk((s) => suspendJobs(s, party.map((m) => m.id), Date.now())); // §6: deployed characters' jobs pause
     setPartyHP(1); setRunVein(0); setRunStage('route');
   }
 
@@ -646,21 +654,21 @@ export default function Eldrathor() {
     });
   }
   function onToggleGather(index) {
-    setAfk((a) => ({ ...a, gatherSlots: a.gatherSlots.map((s, i) => (i !== index || !s.charKey ? s : { ...s, running: !s.running, progress: s.running ? 0 : s.progress })) }));
+    setAfk((a) => ({ ...a, gatherSlots: a.gatherSlots.map((s, i) => (i !== index || !s.charKey ? s : toggleJob(s, Date.now()))) }));
   }
   function onUpdateProcess(patch) {
     const { charKey, ...rest } = patch;
     setAfk((a) => { const base = 'charKey' in patch ? assignJob(a, { kind: 'process' }, charKey) : a; return Object.keys(rest).length ? { ...base, process: { ...base.process, ...rest } } : base; });
   }
   function onToggleProcess() {
-    setAfk((a) => { if (!a.process.charKey) return a; const starting = !a.process.running; return { ...a, process: { ...a.process, running: starting, progress: starting ? a.process.progress : 0 } }; });
+    setAfk((a) => (a.process.charKey ? { ...a, process: toggleJob(a.process, Date.now()) } : a));
   }
   function onUpdateIdle(patch) {
     const { charKey, ...rest } = patch;
     setAfk((a) => { const base = 'charKey' in patch ? assignJob(a, { kind: 'idle' }, charKey) : a; return Object.keys(rest).length ? { ...base, idle: { ...base.idle, ...rest } } : base; });
   }
   function onToggleIdle() {
-    setAfk((a) => { if (!a.idle.charKey) return a; const starting = !a.idle.running; return { ...a, idle: { ...a.idle, running: starting, progress: starting ? a.idle.progress : 0 } }; });
+    setAfk((a) => (a.idle.charKey ? { ...a, idle: toggleJob(a.idle, Date.now()) } : a));
   }
 
   // Screen id for the ? help sheet — every tab root and every drilled-in screen.
@@ -679,7 +687,7 @@ export default function Eldrathor() {
         {tab === 'town' && <TownScreen party={party} stash={stash} setStash={setStash} inventory={inventory} setInventory={setInventory} worldvein={worldvein} setWorldvein={setWorldvein} setTab={selectTab} equipped={equipped} />}
         {tab === 'party' && <PartyScreen party={party} setParty={setParty} roster={roster} setRoster={setRoster} locked={!!territory} stash={stash} setStash={setStash} armor={inventory.armor || []} equipped={equipped} />}
         {tab === 'player' && <PlayerScreen worldvein={worldvein} />}
-        {tab === 'afk' && <AfkScreen unlocked={unlocked} party={party} roster={roster} inventory={inventory} afk={afk} worldvein={worldvein} onUpdateGatherSlot={onUpdateGatherSlot} onToggleGather={onToggleGather} onUpdateProcess={onUpdateProcess} onToggleProcess={onToggleProcess} onUpdateIdle={onUpdateIdle} onToggleIdle={onToggleIdle} />}
+        {tab === 'afk' && <AfkScreen unlocked={unlocked} party={party} roster={roster} inventory={inventory} afk={afk} worldvein={worldvein} deployedIds={runParty ? runParty.map((m) => m.id) : []} onUpdateGatherSlot={onUpdateGatherSlot} onToggleGather={onToggleGather} onUpdateProcess={onUpdateProcess} onToggleProcess={onToggleProcess} onUpdateIdle={onUpdateIdle} onToggleIdle={onToggleIdle} />}
         {tab === 'mountain' && runStage === 'island' && <IslandWorldMap areas={AREAS} unlocked={unlocked} onSelectArea={onSelectArea} onHarbor={() => selectTab('town')} />}
         {tab === 'mountain' && runStage === 'rally' && selectedArea && <RallyScreen area={selectedArea} party={party} roster={roster} onSwap={onRallySwap} onExplore={onRallyExplore} onBack={onRallyBack} />}
         {tab === 'mountain' && RUN_STAGES.has(runStage) && area && territory && (
@@ -705,6 +713,7 @@ export default function Eldrathor() {
         {sheet === 'runlog' && <RunLogSheet log={log} areaName={area?.name} onClose={() => { setLogSeen(log.length); setSheet(null); }} />}
         {sheet === 'debug' && <DebugTraceSheet onClose={() => setSheet(null)} />}
         {sheet === 'settings' && <SettingsSheet store={SAVE_STORE} onClose={() => setSheet(null)} />}
+        {offline && !sheet && <OfflineSheet summary={offline} onClose={() => setOffline(null)} />}
         {sheet === 'menu' && (
           <MenuSheet
             activeTab={tab}
