@@ -15,8 +15,8 @@ import './parchment.css';
  * §13: this screen stays mounted for the whole run; fights render as overlays above it.
  * §17: the camera is explicit run state (`camera` prop = { pan, motion, focus }); a `focus` is a
  * framing request resolved here at render time — never a recentre on mount or return.
- * §16: travel is ONE continuous requestAnimationFrame tween along the polyline (600 ms/hop,
- * eased at the ends only); the camera follows the marker every frame; tap-to-skip eases 250 ms.
+ * §16 (amended 2026-09-13, slower): travel is ONE continuous requestAnimationFrame tween along the
+ * polyline (900 ms/hop, eased at the ends only); the camera follows the marker every frame; tap-to-skip eases 300 ms.
  */
 
 /** v3 §2 palette — colour distinguishes type (only once a node is revealed). */
@@ -46,13 +46,15 @@ function marginFor(vp) {
 const TOAST_MS = 3000;
 
 /** The camera eases from its current position into "follow the marker" over this long at trip start (§17: ≥ 250 ms, never a cut). */
-const CAMERA_BLEND_MS = 500;
+const CAMERA_BLEND_MS = 700;
 
 /** The sheet's CURRENT on-screen translate (mid-transition included), from the computed transform matrix. */
 function readSheetPan(el) {
   if (!el) return null;
   const m = window.getComputedStyle(el).transform;
   if (!m || m === 'none') return null;
+  const m3 = m.match(/matrix3d\(([^)]+)\)/);
+  if (m3) { const v = m3[1].split(',').map(Number); return v.length === 16 ? { x: v[12], y: v[13] } : null; }
   const parts = m.match(/matrix\(([^)]+)\)/);
   if (!parts) return null;
   const v = parts[1].split(',').map(Number);
@@ -74,6 +76,10 @@ function cancelScheduled(h) {
   if (h.r) window.cancelAnimationFrame(h.r);
   if (h.t) window.clearTimeout(h.t);
 }
+
+/** Marker placement — transform only (its own compositor layer; no layout, no parchment repaint per frame). */
+const markerTransform = (pos) => `translate3d(${pos.x}px, ${pos.y}px, 0) rotate(45deg)`;
+const sheetTransform = (pan) => `translate3d(${pan.x}px, ${pan.y}px, 0)`;
 
 /** Keep pointer events flowing to the viewport during a drag; tolerate synthetic pointers. */
 function capturePointer(el, pointerId) {
@@ -173,8 +179,8 @@ export default function RouteMapScreen({
       const follow = centerOn(pos, vp, sheet, MARGIN);
       const b = finished ? 1 : easeInOut(Math.min(1, (now - blendT0) / CAMERA_BLEND_MS), 0.5);
       tw.pan = { x: startPan.x + (follow.x - startPan.x) * b, y: startPan.y + (follow.y - startPan.y) * b };
-      if (markerRef.current) { markerRef.current.style.left = `${pos.x}px`; markerRef.current.style.top = `${pos.y}px`; }
-      if (sheetRef.current) sheetRef.current.style.transform = `translate(${tw.pan.x}px, ${tw.pan.y}px)`;
+      if (markerRef.current) markerRef.current.style.transform = markerTransform(pos);
+      if (sheetRef.current) sheetRef.current.style.transform = sheetTransform(tw.pan);
       if (finished) {
         done = true;
         tw.active = false;
@@ -196,8 +202,8 @@ export default function RouteMapScreen({
   useLayoutEffect(() => {
     const tw = tween.current;
     if (!tw.active || !tw.pos || !tw.pan) return;
-    if (markerRef.current) { markerRef.current.style.left = `${tw.pos.x}px`; markerRef.current.style.top = `${tw.pos.y}px`; }
-    if (sheetRef.current) sheetRef.current.style.transform = `translate(${tw.pan.x}px, ${tw.pan.y}px)`;
+    if (markerRef.current) markerRef.current.style.transform = markerTransform(tw.pos);
+    if (sheetRef.current) sheetRef.current.style.transform = sheetTransform(tw.pan);
   });
 
   // §9: 3 s toast of the latest log line under the HUD strip
@@ -264,7 +270,7 @@ export default function RouteMapScreen({
   return (
     <div className="eld-map-wrap" style={styles.wrap}>
       <div ref={vpRef} className="eld-route-viewport eld-route-viewport--full" onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}>
-        <div ref={sheetRef} className={`eld-parchment-sheet${sheetMotion}`} style={{ width: sheet.w, height: sheet.h, transform: `translate(${pan.x}px, ${pan.y}px)` }}>
+        <div ref={sheetRef} className={`eld-parchment-sheet${sheetMotion}`} style={{ width: sheet.w, height: sheet.h, transform: sheetTransform(pan) }}>
           <svg className="eld-parchment-svg" width={sheet.w} height={sheet.h} viewBox={`${-M.x} ${-M.top} ${VW} ${VH}`}>
             <defs>
               <radialGradient id="eld-fog-hole">
@@ -337,7 +343,7 @@ export default function RouteMapScreen({
           })}
 
           {/* the party marker sits on top of whichever node the party occupies; §16 it glides along the polyline */}
-          {cur && <div ref={markerRef} className="eld-party-marker" style={{ left: markerPos.x, top: markerPos.y }} aria-hidden="true" />}
+          {cur && <div ref={markerRef} className="eld-party-marker" style={{ transform: markerTransform(markerPos) }} aria-hidden="true" />}
         </div>
 
         {/* §7 — single 44 px run HUD strip overlaid on the map */}

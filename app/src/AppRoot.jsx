@@ -252,7 +252,7 @@ export default function Eldrathor() {
     if (travelTimer.current) { window.clearTimeout(travelTimer.current); travelTimer.current = null; }
   }
   /**
-   * §16: the trip is ONE continuous tween run by RouteMapScreen (600 ms/hop, eased at the ends).
+   * §16 (amended, slower): the trip is ONE continuous tween run by RouteMapScreen (900 ms/hop, eased at the ends).
    * Travel is FREE (§6): no clock ticks, no interruptions. On arrival the party stands on the
    * destination, then (§12) a 200 ms pause before the card opens.
    */

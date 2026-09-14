@@ -63,7 +63,6 @@
   stroke-width: 7;
   stroke-linecap: round;
   opacity: 0.9;
-  filter: drop-shadow(0 0 5px rgba(232, 196, 106, 0.9));
   animation: eld-plan-in 300ms ease;
 }
 
@@ -108,7 +107,24 @@
   color: #5b6a8a;
   background: rgba(91, 106, 138, 0.08);
   font-size: var(--mv-label, 15px);
+  position: relative;
+}
+
+/*
+ * Performance: the pulse animates OPACITY on a pseudo-element (compositor-only) — animating
+ * box-shadow on the node itself re-rasterised the whole parchment layer every frame, and the cost
+ * grew with every revealed node (the map got laggier as the run went on).
+ */
+.eld-pnode.is-unknown .eld-pnode-shape::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 10px 2px rgba(91, 106, 138, 0.45), 0 0 8px 1px rgba(91, 106, 138, 0.35);
+  opacity: 0;
   animation: eld-veil-pulse 3s ease-in-out infinite;
+  will-change: opacity;
+  pointer-events: none;
 }
 
 /* Scouted (uncleared) — type icon in a hollow ring, type colour */
@@ -168,8 +184,15 @@
   position: relative;
 }
 
-.eld-pnode.is-boss.is-unsealed .eld-pnode-shape {
-  animation: eld-boss-pulse 1.4s ease-in-out infinite;
+.eld-pnode.is-boss.is-unsealed .eld-pnode-shape::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 3px solid rgba(142, 107, 209, 0.6);
+  animation: eld-boss-pulse 1.4s ease-out infinite;
+  will-change: transform, opacity;
+  pointer-events: none;
 }
 
 .eld-pnode-chain {
@@ -207,13 +230,13 @@
 }
 
 @keyframes eld-veil-pulse {
-  0%, 100% { box-shadow: inset 0 0 0 0 rgba(91, 106, 138, 0), 0 0 0 0 rgba(91, 106, 138, 0); }
-  50% { box-shadow: inset 0 0 10px 2px rgba(91, 106, 138, 0.45), 0 0 8px 1px rgba(91, 106, 138, 0.35); }
+  0%, 100% { opacity: 0; }
+  50% { opacity: 1; }
 }
 
 @keyframes eld-boss-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(142, 107, 209, 0.6); }
-  50% { box-shadow: 0 0 0 12px rgba(142, 107, 209, 0); }
+  0% { transform: scale(1); opacity: 0.8; }
+  100% { transform: scale(1.45); opacity: 0; }
 }
 
 @keyframes eld-plan-in {
@@ -502,11 +525,15 @@
 /* the party marker is its own element so it can glide between nodes (v3 §12) */
 .eld-party-marker {
   position: absolute;
+  left: 0;
+  top: 0;
   width: 40px;
   height: 40px;
   margin: -20px 0 0 -20px;
   border-radius: 6px;
-  transform: rotate(45deg);
+  /* positioned by transform (translate3d + rotate) so the tween never triggers layout or a sheet repaint */
+  will-change: transform;
+  transform: translate3d(0, 0, 0) rotate(45deg);
   background: radial-gradient(circle at 50% 50%, #fffdf5 0%, #fffdf5 28%, #e8c46a 32%, #e8c46a 100%);
   border: 2px solid #fff8e1;
   box-shadow: 0 0 0 5px rgba(232, 196, 106, 0.55), 0 0 22px 6px rgba(232, 196, 106, 0.75);
@@ -528,9 +555,9 @@
 .eld-edge-plan { stroke-width: 7; }
 
 /* --- v3 §12: every camera move eased ≥ 250 ms; cards slide up in 250 ms --- */
-/* every camera move that is not the travel tween is a visible PAN: 450 ms, soft in and out, never a cut */
+/* every camera move that is not the travel tween is a visible PAN: 700 ms, soft in and out, never a cut (Anthony 2026-09-13: slower) */
 .eld-parchment-sheet.is-anim {
-  transition: transform 450ms cubic-bezier(0.45, 0, 0.25, 1);
+  transition: transform 700ms cubic-bezier(0.45, 0, 0.25, 1);
 }
 
 /* --- §13: the map stays mounted for the whole run; fight / results / sanctuary are overlays --- */

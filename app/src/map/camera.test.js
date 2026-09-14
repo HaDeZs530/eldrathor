@@ -49,9 +49,9 @@ test('centre / clamp: the party lands in the band between the HUD strip and the 
   assert.deepEqual(c, { x: 0, y: vp.h - sheet.h });
 });
 
-test('§16: one continuous tween — 600 ms per hop, 250 ms skip, eased only at the ends, lands exactly on the destination', () => {
-  assert.equal(HOP_MS, 600);
-  assert.equal(SKIP_MS, 250);
+test('§16 (amended 2026-09-13): one continuous tween — 900 ms per hop, 300 ms skip, eased only at the ends, lands exactly on the destination', () => {
+  assert.equal(HOP_MS, 900);
+  assert.equal(SKIP_MS, 300);
   const pts = [{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }, { x: 300, y: 100 }];
   assert.equal(travelDuration(pts.length - 1), 3 * HOP_MS);
   assert.deepEqual(polylinePointAt(pts, 0), pts[0]);
