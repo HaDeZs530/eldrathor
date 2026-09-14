@@ -26,7 +26,7 @@ import HelpSheet from './components/shell/HelpSheet.jsx';
 import MenuSheet from './components/shell/MenuSheet.jsx';
 import RunLogSheet from './map/RunLogSheet.jsx';
 import DebugTraceSheet from './debug/DebugTraceSheet.jsx';
-import { trace, isTraceOn } from './debug/trace.js';
+import { trace, isTraceOn, BUILD } from './debug/trace.js';
 import { travelDuration, cameraReducer, CARD_PAUSE_MS, OVERLAY_FADE_MS } from './map/camera.js';
 import { createStore, createSaver, countedRng } from './save/save.js';
 import SettingsSheet from './components/shell/SettingsSheet.jsx';
@@ -239,6 +239,14 @@ export default function Eldrathor() {
     fightIndex.current = 0;
     const t = genTerritory(a, { rng: runRng.current });
     trace('run', { start: a.name, seed: runSeed.current, nodes: t.nodes.length, rares: t.rares.length, entrance: t.entranceId });
+    // M1d: a state snapshot at run start so a trace can be reproduced — build, party (level / gear), banked Worldvein, unlocks
+    if (isTraceOn()) {
+      trace('snapshot', {
+        build: BUILD, tier: a.tier, worldvein, unlocked,
+        party: fielded.map((m) => ({ id: m.id, name: m.name, arch: m.archetype, lv: m.level, xp: Math.floor(m.xp || 0), weapon: m.weaponItem ? `${m.weaponItem.tier} ${m.weaponItem.weaponType} ${m.weaponItem.baseRating}+${m.weaponItem.empower || 0}` : 'unarmed', armor: m.armorItem ? `${m.armorItem.quality} ${m.armorItem.rating}` : null })),
+        stash: stash.length, armor: (inventory.armor || []).length,
+      });
+    }
     setArea(a); setTerritory(t); setCurrentId(t.entranceId); setCard(null);
     dispatchCamera({ type: 'runStart', partyId: t.entranceId }); // the only centring of a run: its first frame
     setLog([{ t: `You unroll the route map. ${a.name} lies unexplored beyond the entry — ${t.rares.length} rares roam it (optional hunts, big loot) and ${a.boss} waits at the far end.`, k: 'sys' }]);

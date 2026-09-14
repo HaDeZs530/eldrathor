@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { createModeSwitcher } from './modeSwitch.js';
 import { MODE, HUB_SKIN, TAB_HUB_SKIN } from './tokens.js';
 import '../components/ui/ui.css';

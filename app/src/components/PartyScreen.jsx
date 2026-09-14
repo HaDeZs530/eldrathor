@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { newCharId, ARCHETYPES, STATS, STAT_LABELS, ARCHETYPE_SEEDS, TIER_COLOR } from '../data.js';
 import { starterWeapon, validName, NAME_MAX, equippedIds as equippedOf } from '../progression/progression.js';
 import { MAT_QUALITY } from '../theme/tokens.js';

@@ -1,4 +1,3 @@
-import React from 'react';
 
 /**
  * Eternal Hero–style gear/item boxes around a central class icon / silhouette.

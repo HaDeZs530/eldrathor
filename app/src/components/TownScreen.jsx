@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { TIER_COLOR, newId } from '../data.js';
 import { MAT_QUALITY } from '../theme/tokens.js';
 import { previewEmpower, EMPOWER_MAX, RARITY, weaponDamageMult, rarityIndex } from '../progression/progression.js';

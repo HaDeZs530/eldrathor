@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { AREAS, ARCHETYPES } from '../data.js';
 import { GATHER_FAMILIES, MAT_QUALITY } from '../theme/tokens.js';
 import { trainXpGain, maxUnlockedTier } from '../afkRuntime.js';

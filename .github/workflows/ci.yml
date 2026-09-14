@@ -1,0 +1,32 @@
+# CI — Milestone 1d (docs/CLAUDE_BRIEFS/2026-09-14_m1d-engineering-hygiene.md).
+# Runs on every pull request and on pushes to main: clean install, lint, build, tests.
+# Branch protection on main requires the "build-and-test" check (Anthony enables the ruleset).
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: build-and-test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: app/.nvmrc
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+      - run: npm test

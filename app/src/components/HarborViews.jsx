@@ -1,4 +1,3 @@
-import React from 'react';
 import { ARCHETYPES, WEAPONS, TIER_COLOR } from '../data.js';
 import { deriveDisplay } from '../combat/derive.js';
 
