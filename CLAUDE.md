@@ -39,6 +39,7 @@ Eldrathor: a UI-based iOS RPG (Vite + React now; Capacitor iOS wrap later). The 
 - Weapons DROP (+ merge as growth); armor is CRAFTED only (never drops).
 
 ## Art direction (LOCKED — dual modes + Mountain ladder)
+- **`docs/Eldrathor_Style_Bible_Lock.md` is the production spec**: exact tokens per mode and the asset manifest. Code builds chrome; art files provide illustrations. Reference image `docs/art/concept/style-target-2026-09-14.png`.
 - Island world map → warm RPG (**pan only**, no zoom — playtest lock).
 - Location/node map → hybrid + parchment fog-of-war.
 - Fight/loot → full Mind-view.
