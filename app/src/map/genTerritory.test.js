@@ -156,3 +156,17 @@ test('frontier never strands: exploring greedily, an unexplored node is always v
     assert.ok(t.nodes.every((n) => n.cleared), `seed ${seed}: map never fully cleared`);
   }
 });
+
+test('the boss is the end of the road: degree 1, and every other node is reachable from the entrance WITHOUT passing the boss (200 maps)', () => {
+  for (let seed = 1; seed <= 200; seed++) {
+    const t = genTerritory(area(1 + (seed % 9)), { rng: mulberry32(seed) });
+    const map = Object.fromEntries(t.nodes.map((n) => [n.id, n]));
+    assert.equal(map[t.bossId].neighbors.length, 1, `seed ${seed}: boss degree ${map[t.bossId].neighbors.length}`);
+    const seen = new Set([t.entranceId]);
+    const stack = [t.entranceId];
+    while (stack.length) { const c = stack.pop(); for (const m of map[c].neighbors) if (m !== t.bossId && !seen.has(m)) { seen.add(m); stack.push(m); } }
+    for (const n of t.nodes) if (n.id !== t.bossId) assert.ok(seen.has(n.id), `seed ${seed}: ${n.id} only reachable through the boss`);
+    for (const r of t.rares) assert.ok(seen.has(r.nodeId) && r.nodeId !== t.bossId, `seed ${seed}: rare behind the boss`);
+    assert.ok(t.edges.every(([a, b]) => map[a] && map[b]), `seed ${seed}: dangling edge`);
+  }
+});

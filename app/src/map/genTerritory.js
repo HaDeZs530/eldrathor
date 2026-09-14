@@ -382,6 +382,50 @@ export function genTerritory(area, opts = {}) {
     if (nearest) link(n, nearest);
   }
 
+  // ---------- the boss is the END of the road (Anthony 2026-09-14) ----------
+  // The boss node keeps exactly one edge — the one on the shortest path from the entrance — so nothing
+  // lies "past" the boss and no rare / sanctuary / crystal can only be reached through him. Any node
+  // that was reachable only via the boss is re-linked to the nearest reachable node (never crossing,
+  // same or adjacent band) or, failing that, dropped from the map.
+  {
+    const sp = shortestPath(adj, entrance.id, boss.id) || [];
+    const keep = sp.length >= 2 ? sp[sp.length - 2] : adj[boss.id][0];
+    for (const o of [...adj[boss.id]]) if (o !== keep) unlink(boss.id, o);
+    const reachableSansBoss = () => {
+      const seen = new Set([entrance.id]);
+      const stack = [entrance.id];
+      while (stack.length) {
+        const c = stack.pop();
+        for (const m of adj[c]) if (m !== boss.id && !seen.has(m)) { seen.add(m); stack.push(m); }
+      }
+      return seen;
+    };
+    for (let guard = 0; guard < nodes.length; guard++) {
+      const seen = reachableSansBoss();
+      const stranded = nodes.filter((n) => n !== boss && !seen.has(n.id));
+      if (!stranded.length) break;
+      const map = byId();
+      let linked = false;
+      for (const n of stranded) {
+        const cands = [...seen].map((id) => map[id]).filter((o) => o !== entrance && bandOk(o, n) && !crossesAny(n, o)).sort((a, b) => dist(n, a) - dist(n, b));
+        if (cands.length) { link(n, cands[0]); linked = true; break; }
+      }
+      if (!linked) {
+        // drop the most remote stranded node and retry (its edges go with it)
+        const drop = stranded.sort((a, b) => b.band - a.band)[0];
+        for (const o of [...adj[drop.id]]) unlink(drop.id, o);
+        delete adj[drop.id];
+        nodes.splice(nodes.indexOf(drop), 1);
+      }
+    }
+    // cutting the boss's extra edges can cost loops — restore them away from the boss (§11: ≥ 4 loops)
+    for (let guard = 0; guard < 40 && loops() < 4; guard++) {
+      const cand = gabriel.find(([a, b]) => a !== boss && b !== boss && adj[a.id] && adj[b.id] && !has(a.id, b.id) && deg(a.id) <= 3 && deg(b.id) <= 3 && !crossesAny(a, b));
+      if (!cand) break;
+      link(cand[0], cand[1]);
+    }
+  }
+
   // ---------- depth (BFS from entrance, normalised by the boss's depth) ----------
   const depths = bfsDepths(adj, entrance.id);
   const bossDepth = Math.max(1, depths.get(boss.id) || 1);
