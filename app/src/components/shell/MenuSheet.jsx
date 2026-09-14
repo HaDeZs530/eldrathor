@@ -3,7 +3,7 @@ import './shell.css';
 
 /**
  * ☰ — quick menu bottom sheet (docs/Eldrathor_UI_Shell_Lock.md).
- * Items: Island · Party · Town · Seam · Player · Help · Settings (placeholder).
+ * Items: Island · Party · Town · Seam · Player · Help · Debug trace · Settings (save export / import / reset).
  * During a run adds Extract with a confirm.
  */
 const NAV = [
@@ -14,7 +14,7 @@ const NAV = [
   { id: 'player', label: 'Player', glyph: '◎' },
 ];
 
-export default function MenuSheet({ activeTab, inRun, canExtract, runVein, traceOn = false, onNavigate, onHelp, onDebug, onExtract, onClose }) {
+export default function MenuSheet({ activeTab, inRun, canExtract, runVein, traceOn = false, onNavigate, onHelp, onDebug, onSettings, onExtract, onClose }) {
   const [confirming, setConfirming] = useState(false);
   return (
     <div className="eld-sheet-backdrop" onClick={onClose} role="presentation">
@@ -39,10 +39,10 @@ export default function MenuSheet({ activeTab, inRun, canExtract, runVein, trace
             <span>Debug trace</span>
             <span className="eld-menu-note">{traceOn ? 'recording' : 'off'}</span>
           </button>
-          <button type="button" className="eld-card eld-menu-item" disabled title="Settings — placeholder">
+          <button type="button" className="eld-card eld-menu-item" onClick={onSettings} title="Export / import / reset save">
             <span className="eld-menu-glyph">⚙</span>
             <span>Settings</span>
-            <span className="eld-menu-note">soon {/* DESIGN-OPEN: settings contents */}</span>
+            <span className="eld-menu-note">save · export · import</span>
           </button>
           {inRun && (
             <button type="button" className="eld-card eld-menu-item" disabled={!canExtract} onClick={() => setConfirming(true)}

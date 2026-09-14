@@ -3,7 +3,7 @@
  * Worldvein gained (+20% with Attune Vein), loot = weapon name + tier + rating 1–100.
  * Loot tier roll = world tier ± 1, Attune Vein biases +1.
  */
-import { WEAPONS } from '../data.js';
+import { WEAPONS, newId } from '../data.js';
 
 export const LOOT_TIERS = ['Common', 'Fine', 'Rare', 'Epic', 'Legendary'];
 const WEAPON_TYPES = Object.keys(WEAPONS);
@@ -40,7 +40,7 @@ export function rollRewards({ tier, worldTier, nodeType, attuneVein = false, rng
     const idx = forceTierIdx ?? Math.max(0, Math.min(LOOT_TIERS.length - 1, T - 1 + wobble + tierBias));
     const lootTier = LOOT_TIERS[idx];
     const weaponType = WEAPON_TYPES[Math.floor(rng() * WEAPON_TYPES.length)];
-    return { name: `${lootTier} ${weaponType}`, tier: lootTier, weaponType, rating: 1 + Math.floor(rng() * 100) };
+    return { id: newId('w'), name: `${lootTier} ${weaponType}`, tier: lootTier, weaponType, rating: 1 + Math.floor(rng() * 100) };
   };
   const gears = [];
   const bias = attuneVein ? 1 : 0;

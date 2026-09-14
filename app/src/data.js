@@ -82,7 +82,9 @@ export const DEFAULT_PARTY = [
 ];
 
 /** Stable character id (bug-fix pass 1 §7/§8: run HP and AFK jobs are keyed by id, never by position). */
-export const newCharId = () => `c-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
+/** Permanent id for any entity (Progression Loop Lock §1): `c-` Adventurer, `w-` weapon, `a-` armor. */
+export const newId = (prefix = 'i') => `${prefix}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+export const newCharId = () => newId('c');
 export const withIds = (list) => list.map((m) => (m.id ? m : { ...m, id: newCharId() }));
 
 export const TIER_COLOR = {
