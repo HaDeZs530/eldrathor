@@ -14,8 +14,8 @@ export const HOP_MS = 600;
 export const SKIP_MS = 250;
 /** §17 — "upper 60 % of the map viewport": the framed point sits at 30 % of the viewport height. */
 export const FRAME_TOP_FRAC = 0.3;
-/** §17 — every camera ease is ≥ 250 ms; framing eases take 300 ms (CSS `.is-anim`). */
-export const FRAME_EASE_MS = 300;
+/** Every camera ease is ≥ 250 ms; framing pans take 450 ms (CSS `.is-anim`) — never a cut. */
+export const FRAME_EASE_MS = 450;
 export const CARD_PAUSE_MS = 200;
 export const OVERLAY_FADE_MS = 350;
 

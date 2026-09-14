@@ -46,7 +46,7 @@ function marginFor(vp) {
 const TOAST_MS = 3000;
 
 /** The camera eases from its current position into "follow the marker" over this long at trip start (§17: ≥ 250 ms, never a cut). */
-const CAMERA_BLEND_MS = 350;
+const CAMERA_BLEND_MS = 500;
 
 /** The sheet's CURRENT on-screen translate (mid-transition included), from the computed transform matrix. */
 function readSheetPan(el) {
@@ -149,6 +149,8 @@ export default function RouteMapScreen({
     const blendT0 = performance.now();
     tween.current = { active: true, pos: points[0], pan: null, skipFrom: null, skipAt: null, raf: null };
     let done = false;
+    const sheetEl = sheetRef.current;
+    if (sheetEl) sheetEl.style.transition = 'none'; // from here on the tween owns the transform, frame by frame
     const step = (now) => {
       if (done) return;
       const tw = tween.current;
@@ -176,6 +178,7 @@ export default function RouteMapScreen({
       if (finished) {
         done = true;
         tw.active = false;
+        if (sheetEl) sheetEl.style.transition = '';
         // the camera is now exactly where the tween left it — no correction, no snap
         setCamera({ type: 'travelEnd', pan: tw.pan });
         onTravelEnd();
@@ -184,7 +187,7 @@ export default function RouteMapScreen({
       tw.raf = schedule(step);
     };
     tween.current.raf = schedule(step);
-    return () => { done = true; cancelScheduled(tween.current.raf); };
+    return () => { done = true; cancelScheduled(tween.current.raf); if (sheetEl) sheetEl.style.transition = ''; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [travel?.startTs]);
 
@@ -254,7 +257,9 @@ export default function RouteMapScreen({
   const revealed = territory.nodes.filter((n) => n.revealed);
   const completedCount = territory.nodes.filter((n) => n.cleared).length;
   const markerPos = cur ? sheetPt(cur) : { x: 0, y: 0 };
-  const sheetMotion = !travel && camera?.motion === 'ease' ? ' is-anim' : '';
+  // the ease class stays on during a trip: the tween disables the CSS transition INLINE on its first frame
+  // (dropping the class at trip start would snap a half-finished ease to its target before the tween's first write)
+  const sheetMotion = camera?.motion === 'ease' ? ' is-anim' : '';
 
   return (
     <div className="eld-map-wrap" style={styles.wrap}>
