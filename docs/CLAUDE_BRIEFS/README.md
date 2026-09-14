@@ -9,9 +9,10 @@ Active coding tasks for **Claude Code**. The **Claude Design Chat** writes these
 - When a brief is done, mark **DONE** at the top, move it to `_archive/`, and note it in `docs/SESSION_LOG.md`.
 
 ## Queue (2026-09-14)
-- `2026-09-14_m1d-engineering-hygiene.md` — DONE (#PRNUM) — being archived with this PR; queue empty until the Design Chat's next brief.
+- `2026-09-14_m1d-engineering-hygiene.md` — DONE (#54) — archived; queue empty until the Design Chat's next brief.
 
 ## Archive (`_archive/`, newest first — all DONE or superseded)
+- `2026-09-14_m1d-engineering-hygiene.md` — DONE (#54)
 - `2026-09-14_m1c-afk-true-idle.md` — DONE (#53)
 - `2026-09-14_style-bible-chrome.md` — DONE (#52)
 - `2026-09-14_m1b-progression-chain.md` — DONE (#51)
