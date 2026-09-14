@@ -117,14 +117,13 @@ The party marker (gold diamond) sits on top of whichever node the party occupies
 - The boss node is unexplored like any other. Exploring it reveals crown + chains if sealed; the seal card shows rares remaining. Kill all rares → the revealed boss node's chains drop and it pulses; if the boss node is still unexplored when the last rare dies, nothing on the map changes until you find it (the run log says "The seal is broken").
 - The "shortest revealed path lights up" rule is dropped — there's nothing to light up to.
 
-## 16. Travel speed
-**600 ms per hop**, one continuous tween along the whole path, camera tied to it per frame, no last-hop snap. Skip = 250 ms ease.
+## 16. Travel speed (as shipped and playtest-approved, PRs #35–#40)
+**900 ms per hop**, one continuous tween along the whole path, camera tied to it per frame, no last-hop snap. Skip = 300 ms ease.
 
-## 17. Camera framing
-- **Far node tapped:** camera eases (300 ms) to centre that node in the upper 60% of the map viewport, card below.
-- **Adjacent node tapped:** camera eases to frame **both** party and node (midpoint), both inside the upper 60%.
-- **Before any overlay closes** (Results, Sanctuary): camera eases to centre on the party's current node **while the overlay is still up** (300 ms), then the overlay fades. The map is never revealed off-party.
-- All eases ≥ 250 ms; never a cut.
+## 17. Camera (as shipped and playtest-approved, PRs #35–#40 — replaces the fixed-framing draft)
+- **One rule: every camera move is a slow 900 ms pan to centre on its target; never a cut, never an auto-snap.** Targets: the tapped node (card below), the party on arrival, the party under an overlay before it fades. Adjacent-node midpoint framing and the upper-60% rule are dropped in favour of this single behaviour.
+- One camera owner: any new pan/travel/drag cancels the previous animation; all cancelled on unmount.
+- The map is never revealed off-party after an overlay.
 
 ## 18. Party marker never hides the node (RULED 2026-09-14)
 The party marker is a **gold ring, not a solid diamond**. It frames whatever node the party stands on, so the node's own icon stays visible inside it: a revealed skull, shard, blades or crown sits inside the gold ring; a completed node shows its dim dot inside the ring. A small gold pennant (▲, 10 px) floats above the ring so the party is still findable at a glance when zoomed out. Ring: 3 px gold stroke, 44 px diameter, soft outer glow; the pennant bobs 2 px on a 2 s loop. The node icon under the party is never recoloured or replaced — the icon is the node, the ring is you.

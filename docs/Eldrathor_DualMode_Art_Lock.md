@@ -26,7 +26,8 @@ Forge/temple biome on the node map: **interior rooms/hallways with walls**, not 
 ## Hub skins vs dual-mode (AFK/Town — 2026-09-11)
 
 Aligned with `docs/Eldrathor_AFK_Town_Lock.md` / TabBar lock:
-- **Town** (incl. Crafter / Upgrade / Market sub) → warm WORLD / `hub-rpg`.
+- **Town** (incl. Crafter / Smith / Market sub) → warm WORLD / `hub-rpg`.
+  > **Town treatment amended 2026-09-14 (Anthony-approved concept, PR #48):** Town — and only Town — uses a **painted pixel-art harbor hero (250 px)**, dark warm panel fills, restrained 1 px antique-gold/brown borders, **Cinzel** display titles, a system UI face for controls/numbers/body, and four stacked illustrated destination rows (**Party / Crafter / Smith / Market**). "Chunky micro-pixel kit, hard edges, Press Start 2P" no longer applies to Town. App header, tab bar and every other WORLD-mode screen are unchanged. **"Upgrade" is presented to the player as "Smith"** (section id stays `upgrade`). Art slots pending: `veinharbor-hero`, `town-party`, `town-crafter`, `town-smith`, `town-market` (styled fallback until files land).
 - **AFK Gather + Idle/Train** → Mind-view / `hub-mind`.
 - **AFK Process** → theme OPEN; prototype uses mind chrome + slight forge glow.
 - Root Market tab removed; Market is under Town only.

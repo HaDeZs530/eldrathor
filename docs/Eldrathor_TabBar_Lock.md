@@ -11,7 +11,7 @@
 1. **Player** — Mind-view UI (Mythros-blue refined / cold projection)
 2. **Party** — Mind-view UI
 3. **Mountain** — CENTER, emphasized (larger / glowing). Hybrid look between mind-view and warm RPG. Owns mountain map / world select / expedition entry.
-4. **Town** — Warm RPG / world coloration (micro-pixel warm). Veinharbor hub + **Crafter** + **Upgrade/Smith** + **Market** (sub-area).
+4. **Town** — Warm RPG / world coloration. Veinharbor hub (painted harbor hero + illustrated destination rows, see Dual-Mode lock amendment 2026-09-14) + **Party** row (opens the Party tab) + **Crafter** + **Smith** (id `upgrade`) + **Market** (sub-areas). Each sub-area has "← Back to Veinharbor"; harbor scroll position preserved; Town tab stays selected.
 5. **AFK / Seam** — Mind-view for Gather & Idle; Process theme OPEN (mind + slight forge glow). Replaces former root Market tab. Name OPEN (Seam / Echoes / Bound / …).
 
 ## Hub chrome theme families

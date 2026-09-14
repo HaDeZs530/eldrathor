@@ -28,7 +28,9 @@ _(none queued — waiting on the Design Chat's next brief)_
 - PR #19 — combat v2
 - PR #20 — playtest polish
 - PR #21 — route map v2
-- PR #22 — UI shell (zoom, help/menu; scale pass was insufficient → redone in v3 brief)
+- PR #22 — UI shell
+- PRs #23–#45 — route map v3 series (travel, states, camera, no respawns, no seal, run log)
+- PR #46 — bug-fix pass 1 · #47 — ring marker + seal cleanup · #48 — Veinharbor visual pass rev 1
 - PR #23 — route map v3: one-tap travel, node visual states, ambush flee, Mind-view scale, fight order
 - PR #24 / #25 — Mind-view scale on Player / Party / Seam; Party stat sizes
 - PR #26 — v3 amendments: no respawns, free travel, named at generation, full-screen map + 44 px HUD
