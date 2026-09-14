@@ -14,7 +14,7 @@ const NAV = [
   { id: 'player', label: 'Player', glyph: '◎' },
 ];
 
-export default function MenuSheet({ activeTab, inRun, canExtract, runVein, onNavigate, onHelp, onExtract, onClose }) {
+export default function MenuSheet({ activeTab, inRun, canExtract, runVein, traceOn = false, onNavigate, onHelp, onDebug, onExtract, onClose }) {
   const [confirming, setConfirming] = useState(false);
   return (
     <div className="eld-sheet-backdrop" onClick={onClose} role="presentation">
@@ -33,6 +33,11 @@ export default function MenuSheet({ activeTab, inRun, canExtract, runVein, onNav
             <span className="eld-menu-glyph">?</span>
             <span>Help</span>
             <span className="eld-menu-note">this screen + basics</span>
+          </button>
+          <button type="button" className="eld-card eld-menu-item" onClick={onDebug} title="Playtest debug trace">
+            <span className="eld-menu-glyph">🐞</span>
+            <span>Debug trace</span>
+            <span className="eld-menu-note">{traceOn ? 'recording' : 'off'}</span>
           </button>
           <button type="button" className="eld-card eld-menu-item" disabled title="Settings — placeholder">
             <span className="eld-menu-glyph">⚙</span>

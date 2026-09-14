@@ -39,6 +39,7 @@ _(none queued — waiting on the Design Chat's next brief)_
 
 ## Playtest
 Phone: `cd app && npm run dev -- --host` → LAN URL (or `npm run dev:phone` once PR #15 lands for a QR code). Island pans + zoom toggle; route map fills the screen.
+**Debug trace (PR #39):** ☰ Menu → Debug trace → Turn on; play; Copy → paste to Claude Code with what felt wrong. Format + reading guide: `docs/DEBUG_TRACE.md`.
 
 ## Rules reminder
 Weapons drop / armor craft; Worldvein currency; tab bar stays during runs; themes crossfade; no new deps without reason.
