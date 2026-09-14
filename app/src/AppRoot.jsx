@@ -26,6 +26,18 @@ import RunLogSheet from './map/RunLogSheet.jsx';
 import DebugTraceSheet from './debug/DebugTraceSheet.jsx';
 import { trace, isTraceOn } from './debug/trace.js';
 import { travelDuration, cameraReducer, CARD_PAUSE_MS, OVERLAY_FADE_MS } from './map/camera.js';
+import { createStore, createSaver, countedRng } from './save/save.js';
+import SettingsSheet from './components/shell/SettingsSheet.jsx';
+
+// ---------- save & resume (Progression Loop Lock §1 / M1a) ----------
+// One store + one debounced saver per page. The save is read once, before the first render, and every
+// piece of persisted state below initialises from it (BOOT). A snapshot effect re-schedules a write on
+// every state transition; the saver flushes when the page goes hidden or unloads.
+const SAVE_STORE = createStore();
+const SAVER = createSaver({ store: SAVE_STORE });
+const BOOT = SAVE_STORE.load();
+const S0 = BOOT.state || {};
+const R0 = S0.run || null;
 
 const HUB_LABELS = {
   player: 'Veinbinder',
@@ -46,34 +58,35 @@ const TYPE_GLYPH = { normal: '⚔', crystal: '❖', sanctuary: '✧', rare: '☠
 
 export default function Eldrathor() {
   const { enterMindView, exitMindView, currentMode, setHubSkinForTab } = useTheme();
-  const [tab, setTab] = useState('mountain');
-  const [runStage, setRunStage] = useState('island'); // island | rally | route | fight | loot | sanctuary
+  const [tab, setTab] = useState(() => (R0 ? 'mountain' : S0.tab || 'mountain'));
+  // a run saved mid-fight resumes at its Results (the fight is pre-rolled data); otherwise at its own stage
+  const [runStage, setRunStage] = useState(() => (R0 ? (R0.runStage === 'fight' ? 'loot' : R0.runStage) : 'island')); // island | rally | route | fight | loot | sanctuary
   const [selectedArea, setSelectedArea] = useState(null);
-  const [party, setParty] = useState(() => withIds(DEFAULT_PARTY));
-  const [roster, setRoster] = useState(() => withIds([
+  const [party, setParty] = useState(() => (S0.party ? withIds(S0.party) : withIds(DEFAULT_PARTY)));
+  const [roster, setRoster] = useState(() => withIds(S0.roster || [
     { name: 'Nyra', archetype: 'Adept', weapon: 'Staff', level: 1 },
     { name: 'Thalen', archetype: 'Resonator', weapon: 'Orb + Tome', level: 1 },
   ]));
   // bug-fix pass 1 §7 (design ruling 2026-09-14): the fielded party is SNAPSHOT at Rally → Explore and
   // frozen for the run; the Party tab can't swap/promote while a territory exists.
-  const [runParty, setRunParty] = useState(null);
-  const [worldvein, setWorldvein] = useState(80);
-  const [stash, setStash] = useState([]);
-  const [inventory, setInventory] = useState({ raw: { wood: 4, metal: 2, hunt: 1 }, infused: [], scrap: 0, armor: [] });
-  const [area, setArea] = useState(null);
-  const [territory, setTerritory] = useState(null);
-  const [currentId, setCurrentId] = useState(null);
-  const [log, setLog] = useState([]); // run log (v3 §9): every run event, newest last
-  const [logSeen, setLogSeen] = useState(0); // entries seen when the Run log sheet was last opened
-  const logSeq = useRef(0);
+  const [runParty, setRunParty] = useState(() => R0?.runParty || null);
+  const [worldvein, setWorldvein] = useState(() => (typeof S0.worldvein === 'number' ? S0.worldvein : 80));
+  const [stash, setStash] = useState(() => S0.stash || []);
+  const [inventory, setInventory] = useState(() => S0.inventory || { raw: { wood: 4, metal: 2, hunt: 1 }, infused: [], scrap: 0, armor: [] });
+  const [area, setArea] = useState(() => (R0 ? AREAS.find((a) => a.id === R0.areaId) || null : null));
+  const [territory, setTerritory] = useState(() => R0?.territory || null);
+  const [currentId, setCurrentId] = useState(() => R0?.currentId || null);
+  const [log, setLog] = useState(() => R0?.log || []); // run log (v3 §9): every run event, newest last
+  const [logSeen, setLogSeen] = useState(() => R0?.logSeen || 0); // entries seen when the Run log sheet was last opened
+  const logSeq = useRef(R0?.logSeq || 0);
   const [busy, setBusy] = useState(false);
-  const [partyHP, setPartyHP] = useState(1);
-  const [runVein, setRunVein] = useState(0);
-  const [unlocked, setUnlocked] = useState(1);
+  const [partyHP, setPartyHP] = useState(() => R0?.partyHP ?? 1);
+  const [runVein, setRunVein] = useState(() => R0?.runVein || 0);
+  const [unlocked, setUnlocked] = useState(() => S0.unlocked || 1);
   const [flash, setFlash] = useState(null);
   const [sheet, setSheet] = useState(null); // null | 'help' | 'help+basics' | 'menu' | 'runlog'
   const logRef = useRef(null);
-  const [afk, setAfk] = useState({
+  const [afk, setAfk] = useState(() => S0.afk || {
     gatherSlots: [emptyGatherSlot(), emptyGatherSlot(), emptyGatherSlot()],
     gatherSkillXp: { wood: 0, metal: 0, hunt: 0 },
     process: { charKey: null, family: 'wood', running: false, progress: 0 },
@@ -83,7 +96,7 @@ export default function Eldrathor() {
   // --- run state (route map v2) ---
   const [ambush, setAmbush] = useState(null); // AmbushCard (v3 §3): { nodeId, prevId, kind, enemies, fleeChance, ... }
   const [travel, setTravel] = useState(null); // §14 trip: { path, startTs, duration, after, skipAt? }
-  const [camera, dispatchCameraRaw] = useReducer(cameraReducer, { pan: null, motion: 'none', focus: null }); // §13/§17 explicit run camera
+  const [camera, dispatchCameraRaw] = useReducer(cameraReducer, { pan: R0?.cameraPan || null, motion: 'none', focus: null }); // §13/§17 explicit run camera (resumes in place)
   /** Every camera action goes through here so the debug trace sees its cause. */
   const dispatchCamera = useCallback((action) => {
     if (isTraceOn()) {
@@ -99,22 +112,22 @@ export default function Eldrathor() {
   const [card, setCard] = useState(null); // §15 the one card under the map: explore / reveal / ambush
   const [overlayLeaving, setOverlayLeaving] = useState(null); // snapshot of the last overlay while it fades out (350 ms)
   const overlayTimer = useRef(null);
-  const [prevId, setPrevId] = useState(null); // node the party came from (flee steps back here)
+  const [prevId, setPrevId] = useState(() => R0?.prevId || null); // node the party came from (flee steps back here)
   const travelTimer = useRef(null);
-  const [runMods, setRunMods] = useState({ dmgMult: 1, mitAdd: 0 }); // sanctuary bonuses, per run
-  const [runHp, setRunHp] = useState(null); // per-Adventurer HP carried across fights, keyed by character id (0 = fallen); null = fresh
+  const [runMods, setRunMods] = useState(() => R0?.runMods || { dmgMult: 1, mitAdd: 0 }); // sanctuary bonuses, per run
+  const [runHp, setRunHp] = useState(() => R0?.runHp || null); // per-Adventurer HP carried across fights, keyed by character id (0 = fallen); null = fresh
   const fielded = runParty || party; // the party that fights this run
   const hpArrFor = (list) => (runHp ? list.map((m) => runHp[m.id] ?? 1) : undefined);
   const extractingRef = useRef(false); // §2: one extraction credit per run
   const fightRef = useRef(null); // §10: latest fight for finishFightToLoot (no setter inside an updater)
-  const [fightNode, setFightNode] = useState(null);
-  const [fight, setFight] = useState(null); // { enemies, derived, events, result, stats, rewards, named, rare }
+  const [fightNode, setFightNode] = useState(() => R0?.fightNode || null);
+  const [fight, setFight] = useState(() => R0?.fight || null); // { enemies, derived, events, result, stats, rewards, named, rare }
   useEffect(() => { fightRef.current = fight; }, [fight]);
-  const [fightElapsed, setFightElapsed] = useState(0);
+  const [fightElapsed, setFightElapsed] = useState(() => R0?.fight?.result?.durationMs || 0);
   const [fightSpeed, setFightSpeed] = useState(1);
-  const runRng = useRef(Math.random);
-  const runSeed = useRef(1);
-  const fightIndex = useRef(0);
+  const runRng = useRef(R0 ? countedRng(R0.seed, R0.rngCount || 0) : Math.random);
+  const runSeed = useRef(R0?.seed || 1);
+  const fightIndex = useRef(R0?.fightIndex || 0);
   const fightTimers = useRef({ tick: null });
   const fightSpeedRef = useRef(1);
   useEffect(() => { fightSpeedRef.current = fightSpeed; }, [fightSpeed]);
@@ -131,6 +144,23 @@ export default function Eldrathor() {
   useEffect(() => { rosterRef.current = roster; }, [roster]);
   useEffect(() => { unlockedRef.current = unlocked; }, [unlocked]);
   useEffect(() => { if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight; }, [log]);
+  // ---- save snapshot on every persisted transition (debounced ≤ 1 s; flushed on hide/unload) ----
+  useEffect(() => {
+    const inRunStage = territory && ['route', 'fight', 'loot', 'sanctuary'].includes(runStage);
+    const run = inRunStage ? {
+      areaId: area?.id, runStage, currentId, prevId, territory, runParty, runHp, runMods, runVein, partyHP, log, logSeen,
+      logSeq: logSeq.current, fight, fightNode, cameraPan: camera.pan, seed: runSeed.current,
+      rngCount: typeof runRng.current?.count === 'number' ? runRng.current.count : 0, fightIndex: fightIndex.current,
+    } : null;
+    SAVER.schedule({ tab, party, roster, worldvein, stash, inventory, unlocked, afk, afkSavedAt: Date.now(), run });
+  }, [tab, party, roster, worldvein, stash, inventory, unlocked, afk, runStage, area, territory, currentId, prevId, runParty, runHp, runMods, runVein, partyHP, log, logSeen, fight, fightNode, camera.pan]);
+  useEffect(() => {
+    if (BOOT.quarantined) doFlash('Save was unreadable — started fresh (copy kept)', colors.mindDanger);
+    else if (BOOT.migratedFrom != null) doFlash('Save updated to the current version', colors.mythros);
+    if (R0 && ['loot', 'sanctuary', 'fight'].includes(R0.runStage)) enterMindView();
+    return () => SAVER.flush();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   useEffect(() => {
     const id = window.setInterval(() => {
       const patch = tickAfk({
@@ -184,7 +214,7 @@ export default function Eldrathor() {
   function onRallyExplore() {
     const a = selectedArea; if (!a) return;
     runSeed.current = (Math.random() * 0xffffffff) >>> 0;
-    runRng.current = mulberry32(runSeed.current);
+    runRng.current = countedRng(runSeed.current); // counted so a resumed run continues the same stream
     fightIndex.current = 0;
     const t = genTerritory(a, { rng: runRng.current });
     trace('run', { start: a.name, seed: runSeed.current, nodes: t.nodes.length, rares: t.rares.length, entrance: t.entranceId });
@@ -638,6 +668,7 @@ export default function Eldrathor() {
         {(sheet === 'help' || sheet === 'help+basics') && <HelpSheet screenId={screenId} showBasics={sheet === 'help+basics'} onClose={() => setSheet(null)} />}
         {sheet === 'runlog' && <RunLogSheet log={log} areaName={area?.name} onClose={() => { setLogSeen(log.length); setSheet(null); }} />}
         {sheet === 'debug' && <DebugTraceSheet onClose={() => setSheet(null)} />}
+        {sheet === 'settings' && <SettingsSheet store={SAVE_STORE} onClose={() => setSheet(null)} />}
         {sheet === 'menu' && (
           <MenuSheet
             activeTab={tab}
@@ -648,6 +679,7 @@ export default function Eldrathor() {
             onNavigate={(id) => { setSheet(null); selectTab(id); }}
             onHelp={() => setSheet('help+basics')}
             onDebug={() => setSheet('debug')}
+            onSettings={() => setSheet('settings')}
             onExtract={() => { setSheet(null); extract(); }}
             onClose={() => setSheet(null)}
           />

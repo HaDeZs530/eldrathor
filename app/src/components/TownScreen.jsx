@@ -1,5 +1,5 @@
 import React, { useLayoutEffect, useRef, useState } from 'react';
-import { TIER_COLOR } from '../data.js';
+import { TIER_COLOR, newId } from '../data.js';
 import { MAT_QUALITY } from '../theme/tokens.js';
 import { TOWN_LAYOUT, TOWN_DESTINATIONS } from '../town/townLayout.js';
 import TownArt from './town/TownArt.jsx';
@@ -123,7 +123,7 @@ function CrafterPanel({ inventory, setInventory }) {
         m.qty -= remaining; remaining = 0; return true;
       });
       const armor = [...(inv.armor || []), {
-        id: `${recipe.id}-${Date.now()}`, name: recipe.name, quality: recipe.quality, rating: recipe.rating, slot: 'chest',
+        id: newId('a'), recipeId: recipe.id, name: recipe.name, quality: recipe.quality, rating: recipe.rating, slot: 'chest',
       }];
       return { ...inv, infused, armor };
     });
