@@ -76,10 +76,14 @@ export const ARCHETYPE_SEEDS = {
 };
 
 export const DEFAULT_PARTY = [
-  { name: 'Kessa', archetype: 'Bulwark', weapon: 'Sword + Shield', level: 3 },
-  { name: 'Orin', archetype: 'Warden', weapon: 'Staff', level: 3 },
-  { name: 'Vayle', archetype: 'Striker', weapon: 'Dual Daggers', level: 3 },
+  { id: 'c-kessa', name: 'Kessa', archetype: 'Bulwark', weapon: 'Sword + Shield', level: 3 },
+  { id: 'c-orin', name: 'Orin', archetype: 'Warden', weapon: 'Staff', level: 3 },
+  { id: 'c-vayle', name: 'Vayle', archetype: 'Striker', weapon: 'Dual Daggers', level: 3 },
 ];
+
+/** Stable character id (bug-fix pass 1 §7/§8: run HP and AFK jobs are keyed by id, never by position). */
+export const newCharId = () => `c-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
+export const withIds = (list) => list.map((m) => (m.id ? m : { ...m, id: newCharId() }));
 
 export const TIER_COLOR = {
   Common: '#9fb2bd', Fine: '#7fd6a0', Rare: '#6fb7d6', Epic: '#b58fe0', Legendary: '#e0a04d',

@@ -98,5 +98,5 @@ export function spawnEnemies(worldTier, nodeType, rareFlag = false, opts = {}) {
   for (let i = 0; i < n; i++) {
     units.push(mk(TRASH_NAMES[Math.floor(rng() * TRASH_NAMES.length)], b.hp, b.dmg, b.interval, b.mit));
   }
-  return units;
+  return finish(units, { depthMult, named, rng }); // bug-fix pass 1 §1: depth + named modifiers apply to normal units too
 }

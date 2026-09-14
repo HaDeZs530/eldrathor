@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { biomeForArea, renderBiomeLayer } from './biomeStamps.jsx';
 import { rareAt, raresAlive, isWalkable, nodeState } from './routeState.js';
 import { resolveFocus, centerOn, clampPan, easeInOut, easeOut, polylinePointAt, SKIP_MS, FOLLOW_TAU_MS, FRAME_EASE_MS } from './camera.js';
+import { createCameraController } from './cameraController.js';
 import { trace, isTraceOn } from '../debug/trace.js';
 import './parchment.css';
 
@@ -90,7 +91,7 @@ export default function RouteMapScreen({
   const markerRef = useRef(null);
   const [vp, setVp] = useState({ w: 0, h: 0 });
   const [confirmExtract, setConfirmExtract] = useState(false);
-  const gesture = useRef({ active: false, dist: 0, moved: false, target: null, start: null, basePan: null });
+  const gesture = useRef({ active: false, pointerId: null, dist: 0, moved: false, target: null, start: null, basePan: null });
 
   const byId = useMemo(() => Object.fromEntries(territory.nodes.map((n) => [n.id, n])), [territory.nodes]);
   const biome = biomeForArea(area);
@@ -129,36 +130,38 @@ export default function RouteMapScreen({
   const measured = vp.w > 0 && vp.h > 0;
   const pan = camera?.pan || { x: 0, y: 0 }; // committed pan — the initial paint only; the controller owns the rest
 
-  // ---------- camera controller (single owner of the sheet transform) ----------
-  // the controller's mutable state lives in a ref; it is only ever touched from handlers, effects and frame callbacks
-  const cam = useRef({ pan: { x: pan.x, y: pan.y }, anim: null, raf: null });
-  const writeSheet = () => { if (sheetRef.current) sheetRef.current.style.transform = sheetTransform(cam.current.pan); };
-  const stopCameraAnim = () => { const c = cam.current; if (c.raf) cancelScheduled(c.raf); c.raf = null; c.anim = null; };
-  /** Eased pan from the controller's CURRENT pan to `target` over `ms` (0 = immediate); commits when done. */
+  // ---------- camera controller (single owner of the sheet transform; bug-fix pass 1 §9) ----------
+  // Created on mount, disposed on unmount (StrictMode's mount/unmount/mount gets a fresh one): every
+  // eased pan, drag frame and travel frame goes through it, a new move cancels the previous frame
+  // callback, and after dispose nothing can write to the sheet again.
+  const camRef = useRef(null);
+  const initialPanRef = useRef(pan);
+  useLayoutEffect(() => {
+    camRef.current = createCameraController({
+      pan: initialPanRef.current,
+      write: (p) => { if (sheetRef.current) sheetRef.current.style.transform = sheetTransform(p); },
+      commit: (p) => setCamera({ type: 'set', pan: p }),
+      schedule,
+      cancel: cancelScheduled,
+      ease: (u) => easeInOut(u, 0.5), // soft in and out
+    });
+    return () => { camRef.current?.dispose(); camRef.current = null; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const writeSheet = () => { const c = camRef.current; if (c && sheetRef.current) sheetRef.current.style.transform = sheetTransform(c.pan); };
+  /** Eased pan from the controller's CURRENT pan to `target` over `ms` (0 = immediate); traced. */
   const panTo = (target, ms, cause, extra = {}) => {
-    const c = cam.current;
-    stopCameraAnim();
-    const px = Math.hypot(target.x - c.pan.x, target.y - c.pan.y);
-    trace('pan', { cause, from: [c.pan.x, c.pan.y], to: [target.x, target.y], px, ms, ...extra });
-    if (px < 0.5 || ms <= 0) { c.pan = { ...target }; writeSheet(); setCamera({ type: 'set', pan: c.pan }); return; }
-    c.anim = { from: { ...c.pan }, to: { ...target }, t0: performance.now(), ms };
-    const step = (now) => {
-      const a = c.anim; if (!a) return;
-      const u = Math.min(1, (now - a.t0) / a.ms);
-      const k = easeInOut(u, 0.5); // soft in and out
-      c.pan = { x: a.from.x + (a.to.x - a.from.x) * k, y: a.from.y + (a.to.y - a.from.y) * k };
-      writeSheet();
-      if (u >= 1) { c.anim = null; c.raf = null; setCamera({ type: 'set', pan: c.pan }); return; }
-      c.raf = schedule(step);
-    };
-    c.raf = schedule(step);
+    const c = camRef.current; if (!c) return;
+    const from = { ...c.pan };
+    const px = c.panTo(target, ms);
+    trace('pan', { cause, from: [from.x, from.y], to: [target.x, target.y], px, ms, ...extra });
   };
 
   // Framing requests (run start = immediate centre; overlay close = slow pan onto the party) resolve
   // once the viewport is measured, from the controller's exact current pan.
   useLayoutEffect(() => {
     if (!measured || !camera?.focus) return;
-    const target = resolveFocus(camera.focus, ptOf, vp, sheet, MARGIN, cam.current.pan);
+    const target = resolveFocus(camera.focus, ptOf, vp, sheet, MARGIN, camRef.current?.pan);
     if (!target) return;
     panTo(target, camera.motion === 'ease' ? FRAME_EASE_MS : 0, camera.focus.mode === 'centre' && camera.motion !== 'ease' ? 'runStart' : 'overlayClose');
     // consume the request: a tap that cancels this pan must not leave it behind to be replayed by the
@@ -173,8 +176,8 @@ export default function RouteMapScreen({
   useEffect(() => { travelRef.current = travel; });
   useEffect(() => {
     if (!travel) { tween.current.active = false; return undefined; }
-    const c = cam.current;
-    stopCameraAnim(); // the trip takes over from wherever the camera is — exactly, no read-back
+    const c = camRef.current; if (!c) return undefined;
+    c.stop(); // the trip takes over from wherever the camera is — exactly, no read-back
     cancelScheduled(tween.current.raf); // a previous trip still settling hands over here
     const points = travel.path.map((id) => sheetPt(byId[id]));
     const dest = points[points.length - 1];
@@ -209,10 +212,9 @@ export default function RouteMapScreen({
       const target = centerOn(pos, vp, sheet, MARGIN);
       const dt = lastTs == null ? 16 : Math.min(100, now - lastTs);
       const k = 1 - Math.exp(-dt / FOLLOW_TAU_MS);
-      c.pan = { x: c.pan.x + (target.x - c.pan.x) * k, y: c.pan.y + (target.y - c.pan.y) * k };
+      c.set({ x: c.pan.x + (target.x - c.pan.x) * k, y: c.pan.y + (target.y - c.pan.y) * k });
       lastTs = now;
       if (markerRef.current) markerRef.current.style.transform = markerTransform(pos);
-      writeSheet();
       if (isTraceOn()) { const st = Math.hypot(c.pan.x - prevPan.x, c.pan.y - prevPan.y); stat.frames += 1; stat.camPx += st; if (st > stat.maxStep) stat.maxStep = st; if (st > 40) trace('camjump', { px: st, frameMs: dt, at: Math.round(now - stat.t0) }); }
       prevPan = c.pan;
       if (finished) {
@@ -228,12 +230,12 @@ export default function RouteMapScreen({
           const dist = Math.hypot(tgt.x - c.pan.x, tgt.y - c.pan.y);
           if (dist > 0.5 && t - settleT0 < 1500) {
             const kk = 1 - Math.exp(-sdt / FOLLOW_TAU_MS);
-            c.pan = { x: c.pan.x + (tgt.x - c.pan.x) * kk, y: c.pan.y + (tgt.y - c.pan.y) * kk };
-            writeSheet();
+            c.set({ x: c.pan.x + (tgt.x - c.pan.x) * kk, y: c.pan.y + (tgt.y - c.pan.y) * kk });
             tw.raf = schedule(settle);
             return;
           }
           tw.active = false;
+          if (c.disposed) return; // unmounted mid-settle: no commit after unmount
           trace('tween', { settled: true, settleMs: Math.round(t - settleT0), pan: [c.pan.x, c.pan.y], restPx: dist });
           setCamera({ type: 'travelEnd', pan: c.pan });
         };
@@ -248,6 +250,8 @@ export default function RouteMapScreen({
     return () => { if (!done) { done = true; cancelScheduled(tween.current.raf); } };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [travel?.startTs]);
+  // unmount: no frame of any kind survives (the controller disposes itself in its own effect)
+  useEffect(() => () => { cancelScheduled(tween.current.raf); tween.current.active = false; }, []);
 
   // After EVERY commit the DOM shows the controller's pan (React's style prop is only the first paint),
   // and the marker its tween position while a trip runs.
@@ -284,35 +288,49 @@ export default function RouteMapScreen({
   }
   function onPointerDown(e) {
     const g = gesture.current;
-    if (g.active) return;
-    g.active = true; g.dist = 0; g.moved = false; g.start = localPt(e); g.basePan = { ...cam.current.pan };
+    const c = camRef.current;
+    if (g.active || !c) return;
+    // bug-fix pass 1 §4: cards, the HUD strip and anything marked data-no-map-gesture never start a map
+    // gesture (their buttons get their click; a drag that begins on them never pans the map)
+    if (e.target.closest?.('.eld-scout-card, .eld-run-hud, [data-no-map-gesture]')) return;
+    g.active = true; g.pointerId = e.pointerId; g.dist = 0; g.moved = false; g.start = localPt(e); g.basePan = { ...c.pan };
     g.target = e.target.closest?.('[data-node]')?.dataset.node || null;
     capturePointer(vpEl.current, e.pointerId);
   }
   function onPointerMove(e) {
     const g = gesture.current;
-    if (!g.active || travel) return;
+    const c = camRef.current;
+    if (!g.active || !c || travel || e.pointerId !== g.pointerId) return; // §3: a second finger cannot move the gesture
     const p = localPt(e);
     const dx = p.x - g.start.x;
     const dy = p.y - g.start.y;
     g.dist = Math.abs(dx) + Math.abs(dy);
     if (g.dist > TAP_SLOP) g.moved = true;
     // the sheet follows the finger unclamped (controller only — no React state per move); release eases it back
-    if (g.moved) { stopCameraAnim(); cam.current.pan = { x: g.basePan.x + dx, y: g.basePan.y + dy }; writeSheet(); }
+    if (g.moved) c.set({ x: g.basePan.x + dx, y: g.basePan.y + dy });
   }
-  function onPointerUp() {
+  function onPointerUp(e) {
     const g = gesture.current;
-    if (!g.active) return;
+    if (!g.active || (e && e.pointerId !== g.pointerId)) return; // §3: only the gesture's own pointer can finish it
     g.active = false;
     if (!g.moved) {
       if (travel) { trace('gesture', { tap: 'skip-travel' }); onTapNode(null); } // tap anywhere while travelling = eased skip
       else if (g.target) activateNode(g.target);
       else trace('gesture', { tap: 'empty' });
-    } else if (!travel) {
+    } else if (!travel && camRef.current) {
       trace('gesture', { drag: [g.start.x, g.start.y], px: g.dist });
-      panTo(clampPan(cam.current.pan, vp, sheet), 500, 'release');
+      panTo(clampPan(camRef.current.pan, vp, sheet), 500, 'release');
     }
     g.target = null;
+  }
+  /** §3: a cancelled pointer (scroll takeover, second finger, system gesture) NEVER counts as a tap. */
+  function onPointerCancel(e) {
+    const g = gesture.current;
+    if (!g.active || (e && e.pointerId !== g.pointerId)) return;
+    trace('gesture', { cancel: true, moved: g.moved });
+    const wasDrag = g.moved;
+    g.active = false; g.moved = false; g.target = null;
+    if (wasDrag && !travel && camRef.current) panTo(clampPan(camRef.current.pan, vp, sheet), 500, 'release');
   }
 
   const revealed = territory.nodes.filter((n) => n.revealed);
@@ -362,7 +380,7 @@ export default function RouteMapScreen({
 
   return (
     <div className="eld-map-wrap" style={styles.wrap}>
-      <div ref={vpRef} className="eld-route-viewport eld-route-viewport--full" onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}>
+      <div ref={vpRef} className="eld-route-viewport eld-route-viewport--full" onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerCancel}>
         <div ref={sheetRef} className="eld-parchment-sheet" style={{ width: sheet.w, height: sheet.h, transform: sheetTransform(pan) }}>
           <svg className="eld-parchment-svg" width={sheet.w} height={sheet.h} viewBox={`${-M.x} ${-M.top} ${VW} ${VH}`}>
             {renderBiomeLayer({ territory, byId, biome })}

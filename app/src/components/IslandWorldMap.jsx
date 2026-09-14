@@ -116,7 +116,10 @@ export default function IslandWorldMap({ areas, unlocked, onSelectArea, onHarbor
   function onPointerDown(e) {
     const g = gesture.current;
     if (g.active) return;
+    // bug-fix pass 1 §4: controls never start a map gesture
+    if (e.target.closest?.('.eld-island-ctl, [data-no-map-gesture]')) return;
     g.active = true;
+    g.pointerId = e.pointerId; // §3: only this pointer can move / finish the gesture
     g.dist = 0;
     g.moved = false;
     g.last = localPt(e);
@@ -126,7 +129,7 @@ export default function IslandWorldMap({ areas, unlocked, onSelectArea, onHarbor
 
   function onPointerMove(e) {
     const g = gesture.current;
-    if (!g.active) return;
+    if (!g.active || e.pointerId !== g.pointerId) return;
     const p = localPt(e);
     const dx = p.x - g.last.x;
     const dy = p.y - g.last.y;
@@ -140,12 +143,18 @@ export default function IslandWorldMap({ areas, unlocked, onSelectArea, onHarbor
     });
   }
 
-  function onPointerUp() {
+  function onPointerUp(e) {
     const g = gesture.current;
-    if (!g.active) return;
+    if (!g.active || (e && e.pointerId !== g.pointerId)) return;
     g.active = false;
     if (!g.moved && g.target) activateHotspot(g.target);
     g.target = null;
+  }
+  /** §3: a cancelled pointer (scroll takeover, second finger, system gesture) never counts as a tap. */
+  function onPointerCancel(e) {
+    const g = gesture.current;
+    if (!g.active || (e && e.pointerId !== g.pointerId)) return;
+    g.active = false; g.moved = false; g.target = null;
   }
 
   const held = areas.filter((a) => a.id < unlocked).length;
@@ -167,7 +176,7 @@ export default function IslandWorldMap({ areas, unlocked, onSelectArea, onHarbor
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
-        onPointerCancel={onPointerUp}
+        onPointerCancel={onPointerCancel}
       >
         <div
           className={`eld-island-layer${fading ? ' is-fading' : ''}`}

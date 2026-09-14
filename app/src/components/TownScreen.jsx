@@ -186,25 +186,22 @@ function MarketPanel({ inventory, setInventory, stash, setStash, worldvein, setW
     setWorldvein((v) => v + n * 2);
     setInventory((inv) => ({ ...inv, scrap: 0 }));
   }
+  // bug-fix pass 1 §10: decide from current props, then set — never set state inside an updater
+  // (StrictMode runs updaters twice; nested setters credited twice)
   function sellArmor(idx) {
-    setInventory((inv) => {
-      const armor = [...(inv.armor || [])];
-      const [gone] = armor.splice(idx, 1);
-      if (!gone) return inv;
-      setWorldvein((v) => v + Math.max(8, Math.floor((gone.rating || 20) / 2)));
-      return { ...inv, armor, scrap: (inv.scrap || 0) + 1 };
-    });
+    const armor = [...(inventory.armor || [])];
+    const [gone] = armor.splice(idx, 1);
+    if (!gone) return;
+    setInventory({ ...inventory, armor, scrap: (inventory.scrap || 0) + 1 });
+    setWorldvein((v) => v + Math.max(8, Math.floor((gone.rating || 20) / 2)));
   }
   function scrapWeapon(idx) {
-    setStash((s) => {
-      const next = [...s];
-      const [gone] = next.splice(idx, 1);
-      if (gone) {
-        setInventory((inv) => ({ ...inv, scrap: (inv.scrap || 0) + 1 }));
-        setWorldvein((v) => v + Math.max(3, Math.floor((gone.rating || 10) / 5)));
-      }
-      return next;
-    });
+    const next = [...stash];
+    const [gone] = next.splice(idx, 1);
+    if (!gone) return;
+    setStash(next);
+    setInventory((inv) => ({ ...inv, scrap: (inv.scrap || 0) + 1 }));
+    setWorldvein((v) => v + Math.max(3, Math.floor((gone.rating || 10) / 5)));
   }
   return (
     <div style={S.col}>

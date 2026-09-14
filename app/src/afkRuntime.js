@@ -22,13 +22,39 @@ export function rollInfusedQuality() {
   return 'Common';
 }
 
+/**
+ * Resolve a job's character key. Keys are stable character ids (bug-fix pass 1 §8) — a roster swap
+ * or promotion never moves an assignment. Legacy positional keys (`party:i` / `roster:i`) still resolve.
+ */
 export function resolveCharKey(key, party, roster) {
   if (!key) return null;
-  const [source, idxStr] = key.split(':');
+  const pi = party.findIndex((m) => m.id === key);
+  if (pi >= 0) return { source: 'party', index: pi, member: party[pi] };
+  const ri = roster.findIndex((m) => m.id === key);
+  if (ri >= 0) return { source: 'roster', index: ri, member: roster[ri] };
+  const [source, idxStr] = String(key).split(':');
   const idx = Number(idxStr);
-  if (source === 'party') return { source, index: idx, member: party[idx] };
-  if (source === 'roster') return { source, index: idx, member: roster[idx] };
+  if (source === 'party' && party[idx]) return { source, index: idx, member: party[idx] };
+  if (source === 'roster' && roster[idx]) return { source, index: idx, member: roster[idx] };
   return null;
+}
+
+/**
+ * One job per character: assigning `charKey` to `target` ({kind:'gather', index} | {kind:'process'} |
+ * {kind:'idle'}) clears that character from every other job (and stops it). `charKey` null clears the slot.
+ */
+export function assignJob(state, target, charKey) {
+  const strip = (job) => (charKey && job.charKey === charKey ? { ...job, charKey: null, running: false, progress: 0 } : job);
+  const next = {
+    ...state,
+    gatherSlots: state.gatherSlots.map((g) => strip(g)),
+    process: strip(state.process),
+    idle: strip(state.idle),
+  };
+  if (target.kind === 'gather') next.gatherSlots = next.gatherSlots.map((g, i) => (i === target.index ? { ...g, charKey, running: charKey ? g.running : false, progress: charKey ? g.progress : 0 } : g));
+  else if (target.kind === 'process') next.process = { ...next.process, charKey, running: charKey ? next.process.running : false, progress: charKey ? next.process.progress : 0 };
+  else if (target.kind === 'idle') next.idle = { ...next.idle, charKey, running: charKey ? next.idle.running : false, progress: charKey ? next.idle.progress : 0 };
+  return next;
 }
 
 /** One AFK tick. Mutates via returned patches. DESIGN-OPEN: persistence/offline. */

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ARCHETYPES, WEAPONS, STATS, STAT_LABELS, ARCHETYPE_SEEDS } from '../data.js';
+import { newCharId, ARCHETYPES, WEAPONS, STATS, STAT_LABELS, ARCHETYPE_SEEDS } from '../data.js';
 import GearPaperdoll from './GearPaperdoll.jsx';
 import { deriveDisplay } from '../combat/derive.js';
 import { INNATES } from '../combat/simulate.js';
@@ -17,7 +17,7 @@ const CLASS_GLYPH = {
  * Top: party-of-3 list. Below: extra roster + Create character.
  * Tap member → detail (stats top, purchasable upgrades below) — same shape as Player.
  */
-export default function PartyScreen({ party, setParty, roster, setRoster }) {
+export default function PartyScreen({ party, setParty, roster, setRoster, locked = false }) {
   const [detail, setDetail] = useState(null); // { source: 'party'|'roster', index }
   const [creating, setCreating] = useState(false);
 
@@ -26,7 +26,7 @@ export default function PartyScreen({ party, setParty, roster, setRoster }) {
       <CreateCharacter
         onCancel={() => setCreating(false)}
         onCreate={(n) => {
-          setRoster((r) => [...r, n]);
+          setRoster((r) => [...r, { ...n, id: newCharId() }]);
           setCreating(false);
         }}
       />
@@ -51,19 +51,16 @@ export default function PartyScreen({ party, setParty, roster, setRoster }) {
           }
         }}
         onPromoteToParty={
-          detail.source === 'roster'
+          detail.source === 'roster' && !locked
             ? () => {
                 // Swap into first party slot if full — DESIGN-OPEN: real swap UI.
-                setParty((p) => {
-                  const next = [...p];
-                  const displaced = next[0];
-                  next[0] = member;
-                  setRoster((r) => {
-                    const without = r.filter((_, i) => i !== detail.index);
-                    return displaced ? [...without, displaced] : without;
-                  });
-                  return next;
-                });
+                // bug-fix pass 1 §10: computed from current props, no setter inside an updater
+                const displaced = party[0];
+                const nextParty = [...party];
+                nextParty[0] = member;
+                const without = roster.filter((_, i) => i !== detail.index);
+                setParty(nextParty);
+                setRoster(displaced ? [...without, displaced] : without);
                 setDetail(null);
               }
             : null
@@ -76,6 +73,11 @@ export default function PartyScreen({ party, setParty, roster, setRoster }) {
     <div style={S.wrap}>
       <div style={S.kick}>Mind View · Party</div>
       <div className="eld-brand-name" style={S.title}>Bonded Three</div>
+      {locked && (
+        <div className="eld-panel" style={{ padding: '10px 12px', fontSize: 'var(--mv-label, 15px)', color: 'var(--eld-muted)', lineHeight: 1.4 }} role="status">
+          Your bond is on the mountain — change the party at Rally.
+        </div>
+      )}
       <div style={S.sub}>Active expedition party</div>
 
       <div className="eld-panel" style={S.partyBox}>

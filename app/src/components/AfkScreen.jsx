@@ -16,9 +16,10 @@ export default function AfkScreen({
 }) {
   const [sub, setSub] = useState('gather');
   const areas = AREAS.filter((w) => w.id <= unlocked);
+  // keys are stable character ids (bug-fix pass 1 §8) — swaps/promotions never move an assignment
   const bench = [
-    ...party.map((m, i) => ({ key: `party:${i}`, source: 'party', index: i, ...m })),
-    ...roster.map((m, i) => ({ key: `roster:${i}`, source: 'roster', index: i, ...m })),
+    ...party.map((m, i) => ({ key: m.id || `party:${i}`, source: 'party', index: i, ...m })),
+    ...roster.map((m, i) => ({ key: m.id || `roster:${i}`, source: 'roster', index: i, ...m })),
   ];
   return (
     <div style={S.wrap} className={sub === 'process' ? 'eld-afk-process' : ''}>

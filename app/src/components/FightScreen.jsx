@@ -40,9 +40,10 @@ export default function FightScreen({ area, node, party, fight, elapsedMs, speed
 
   const feed = feedAll.filter((e) => e.t <= elapsedMs).slice(-40);
   const feedRef = useRef(null);
+  const lastT = feed.length ? feed[feed.length - 1].t : -1; // bug-fix pass 1 §6: length stalls at the 40-line cap
   useEffect(() => {
     if (feedRef.current) feedRef.current.scrollTop = feedRef.current.scrollHeight;
-  }, [feed.length]);
+  }, [feed.length, lastT]);
 
   const done = elapsedMs >= result.durationMs;
   const enemyLabel = node?.type === 'boss' ? area?.boss || 'Boss' : fight.named ? 'Named foe' : meta.label;
