@@ -64,7 +64,7 @@ export function setTraceOn(next) {
 export function trace(kind, data) {
   if (!on) return;
   seq += 1;
-  buf.push({ n: seq, t: Math.round(performance.now()), k: kind, d: round(data) });
+  buf.push({ n: seq, t: Math.round(performance.now()), w: Date.now(), k: kind, d: round(data) });
   if (buf.length > TRACE_MAX) buf.splice(0, buf.length - TRACE_MAX);
   scheduleFlush();
   scheduleUpload();
@@ -117,7 +117,8 @@ export function traceText() {
   const lines = buf.map((e) => {
     const dt = prev == null ? 0 : e.t - prev;
     prev = e.t;
-    return `${String(e.t).padStart(7)}ms +${String(dt).padStart(5)} ${e.k.padEnd(12)} ${fmt(e.d)}`;
+    const clock = e.w ? new Date(e.w).toISOString().slice(11, 23) : '            ';
+    return `${clock} ${String(e.t).padStart(7)}ms +${String(dt).padStart(5)} ${e.k.padEnd(12)} ${fmt(e.d)}`;
   });
   return [head, ...lines].join('\n');
 }
@@ -149,7 +150,7 @@ function startFrameMonitor() {
   let last = null;
   const tick = (t) => {
     if (!frameMon) return;
-    if (last != null && !document.hidden) { const gap = t - last; if (gap > LONG_FRAME_MS) trace('longframe', { ms: gap }); }
+    if (last != null && !document.hidden) { const gap = t - last; if (gap > LONG_FRAME_MS && gap < 1000) trace('longframe', { ms: gap }); else if (gap >= 1000) trace('paused', { ms: gap }); }
     last = t;
     frameMon = window.requestAnimationFrame(tick);
   };

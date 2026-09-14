@@ -129,6 +129,7 @@ export function cameraReducer(cam, action) {
     case 'runStart': return { pan: null, motion: 'none', focus: { ids: [action.partyId], mode: 'centre' } };
     case 'overlayClose': return { ...base, motion: 'ease', focus: { ids: [action.partyId], mode: 'centre' } };
     case 'travelEnd': return { pan: action.pan, motion: 'none', focus: null };
+    case 'focusTaken': return { ...base, focus: null }; // the map's controller has started the requested pan — never replay it
     case 'fightStart': return base; // the overlay opens over the map exactly as it was
     default: return base;
   }
