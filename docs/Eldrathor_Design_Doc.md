@@ -406,7 +406,7 @@ The game is split into two distinct activities, each with its own mode. This del
 - Combat itself is fully automatic per earlier decision (classes fire skills like most idle-fighter games). Interactivity lives entirely in map traversal.
 
 ### 8c. The Expedition Map — "Unexplored Territory" Model (LOCKED)
-> **Refined 2026-09-12** by `docs/Eldrathor_RouteMap_v2_Lock.md` and `docs/Eldrathor_RouteMap_v3_Travel_Lock.md` (the latter **removes respawns** — cleared stays cleared, travel is free; the route map is a farm loop: rares + boss are the prize, extract and repeat): now called the **Route map**; scout→engage/leave interaction; 5 node types (Sanctuary added); depth difficulty; roaming rares + seal and respawn rules as written there. Entrance/exit table below is superseded by the nine-area structure.
+> **Refined 2026-09-12** by `docs/Eldrathor_RouteMap_v2_Lock.md` and `docs/Eldrathor_RouteMap_v3_Travel_Lock.md` (the latter **removes respawns and the boss seal** — cleared stays cleared, travel is free, rares are optional hunts, the boss is fightable once found; the route map is a farm loop, extract and repeat): now called the **Route map**; scout→engage/leave interaction; 5 node types (Sanctuary added); depth difficulty; roaming rares + seal and respawn rules as written there. Entrance/exit table below is superseded by the nine-area structure.
 **Territory, not a route.** Large sprawling map (vertical AND horizontal, pannable, bigger than one screen), ~30–45 nodes (Forge wings 25–35 each; Castle 40+). The feel: dropped into unexplored wilderness — genuine frontier choices in multiple directions, not a hiking path.
 
 **Entrances/exits per map (tied to the mountain spiral):**

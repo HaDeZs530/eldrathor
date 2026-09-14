@@ -129,5 +129,5 @@ The party marker (gold diamond) sits on top of whichever node the party occupies
 ## 18. Party marker never hides the node (RULED 2026-09-14)
 The party marker is a **gold ring, not a solid diamond**. It frames whatever node the party stands on, so the node's own icon stays visible inside it: a revealed skull, shard, blades or crown sits inside the gold ring; a completed node shows its dim dot inside the ring. A small gold pennant (▲, 10 px) floats above the ring so the party is still findable at a glance when zoomed out. Ring: 3 px gold stroke, 44 px diameter, soft outer glow; the pennant bobs 2 px on a 2 s loop. The node icon under the party is never recoloured or replaced — the icon is the node, the ring is you.
 
-## 19. No boss seal (RULED 2026-09-14 in code, PR #44; recorded here)
+## 19. No boss seal (LOCKED — confirmed by Anthony 2026-09-14, "gone for good")
 Rares are **optional hunts** for loot/gems; the boss is fightable as soon as it is explored. There is no seal, no seal card, no "rares remaining" gate. The boss node is the end of the road (no edges beyond it). Run-log lines and help copy referring to the seal are removed. Map-clear bonus stands.
