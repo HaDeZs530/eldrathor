@@ -7,7 +7,7 @@ export const HELP = {
     title: 'Game basics',
     bullets: [
       'You are a Veinbinder. You don’t fight — your bonded Adventurers do.',
-      'Send three into an area, explore its route map, hunt the rares, break the seal, beat the boss.',
+      'Send three into an area, explore its route map, beat the boss at the far end. Rares are optional hunts with big loot.',
       'Bring home Worldvein and weapons; spend them to come back stronger.',
       'Nothing you earn is ever lost.',
     ],
@@ -31,7 +31,7 @@ export const HELP = {
       'Every unexplored node looks the same. Tap one for Explore / Cancel — nothing moves until you Explore.',
       'On arrival the node reveals itself: Fight / Flee (a chosen Flee steps back for free). Completed nodes do nothing.',
       'Every explore or clear moves the clock: rares roam the unexplored, and one walking onto you is an ambush.',
-      'Kill all rares to break the boss seal.',
+      'The boss is never locked. Rares roam the unexplored — hunt them if you want the loot.',
       'Extract any time to bank what you have — the map is gone when you leave.',
     ],
   },

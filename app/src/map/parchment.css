@@ -172,7 +172,7 @@
   box-shadow: 0 0 12px rgba(192, 57, 43, 0.45);
 }
 
-/* Boss — violet crown; grey chains while sealed, violet pulse once unsealed */
+/* Boss — violet crown with a violet pulse (never sealed: the boss is always fightable) */
 .eld-pnode.is-boss .eld-pnode-shape {
   width: 40px;
   height: 40px;

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { biomeForArea, renderBiomeLayer } from './biomeStamps.jsx';
-import { rareAt, isSealed, isWalkable, nodeState } from './routeState.js';
+import { rareAt, raresAlive, isWalkable, nodeState } from './routeState.js';
 import { resolveFocus, centerOn, clampPan, easeInOut, easeOut, polylinePointAt, SKIP_MS, FOLLOW_TAU_MS, FRAME_EASE_MS } from './camera.js';
 import { trace, isTraceOn } from '../debug/trace.js';
 import './parchment.css';
@@ -10,7 +10,7 @@ import './parchment.css';
  * on the hybrid parchment surface (docs/Eldrathor_NodeMap_Art_Lock.md).
  *
  * §15 three node states only: unexplored (identical rune for every type — nothing is auto-marked),
- * revealed (type icon; skull if a rare stands there; crown + chains for a sealed boss) and
+ * revealed (type icon; skull if a rare stands there; crown for the boss, which is never locked) and
  * completed (dim dot, tap = nothing). Tapping never moves the party: the cards below the map
  * (Explore / Cancel, Fight / Flee, Use / Leave, seal, ambush) carry every commitment.
  * §13: this screen stays mounted for the whole run; fights render as overlays above it.
@@ -94,8 +94,7 @@ export default function RouteMapScreen({
 
   const byId = useMemo(() => Object.fromEntries(territory.nodes.map((n) => [n.id, n])), [territory.nodes]);
   const biome = biomeForArea(area);
-  const sealed = isSealed(territory);
-  const raresLeft = territory.rares.filter((r) => r.alive).length;
+  const raresLeft = raresAlive(territory);
   const planEdges = useMemo(() => {
     const s = new Set();
     const p = travel?.path;
@@ -394,10 +393,9 @@ export default function RouteMapScreen({
             if (st === 'completed') { state = 'is-cleared'; glyph = ''; label = 'Completed'; }
             else if (st === 'revealed') {
               const rare = rareAt(territory, n.id);
-              const bossSealed = n.type === 'boss' && sealed;
               color = TYPE_COLOR[n.type] || TYPE_COLOR.normal;
               if (rare) { state = 'is-rare'; glyph = '☠'; label = 'Rare'; }
-              else if (n.type === 'boss') { state = `is-boss ${bossSealed ? 'is-sealed' : 'is-unsealed'}`; glyph = '♛'; label = bossSealed ? 'Boss (sealed)' : 'Boss'; }
+              else if (n.type === 'boss') { state = 'is-boss is-unsealed'; glyph = '♛'; label = 'Boss'; }
               else { state = n.namedRare ? 'is-named' : 'is-scouted'; glyph = TYPE_GLYPH[n.type] || '⚔'; label = `${n.namedRare ? 'Named ' : ''}${TYPE_LABEL[n.type] || 'Node'}`; }
             }
             const cls = ['eld-pnode', state, here && 'is-here', st !== 'completed' && !here && 'is-tappable'].filter(Boolean).join(' ');
@@ -413,7 +411,6 @@ export default function RouteMapScreen({
                 onClick={(e) => { if (e.detail === 0) activateNode(n.id); }}
               >
                 <span className="eld-pnode-shape" aria-hidden="true">{glyph}</span>
-                {state.startsWith('is-boss') && sealed && <span className="eld-pnode-chain" aria-hidden="true">⛓</span>}
               </button>
             );
           })}
@@ -425,7 +422,7 @@ export default function RouteMapScreen({
         {/* §7 — single 44 px run HUD strip overlaid on the map */}
         <div className="eld-run-hud" role="status">
           <div className="eld-run-hud-left" title={area.name}>
-            <span style={{ color: sealed ? '#b8a0e8' : '#7fd6a0' }}>{sealed ? `☠ ${raresLeft} rare${raresLeft === 1 ? '' : 's'} · ⛓ sealed` : '♛ seal broken'}</span>
+            <span style={{ color: raresLeft ? '#e08a8a' : '#7fd6a0' }} title="rares are optional hunts — the boss is never locked">{raresLeft ? `☠ ${raresLeft} rare${raresLeft === 1 ? '' : 's'} roam` : '☠ no rares left'}</span>
             <span className="eld-run-hud-sep">·</span>
             <span title="nodes completed">{completedCount}/{territory.nodes.length}</span>
           </div>
