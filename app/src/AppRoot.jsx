@@ -23,6 +23,8 @@ import ScreenHeaderActions from './components/shell/ScreenHeaderActions.jsx';
 import HelpSheet from './components/shell/HelpSheet.jsx';
 import MenuSheet from './components/shell/MenuSheet.jsx';
 import RunLogSheet from './map/RunLogSheet.jsx';
+import DebugTraceSheet from './debug/DebugTraceSheet.jsx';
+import { trace, isTraceOn } from './debug/trace.js';
 import { travelDuration, cameraReducer, CARD_PAUSE_MS, OVERLAY_FADE_MS } from './map/camera.js';
 
 const HUB_LABELS = {
@@ -78,7 +80,19 @@ export default function Eldrathor() {
   // --- run state (route map v2) ---
   const [ambush, setAmbush] = useState(null); // AmbushCard (v3 §3): { nodeId, prevId, kind, enemies, fleeChance, ... }
   const [travel, setTravel] = useState(null); // §14 trip: { path, startTs, duration, after, skipAt? }
-  const [camera, dispatchCamera] = useReducer(cameraReducer, { pan: null, motion: 'none', focus: null }); // §13/§17 explicit run camera
+  const [camera, dispatchCameraRaw] = useReducer(cameraReducer, { pan: null, motion: 'none', focus: null }); // §13/§17 explicit run camera
+  /** Every camera action goes through here so the debug trace sees its cause. */
+  const dispatchCamera = useCallback((action) => {
+    if (isTraceOn()) {
+      const d = { type: action.type };
+      if (action.pan) { d.to = [action.pan.x, action.pan.y]; }
+      if (action.motion) d.motion = action.motion;
+      if (action.partyId) d.party = action.partyId;
+      if (action.dx != null) { d.dx = action.dx; d.dy = action.dy; }
+      trace('camera', d);
+    }
+    dispatchCameraRaw(action);
+  }, []);
   const [card, setCard] = useState(null); // §15 the one card under the map: explore / reveal / seal / ambush
   const [overlayLeaving, setOverlayLeaving] = useState(null); // snapshot of the last overlay while it fades out (350 ms)
   const overlayTimer = useRef(null);
@@ -131,7 +145,7 @@ export default function Eldrathor() {
   }, [tab, runStage, setHubSkinForTab, enterMindView, exitMindView]);
   useEffect(() => () => { clearFightTimers(); if (travelTimer.current) window.clearTimeout(travelTimer.current); if (overlayTimer.current) window.clearTimeout(overlayTimer.current); }, []);
 
-  function selectTab(id) { setTab(id); setHubSkinForTab(id); }
+  function selectTab(id) { trace('tab', { id }); setTab(id); setHubSkinForTab(id); }
   function pushLog(t, k = 'n') { logSeq.current += 1; const id = logSeq.current; setLog((l) => [...l, { id, t, k, clock: territoryRef.current?.clock ?? null }]); }
   const territoryRef = useRef(null);
   useEffect(() => { territoryRef.current = territory; }, [territory]);
@@ -150,8 +164,8 @@ export default function Eldrathor() {
   }
 
   // ---------- island → rally → route ----------
-  function onSelectArea(a) { setSelectedArea(a); setRunStage('rally'); }
-  function onRallyBack() { setSelectedArea(null); setRunStage('island'); }
+  function onSelectArea(a) { trace('island', { pin: a.id, name: a.name }); setSelectedArea(a); setRunStage('rally'); }
+  function onRallyBack() { trace('rally', { back: true }); setSelectedArea(null); setRunStage('island'); }
   function onRallySwap(slot, rosterIndex) {
     const incoming = roster[rosterIndex];
     if (!incoming) return;
@@ -165,6 +179,7 @@ export default function Eldrathor() {
     runRng.current = mulberry32(runSeed.current);
     fightIndex.current = 0;
     const t = genTerritory(a, { rng: runRng.current });
+    trace('run', { start: a.name, seed: runSeed.current, nodes: t.nodes.length, rares: t.rares.length, entrance: t.entranceId });
     setArea(a); setTerritory(t); setCurrentId(t.entranceId); setCard(null);
     dispatchCamera({ type: 'runStart', partyId: t.entranceId }); // the only centring of a run: its first frame
     setLog([{ t: `You unroll the route map. ${a.name} lies unexplored beyond the entry — ${t.rares.length} rares roam it and the boss is sealed.`, k: 'sys' }]);
@@ -258,18 +273,21 @@ export default function Eldrathor() {
    */
   function beginTrip(path, after) {
     if (!path || path.length < 2) { if (after) runAfter(territory, currentId, after); return; }
+    trace('trip', { start: path[0], to: path[path.length - 1], hops: path.length - 1, ms: travelDuration(path.length - 1), after: after?.type || null });
     setCard(null); setAmbush(null);
     setTravel({ path, startTs: performance.now(), duration: travelDuration(path.length - 1), after, skipAt: null });
   }
   function onTravelEnd() {
     const tr = travel; if (!tr) return;
     const dest = tr.path[tr.path.length - 1];
+    trace('trip', { arrived: dest, elapsed: Math.round(performance.now() - tr.startTs), skipped: tr.skipAt != null });
     setPrevId(tr.path[tr.path.length - 2] || currentId);
     setCurrentId(dest);
     setTravel(null);
     if (tr.after) travelTimer.current = window.setTimeout(() => runAfter(territoryRef.current || territory, dest, tr.after), CARD_PAUSE_MS);
   }
   function skipTrip() {
+    trace('trip', { skip: true });
     setTravel((tr) => (tr && tr.skipAt == null ? { ...tr, skipAt: performance.now() } : tr));
   }
   /** Arrival: the node the party now stands on becomes Revealed and its card opens. */
@@ -303,13 +321,14 @@ export default function Eldrathor() {
    * but not adjacent → Explore / Cancel. Revealed + adjacent → the reveal card directly.
    */
   function onTapNode(n) {
-    if (busy || !territory) return;
+    if (busy || !territory) { trace('tap', { node: n?.id || null, ignored: busy ? 'busy' : 'no-territory' }); return; }
     if (travel) { skipTrip(); return; } // tap anywhere while travelling = eased skip
-    if (!n || n.id === currentId || ambush) return;
+    if (!n || n.id === currentId || ambush) { trace('tap', { node: n?.id || null, ignored: !n ? 'no-node' : n.id === currentId ? 'party-node' : 'ambush-open' }); return; }
     const t = territory;
     const st = nodeState(n);
-    if (st === 'completed') return;
+    if (st === 'completed') { trace('tap', { node: n.id, state: st, ignored: 'completed' }); return; }
     const adjacent = isAdjacent(t, currentId, n.id);
+    trace('tap', { node: n.id, state: st, type: n.scouted ? effectiveType(t, n) : 'hidden', adjacent, card: st === 'revealed' && adjacent ? 'reveal' : 'explore' });
     if (st === 'revealed' && adjacent) {
       setCard(buildReveal(t, n, { onNode: false }));
       return;
@@ -321,6 +340,7 @@ export default function Eldrathor() {
   }
   /** One handler for every card button (§15). */
   function onCardAction(id) {
+    trace('card', { action: id, kind: ambush ? 'ambush' : card?.kind || null, node: ambush?.nodeId || card?.nodeId || null });
     // the ambush card is derived from `ambush`, not `card` — route its buttons first (a null `card` must not swallow them)
     if (id === 'ambushFight') { onAmbushFight(); return; }
     if (id === 'ambushFlee') { onAmbushFlee(); return; }
@@ -359,6 +379,7 @@ export default function Eldrathor() {
       case 'use': {
         setCard(null);
         if (!c.onNode) { beginTrip([currentId, n.id], { type: 'use', nodeId: n.id }); return; }
+        trace('overlay', { open: 'sanctuary', node: n.id });
         setFightNode(n); setRunStage('sanctuary'); enterMindView();
         return;
       }
@@ -378,6 +399,7 @@ export default function Eldrathor() {
   function openAmbush(t, halt) {
     const node = t.nodes.find((x) => x.id === halt.nodeId);
     if (!node) return;
+    trace('ambush', { node: node.id, kind: halt.kind, prev: halt.prevId || null });
     const isRare = halt.kind === 'rare';
     const rng = mulberry32((runSeed.current ^ Math.imul(t.clock + 7, 0x27d4eb2f)) >>> 0);
     const enemies = enemiesFor(t, node, rng);
@@ -451,6 +473,7 @@ export default function Eldrathor() {
   const finishFightToLoot = useCallback(() => {
     clearFightTimers();
     setFight((f) => { if (f) setFightElapsed(f.result.durationMs); return f; });
+    trace('overlay', { open: 'results' });
     setRunStage('loot'); setBusy(false);
   }, []);
   function startFight(n, opts = {}) {
@@ -475,6 +498,7 @@ export default function Eldrathor() {
     setFight({ enemies, derived, events: sim.events, result: sim.result, stats: sim.stats, rewards, seed, named: !!n.namedRare, rare: !!rare, eff, mapClear, ambush: !!opts.ambush });
     setFightNode({ ...n, tier: area.tier, type: eff });
     setFightElapsed(0); setFightSpeed(1);
+    trace('overlay', { open: 'fight', node: n.id, type: eff, win: sim.result.win, durMs: sim.result.durationMs, ambush: !!opts.ambush });
     setRunStage('fight'); enterMindView();
     fightTimers.current.tick = window.setInterval(() => {
       setFightElapsed((e) => {
@@ -491,6 +515,7 @@ export default function Eldrathor() {
   function skipFight() { finishFightToLoot(); }
   /** Keep the last overlay rendered for 350 ms while it fades out (§13 single crossfade). */
   function fadeOutOverlay(kind) {
+    trace('overlay', { close: kind, fadeMs: OVERLAY_FADE_MS });
     setOverlayLeaving({ kind, fight, fightNode, area });
     if (overlayTimer.current) window.clearTimeout(overlayTimer.current);
     overlayTimer.current = window.setTimeout(() => setOverlayLeaving(null), OVERLAY_FADE_MS);
@@ -537,6 +562,7 @@ export default function Eldrathor() {
     maybeAmbush(t, n.id, prevId);
   }
   function extract() {
+    trace('run', { extract: true, vein: runVein });
     pushLog(`⇱ Extracted with ${runVein} Worldvein banked.`, 'good');
     doFlash(`Extracted ${runVein} Worldvein`, colors.mythros);
     setWorldvein((v) => v + runVein);
@@ -599,14 +625,17 @@ export default function Eldrathor() {
         <TabBar activeTab={tab} onSelect={selectTab} />
         {(sheet === 'help' || sheet === 'help+basics') && <HelpSheet screenId={screenId} showBasics={sheet === 'help+basics'} onClose={() => setSheet(null)} />}
         {sheet === 'runlog' && <RunLogSheet log={log} areaName={area?.name} onClose={() => { setLogSeen(log.length); setSheet(null); }} />}
+        {sheet === 'debug' && <DebugTraceSheet onClose={() => setSheet(null)} />}
         {sheet === 'menu' && (
           <MenuSheet
             activeTab={tab}
             inRun={inRun}
             canExtract={canExtract}
             runVein={runVein}
+            traceOn={isTraceOn()}
             onNavigate={(id) => { setSheet(null); selectTab(id); }}
             onHelp={() => setSheet('help+basics')}
+            onDebug={() => setSheet('debug')}
             onExtract={() => { setSheet(null); extract(); }}
             onClose={() => setSheet(null)}
           />

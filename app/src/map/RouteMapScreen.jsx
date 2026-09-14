@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { biomeForArea, renderBiomeLayer } from './biomeStamps.jsx';
 import { rareAt, isSealed, isWalkable, nodeState } from './routeState.js';
 import { resolveFocus, centerOn, easeInOut, easeOut, polylinePointAt, SKIP_MS, FOLLOW_TAU_MS } from './camera.js';
+import { trace, isTraceOn } from '../debug/trace.js';
 import './parchment.css';
 
 /**
@@ -156,7 +157,10 @@ export default function RouteMapScreen({
     // ease, a drag) and glides toward "centred on the marker" with a slow exponential lag, so it
     // arrives centred without ever snapping or cutting.
     const startPan = readSheetPan(sheetRef.current) || pan;
+    const stat = { frames: 0, maxStep: 0, camPx: 0, t0: performance.now() }; // per-trip camera summary for the debug trace
+    trace('tween', { start: [startPan.x, startPan.y], marker: [points[0].x, points[0].y], hops: points.length - 1, ms: dur });
     let lastTs = null;
+    let prevPan = startPan;
     tween.current = { active: true, pos: points[0], pan: startPan, skipFrom: null, skipAt: null, raf: null };
     let done = false;
     const sheetEl = sheetRef.current;
@@ -192,8 +196,11 @@ export default function RouteMapScreen({
       lastTs = now;
       if (markerRef.current) markerRef.current.style.transform = markerTransform(pos);
       if (sheetRef.current) sheetRef.current.style.transform = sheetTransform(tw.pan);
+      if (isTraceOn()) { const st = Math.hypot(tw.pan.x - prevPan.x, tw.pan.y - prevPan.y); stat.frames += 1; stat.camPx += st; if (st > stat.maxStep) stat.maxStep = st; if (st > 40) trace('camjump', { px: st, frameMs: dt, at: Math.round(now - stat.t0) }); }
+      prevPan = tw.pan;
       if (finished) {
         done = true;
+        trace('tween', { arrived: true, elapsed: Math.round(now - stat.t0), frames: stat.frames, camPx: stat.camPx, maxStep: stat.maxStep, skipped: trv?.skipAt != null });
         onTravelEnd(); // the party is placed on arrival; the camera may still be drifting
         // settle: keep the same slow glide until the camera rests centred on the marker (≤ 1.5 s), then hand
         // the camera back exactly where the glide left it — no correction, no snap
@@ -212,6 +219,7 @@ export default function RouteMapScreen({
           }
           tw.active = false;
           if (sheetEl) sheetEl.style.transition = '';
+          trace('tween', { settled: true, settleMs: Math.round(t - settleT0), pan: [tw.pan.x, tw.pan.y], restPx: dist });
           setCamera({ type: 'travelEnd', pan: tw.pan });
         };
         tw.raf = schedule(settle);
@@ -257,7 +265,9 @@ export default function RouteMapScreen({
     // pan to centre, slowly: the tapped node glides to the centre of the HUD/card band (900 ms ease)
     if (measured && n.id !== currentId && !n.cleared) {
       const target = centerOn(sheetPt(n), vp, sheet, MARGIN);
-      if (Math.abs(target.x - pan.x) > 0.5 || Math.abs(target.y - pan.y) > 0.5) setCamera({ type: 'set', pan: target, motion: 'ease' });
+      const px = Math.hypot(target.x - pan.x, target.y - pan.y);
+      if (px > 0.5) { trace('pan', { cause: 'tap', node: n.id, from: [pan.x, pan.y], to: [target.x, target.y], px, ms: 900 }); setCamera({ type: 'set', pan: target, motion: 'ease' }); }
+      else trace('pan', { cause: 'tap', node: n.id, px: 0 });
     }
     onTapNode(n);
   }
@@ -284,9 +294,11 @@ export default function RouteMapScreen({
     if (!g.active) return;
     g.active = false;
     if (!g.moved) {
-      if (travel) onTapNode(null); // tap anywhere while travelling = eased skip
+      if (travel) { trace('gesture', { tap: 'skip-travel' }); onTapNode(null); } // tap anywhere while travelling = eased skip
       else if (g.target) activateNode(g.target);
+      else trace('gesture', { tap: 'empty' });
     } else if (!travel) {
+      trace('gesture', { drag: [g.start.x, g.start.y], px: g.dist });
       setCamera({ type: 'release', vp, sheet });
     }
     g.target = null;
