@@ -3,7 +3,7 @@
  * docs/Eldrathor_RouteMap_v3_Travel_Lock.md §3, §6, §15 (NO respawns; free travel; the
  * explore commitment model with exactly three node states).
  * Pure helpers over the territory object: node state, reveal-on-clear, the scout/clear action
- * clock that moves rares, the boss seal, explore-path planning and the ambush flee roll.
+ * clock that moves rares, explore-path planning and the ambush flee roll.
  */
 
 /**
@@ -39,15 +39,6 @@ export function rareAt(t, nodeId) {
 /** What the node fights as right now: a living rare on it overrides the underlying type. */
 export function effectiveType(t, node) {
   return rareAt(t, node.id) ? 'rare' : node.type;
-}
-
-/**
- * Anthony 2026-09-14: the boss is NEVER sealed behind the rares. Rares are optional big-loot hunts;
- * killing some (or none) before the boss is the player's call. Kept as a function so the seal can be
- * reinstated by one line if the design ever swings back; every caller treats it as always false.
- */
-export function isSealed() {
-  return false;
 }
 
 /** Living rares left on the map (optional hunts). */
@@ -112,7 +103,7 @@ export function thinFogIfStranded(t) {
 
 export function killRare(t, nodeId) {
   const rares = t.rares.map((r) => (r.alive && r.nodeId === nodeId ? { ...r, alive: false } : r));
-  return { ...t, rares, sealBroken: !rares.some((r) => r.alive) };
+  return { ...t, rares };
 }
 
 /**

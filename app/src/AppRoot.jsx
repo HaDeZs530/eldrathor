@@ -96,7 +96,7 @@ export default function Eldrathor() {
     }
     dispatchCameraRaw(action);
   }, []);
-  const [card, setCard] = useState(null); // §15 the one card under the map: explore / reveal / seal / ambush
+  const [card, setCard] = useState(null); // §15 the one card under the map: explore / reveal / ambush
   const [overlayLeaving, setOverlayLeaving] = useState(null); // snapshot of the last overlay while it fades out (350 ms)
   const overlayTimer = useRef(null);
   const [prevId, setPrevId] = useState(null); // node the party came from (flee steps back here)
@@ -229,7 +229,7 @@ export default function Eldrathor() {
     if (eff === 'sanctuary') return [];
     return spawnEnemies(area.tier, eff, false, { rng, bossName: area.boss, depthMult: eff === 'rare' || eff === 'boss' ? 1 : depthMultFor(n), named: !!n.namedRare });
   }
-  /** §15 reveal card: type, enemy count, threat band, yield — Fight / Flee (Sanctuary: Use / Leave). The boss is never sealed. */
+  /** §15 reveal card: type, enemy count, threat band, yield — Fight / Flee (Sanctuary: Use / Leave). */
   function buildReveal(t, n, { onNode }) {
     const eff = effectiveType(t, n);
     const rng = mulberry32((runSeed.current ^ Math.imul(Number(n.id.slice(1)) + 1, 0x85ebca6b)) >>> 0);

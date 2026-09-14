@@ -6,7 +6,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { genTerritory, segmentsCross } from './genTerritory.js';
 import { mulberry32 } from '../combat/simulate.js';
-import { tickClock, clearNode, isSealed, raresAlive, killRare, travelPath } from './routeState.js';
+import { tickClock, clearNode, raresAlive, killRare, travelPath } from './routeState.js';
 
 const area = (tier) => ({ id: tier, tier });
 
@@ -40,13 +40,12 @@ test('web: connected, 30–45 nodes, ≥4 loops, 30–40% nodes with ≥3 edges 
   assert.ok(t9.nodes.length >= 45, `tier 9 should be 45+, got ${t9.nodes.length}`);
 });
 
-test('types: boss never sealed, 2–3 rares, 2–4 sanctuaries never adjacent to each other or the entrance', () => {
+test('types: boss node, 2–3 rares (optional hunts), 2–4 sanctuaries never adjacent to each other or the entrance', () => {
   for (let seed = 1; seed <= 20; seed++) {
     const t = genTerritory(area(3), { rng: mulberry32(seed * 3) });
     const { map } = analyse(t);
     assert.equal(map[t.bossId].type, 'boss');
     assert.ok(t.rares.length >= 2 && t.rares.length <= 3, `rares ${t.rares.length}`);
-    assert.equal(isSealed(t), false); // Anthony 2026-09-14: rares never lock the boss
     const sanct = t.nodes.filter((n) => n.type === 'sanctuary');
     assert.ok(sanct.length >= 2 && sanct.length <= 4, `seed ${seed}: sanctuaries ${sanct.length}`);
     const entranceAdj = new Set(map[t.entranceId].neighbors);
@@ -78,7 +77,7 @@ test('named variants roll at generation: 10% of Fight nodes, at least one, gold-
   }
 });
 
-test('clock: rares roam only on scout/clear actions (every 2), may step onto the party, nothing ever respawns; seal breaks when all die', () => {
+test('clock: rares roam only on scout/clear actions (every 2), may step onto the party, nothing ever respawns; raresAlive hits 0 when all die', () => {
   const rng = mulberry32(5);
   let t = genTerritory(area(1), { rng });
   t = { ...t, nodes: t.nodes.map((n) => ({ ...n, revealed: true })) };

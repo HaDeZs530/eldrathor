@@ -13,7 +13,7 @@ import './parchment.css';
  * §15 three node states only: unexplored (identical rune for every type — nothing is auto-marked),
  * revealed (type icon; skull if a rare stands there; crown for the boss, which is never locked) and
  * completed (dim dot, tap = nothing). Tapping never moves the party: the cards below the map
- * (Explore / Cancel, Fight / Flee, Use / Leave, seal, ambush) carry every commitment.
+ * (Explore / Cancel, Fight / Flee, Use / Leave, ambush) carry every commitment.
  * §13: this screen stays mounted for the whole run; fights render as overlays above it.
 * Camera: ONE JS controller owns the sheet transform. Every move — tap pan, overlay-close pan,
  * drag release, the travel glide — starts from the controller's exact current pan and is stepped
@@ -68,7 +68,7 @@ function cancelScheduled(h) {
 }
 
 /** Marker placement — transform only (its own compositor layer; no layout, no parchment repaint per frame). */
-const markerTransform = (pos) => `translate3d(${pos.x}px, ${pos.y}px, 0) rotate(45deg)`;
+const markerTransform = (pos) => `translate3d(${pos.x}px, ${pos.y}px, 0)`;
 const sheetTransform = (pan) => `translate3d(${pan.x}px, ${pan.y}px, 0)`;
 
 /** Keep pointer events flowing to the viewport during a drag; tolerate synthetic pointers. */
@@ -413,7 +413,7 @@ export default function RouteMapScreen({
               const rare = rareAt(territory, n.id);
               color = TYPE_COLOR[n.type] || TYPE_COLOR.normal;
               if (rare) { state = 'is-rare'; glyph = '☠'; label = 'Rare'; }
-              else if (n.type === 'boss') { state = 'is-boss is-unsealed'; glyph = '♛'; label = 'Boss'; }
+              else if (n.type === 'boss') { state = 'is-boss'; glyph = '♛'; label = 'Boss'; }
               else { state = n.namedRare ? 'is-named' : 'is-scouted'; glyph = TYPE_GLYPH[n.type] || '⚔'; label = `${n.namedRare ? 'Named ' : ''}${TYPE_LABEL[n.type] || 'Node'}`; }
             }
             const cls = ['eld-pnode', state, here && 'is-here', st !== 'completed' && !here && 'is-tappable'].filter(Boolean).join(' ');
@@ -433,7 +433,7 @@ export default function RouteMapScreen({
             );
           })}
 
-          {/* the party marker sits on top of whichever node the party occupies; §16 it glides along the polyline */}
+          {/* §18 gold ring + pennant around whichever node the party occupies (the node keeps its icon); §16 it glides along the polyline */}
           {cur && <div ref={markerRef} className="eld-party-marker" style={{ transform: markerTransform(markerPos) }} aria-hidden="true" />}
         </div>
 
