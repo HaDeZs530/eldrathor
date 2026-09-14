@@ -9,10 +9,10 @@ import { mulberry32 } from '../combat/simulate.js';
 const memStorage = () => { const m = new Map(); return { getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)), removeItem: (k) => m.delete(k), keys: () => [...m.keys()] }; };
 
 const midRun = () => ({
-  party: [{ id: 'c-1', name: 'Kessa', archetype: 'Bulwark', level: 3 }, { id: 'c-2', name: 'Orin', archetype: 'Warden', level: 3 }],
-  roster: [{ id: 'c-3', name: 'Nyra', archetype: 'Adept', level: 1 }],
+  party: [{ id: 'c-1', name: 'Kessa', archetype: 'Bulwark', level: 3, xp: 0, weaponId: 'w-1' }, { id: 'c-2', name: 'Orin', archetype: 'Warden', level: 3, xp: 0, weaponId: 'w-2' }],
+  roster: [{ id: 'c-3', name: 'Nyra', archetype: 'Adept', level: 1, xp: 0, weaponId: 'w-3' }],
   worldvein: 120, unlocked: 2,
-  stash: [{ id: 'w-1', name: 'Fine Sword', tier: 'Fine', rating: 61 }],
+  stash: [{ id: 'w-1', name: 'Fine Sword', tier: 'Fine', weaponType: 'Greatsword', baseRating: 61, empower: 0 }, { id: 'w-2', name: 'Common Staff', tier: 'Common', weaponType: 'Staff', baseRating: 30, empower: 0 }, { id: 'w-3', name: 'Common Staff', tier: 'Common', weaponType: 'Staff', baseRating: 30, empower: 0 }],
   inventory: { raw: { wood: 4 }, infused: [{ quality: 'Common', qty: 2 }], scrap: 1, armor: [{ id: 'a-1', name: 'Veinwoven Vest', quality: 'Common', rating: 28 }] },
   afk: { gatherSlots: [{ charKey: 'c-3', areaId: 1, family: 'wood', running: true, progress: 0.4 }], process: { charKey: null }, idle: { charKey: null } },
   run: {
@@ -96,9 +96,25 @@ test('export / import: importText validates and installs the save; reset clears 
   const st = memStorage(); const store = createStore(st, () => 5);
   store.save(midRun());
   const text = store.exportText();
-  assert.ok(text.includes('"v":1'));
+  assert.ok(text.includes(`"v":${SAVE_VERSION}`));
   store.reset(); assert.equal(store.load().fresh, true);
   assert.equal(store.importText('not json').ok, false);
   const imp = store.importText(text); assert.ok(imp.ok);
   const back = store.load(); assert.equal(back.fresh, false); assert.equal(back.state.run.currentId, 'n4');
+});
+
+test('v1 → v2 (M1b): weapon rating becomes immutable baseRating + empower 0, Mythic → Legendary, members carry xp and an equipped Common starter', () => {
+  const v1 = JSON.stringify({ v: 1, party: [{ id: 'c-1', name: 'Kessa', archetype: 'Bulwark', weapon: 'Sword + Shield', level: 3 }], roster: [{ id: 'c-2', name: 'Nyra', archetype: 'Adept', weapon: 'Staff', level: 1 }], worldvein: 10,
+    stash: [{ id: 'w-1', name: 'Fine Bow', tier: 'Fine', weaponType: 'Bow', rating: 61 }], inventory: { raw: {}, infused: [{ family: 'wood', quality: 'Mythic', qty: 1 }], scrap: 0, armor: [{ id: 'a-1', name: 'Court-Bound Carapace', quality: 'Mythic', rating: 82 }] }, run: null });
+  const d = deserialize(v1);
+  assert.ok(d.ok); assert.equal(d.migratedFrom, 1);
+  const bow = d.state.stash.find((w) => w.id === 'w-1');
+  assert.equal(bow.baseRating, 61); assert.equal(bow.empower, 0); assert.equal('rating' in bow, false);
+  assert.equal(d.state.inventory.armor[0].quality, 'Legendary'); assert.equal(d.state.inventory.infused[0].quality, 'Legendary');
+  for (const m of [...d.state.party, ...d.state.roster]) {
+    assert.equal(m.xp, 0);
+    const w = d.state.stash.find((x) => x.id === m.weaponId);
+    assert.ok(w, `${m.name} has an equipped weapon`); assert.equal(w.tier, 'Common'); assert.equal(w.weaponType, m.weapon);
+  }
+  assert.equal(d.state.stash.length, 3);
 });

@@ -1,6 +1,8 @@
 /**
- * Enemy stat blocks — docs/Eldrathor_Combat_v2_Lock.md §4.
- * Base trash unit by world tier T (1–6): hp 60×1.6^(T−1), dmg 9×1.45^(T−1), interval 1.4 s,
+ * Enemy stat blocks — docs/Eldrathor_Combat_v2_Lock.md §4, boss multipliers retuned under
+ * docs/Eldrathor_Progression_Loop_Lock.md §8 (M1b): boss ×22 hp / ×20 dmg (was ×18 / ×2.2) so a
+ * fresh party hits the gear wall and a level-5 Fine-geared party breaks through — see balance.test.js.
+ * Base trash unit by world tier T (1–9): hp 60×1.6^(T−1), dmg 9×1.45^(T−1), interval 1.4 s,
  * mit 0.05+0.03T. Enemies have no abilities in v2 (boss enrage tick only).
  * Enemy roster identities are a separate lock (design doc §9 item 2).
  */
@@ -11,12 +13,25 @@ const RARE_NAME = 'Rare Manifestation';
 // DESIGN-OPEN: named-variant adjectives — `<Adjective> <Enemy>` until the area roster lock lands.
 const NAMED_ADJECTIVES = ['Grim', 'Hollow', 'Ashen', 'Vein-Scarred', 'Bright-Eyed', 'Old'];
 
+/**
+ * Tuning knobs — Progression Loop Lock §8 (M1b): these numbers are set by the balance gates in
+ * balance.test.js (fresh party loses the area-1 boss ≥ 8/10 and wins area-1 trash ≥ 9/10; a level-5
+ * Fine-geared party beats the boss ≥ 8/10). Change them only with the gates green.
+ */
+export const ENEMY_TUNING = {
+  baseHp: 60, hpGrowth: 1.6, baseDmg: 9, dmgGrowth: 1.45, interval: 1.4, mitBase: 0.05, mitPerTier: 0.03,
+  boss: { hp: 22, dmg: 20, interval: 1.6, mitAdd: 0.1 },
+  rare: { hp: 6, dmg: 1.6, interval: 1.2 },
+  crystalHp: 1.2,
+};
+
 function baseUnit(T) {
+  const k = ENEMY_TUNING;
   return {
-    hp: 60 * Math.pow(1.6, T - 1),
-    dmg: 9 * Math.pow(1.45, T - 1),
-    interval: 1.4,
-    mit: 0.05 + 0.03 * T,
+    hp: k.baseHp * Math.pow(k.hpGrowth, T - 1),
+    dmg: k.baseDmg * Math.pow(k.dmgGrowth, T - 1),
+    interval: k.interval,
+    mit: k.mitBase + k.mitPerTier * T,
   };
 }
 
@@ -70,26 +85,27 @@ export function spawnEnemies(worldTier, nodeType, rareFlag = false, opts = {}) {
   });
 
   if (nodeType === 'boss') {
-    // ×18 hp, ×2.2 dmg, interval 1.6 s, mit +0.1; enrage tick every 15 s handled by the simulator.
-    units.push(mk(opts.bossName || 'Boss', b.hp * 18, b.dmg * 2.2, 1.6, b.mit + 0.1, { isBoss: true }));
+    // ENEMY_TUNING.boss (M1b §8): hp/dmg multipliers, interval 1.6 s, mit +0.1; enrage tick every 15 s handled by the simulator.
+    const k = ENEMY_TUNING.boss;
+    units.push(mk(opts.bossName || 'Boss', b.hp * k.hp, b.dmg * k.dmg, k.interval, b.mit + k.mitAdd, { isBoss: true }));
     return finish(units, { depthMult, named, rng });
   }
   if (nodeType === 'rare') {
-    let hp = b.hp * 6;
-    let dmg = b.dmg * 1.6;
+    let hp = b.hp * ENEMY_TUNING.rare.hp;
+    let dmg = b.dmg * ENEMY_TUNING.rare.dmg;
     if (rareFlag) {
       // DESIGN-OPEN: "×1.3 on top" applied to both hp and dmg for the named variant.
       hp *= 1.3;
       dmg *= 1.3;
     }
-    units.push(mk(rareFlag ? `Named ${RARE_NAME}` : RARE_NAME, hp, dmg, 1.2, b.mit, { isRare: true, named: !!rareFlag }));
+    units.push(mk(rareFlag ? `Named ${RARE_NAME}` : RARE_NAME, hp, dmg, ENEMY_TUNING.rare.interval, b.mit, { isRare: true, named: !!rareFlag }));
     return finish(units, { depthMult, named, rng });
   }
   if (nodeType === 'crystal') {
     // 2–3 units at ×1.2 hp. DESIGN-OPEN: 2-vs-3 split not given — 50/50 used.
     const n = weightedPick(rng, [[2, 50], [3, 50]]);
     for (let i = 0; i < n; i++) {
-      units.push(mk(TRASH_NAMES[Math.floor(rng() * TRASH_NAMES.length)], b.hp * 1.2, b.dmg, b.interval, b.mit));
+      units.push(mk(TRASH_NAMES[Math.floor(rng() * TRASH_NAMES.length)], b.hp * ENEMY_TUNING.crystalHp, b.dmg, b.interval, b.mit));
     }
     return finish(units, { depthMult, named, rng });
   }

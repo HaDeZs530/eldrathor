@@ -7,39 +7,9 @@ import assert from 'node:assert/strict';
 import { simulateFight, mulberry32 } from './simulate.js';
 import { spawnEnemies } from './enemies.js';
 
-const LEVEL1_PARTY = [
-  { name: 'Kessa', archetype: 'Bulwark', weapon: 'Sword + Shield', level: 1 },
-  { name: 'Orin', archetype: 'Warden', weapon: 'Staff', level: 1 },
-  { name: 'Vayle', archetype: 'Striker', weapon: 'Dual Daggers', level: 1 },
-];
+import { FRESH_PARTY as LEVEL1_PARTY } from './balance.test.js';
 
-// TODO (design): under the spec's exact §4 numbers W1 trash lasts ~2 s and the W1 boss dies
-// in ~24 s at full HP — see PR notes. These two encode the spec's TARGETS and stay `todo`
-// until the Design Chat re-tunes the 1.6^(T−1) hp base / dmg base.
-test('W1 trash: a level-1 party wins in the 10–20 s target band (across seeds)', { todo: 'spec §4 numbers: fights end in ~2 s' }, () => {
-  let wins = 0;
-  const durations = [];
-  for (let seed = 1; seed <= 25; seed++) {
-    const enemies = spawnEnemies(1, 'normal', false, { rng: mulberry32(seed * 7) });
-    const { result } = simulateFight({ party: LEVEL1_PARTY, enemies, seed });
-    if (result.win) wins += 1;
-    durations.push(result.durationMs / 1000);
-  }
-  assert.equal(wins, 25, 'level-1 party must clear W1 trash reliably');
-  const avg = durations.reduce((a, b) => a + b, 0) / durations.length;
-  assert.ok(avg >= 5 && avg <= 30, `average trash fight ${avg.toFixed(1)}s should sit near the 10–20 s target`);
-});
-
-test('W1 boss: a fresh level-1 party wipes (the gear wall exists)', { todo: 'spec §4 numbers: party wins at full HP' }, () => {
-  let wipes = 0;
-  for (let seed = 1; seed <= 10; seed++) {
-    const enemies = spawnEnemies(1, 'boss', false, { bossName: 'The Gorewood Stag' });
-    const { result, events } = simulateFight({ party: LEVEL1_PARTY, enemies, seed });
-    if (!result.win) wipes += 1;
-    assert.equal(events[events.length - 1].type, result.win ? 'victory' : 'wipe');
-  }
-  assert.ok(wipes >= 8, `expected the W1 boss to wipe a level-1 party in most seeds, got ${wipes}/10 wipes`);
-});
+// The §4 trash-band and boss-wall targets are ENFORCED in balance.test.js (Progression Loop Lock §8, M1b).
 
 test('Aegis taunt redirects enemy targeting onto the Bulwark', () => {
   const enemies = spawnEnemies(1, 'rare', false, { rng: mulberry32(3) });

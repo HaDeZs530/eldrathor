@@ -75,10 +75,11 @@ export const ARCHETYPE_SEEDS = {
   Resonator: { hp: 10, mana: 10, manaRegen: 10, power: 10, mitigation: 10, attackSpeed: 10, critChance: 10, critDamage: 10, healingPower: 10 },
 };
 
+// M1b: a new game IS the lock's "fresh party" (§8) — level 1, Common starter weapons (equipped at boot), no armor.
 export const DEFAULT_PARTY = [
-  { id: 'c-kessa', name: 'Kessa', archetype: 'Bulwark', weapon: 'Sword + Shield', level: 3 },
-  { id: 'c-orin', name: 'Orin', archetype: 'Warden', weapon: 'Staff', level: 3 },
-  { id: 'c-vayle', name: 'Vayle', archetype: 'Striker', weapon: 'Dual Daggers', level: 3 },
+  { id: 'c-kessa', name: 'Kessa', archetype: 'Bulwark', weapon: 'Sword + Shield', level: 1, xp: 0 },
+  { id: 'c-orin', name: 'Orin', archetype: 'Warden', weapon: 'Staff', level: 1, xp: 0 },
+  { id: 'c-vayle', name: 'Vayle', archetype: 'Striker', weapon: 'Dual Daggers', level: 1, xp: 0 },
 ];
 
 /** Stable character id (bug-fix pass 1 §7/§8: run HP and AFK jobs are keyed by id, never by position). */

@@ -1,11 +1,14 @@
 /**
  * Results-screen rewards — docs/Eldrathor_Combat_v2_Lock.md §7.
  * Worldvein gained (+20% with Attune Vein), loot = weapon name + tier + rating 1–100.
- * Loot tier roll = world tier ± 1, Attune Vein biases +1.
+ * Loot rarity — docs/Eldrathor_Progression_Loop_Lock.md §2 (M1b): band by area tier, 70/20/10 roll
+ * (Attune Vein: 40 % one-up), rares +1 band, bosses +1 band with a rating floor of 40, rating 1–100.
  */
-import { WEAPONS, newId } from '../data.js';
+import { WEAPONS } from '../data.js';
+import { RARITY, rollRarity, makeWeapon } from '../progression/progression.js';
 
-export const LOOT_TIERS = ['Common', 'Fine', 'Rare', 'Epic', 'Legendary'];
+export const LOOT_TIERS = RARITY;
+export const BOSS_RATING_FLOOR = 40;
 const WEAPON_TYPES = Object.keys(WEAPONS);
 
 // DESIGN-OPEN: Worldvein amounts and drop chances are not in the v2 spec — carried over from the
@@ -34,18 +37,19 @@ export function rollRewards({ tier, worldTier, nodeType, attuneVein = false, rng
     worldvein += mapClearBonus;
   }
 
-  const rollGear = (tierBias, forceTierIdx = null) => {
-    // tier = area tier ± 1 (−1 / 0 / +1 evenly), + bias (Attune Vein +1, named +1), clamped to the 5 tiers
-    const wobble = Math.floor(rng() * 3) - 1;
-    const idx = forceTierIdx ?? Math.max(0, Math.min(LOOT_TIERS.length - 1, T - 1 + wobble + tierBias));
-    const lootTier = LOOT_TIERS[idx];
+  // §2: rares +1 band, bosses +1 band (and a rating floor); Attune Vein raises the one-up chance to 40 %
+  const shift = nodeType === 'boss' || nodeType === 'rare' ? 1 : 0;
+  const ratingFloor = nodeType === 'boss' ? BOSS_RATING_FLOOR : 1;
+  const rollGear = (extraShift = 0, minTier = null) => {
+    let tier = rollRarity(rng, T, { attune: attuneVein, shift: shift + extraShift });
+    if (minTier && RARITY.indexOf(tier) < RARITY.indexOf(minTier)) tier = minTier;
     const weaponType = WEAPON_TYPES[Math.floor(rng() * WEAPON_TYPES.length)];
-    return { id: newId('w'), name: `${lootTier} ${weaponType}`, tier: lootTier, weaponType, rating: 1 + Math.floor(rng() * 100) };
+    const baseRating = ratingFloor + Math.floor(rng() * (101 - ratingFloor));
+    return makeWeapon({ tier, weaponType, baseRating });
   };
   const gears = [];
-  const bias = attuneVein ? 1 : 0;
-  if (rng() < (GEAR_CHANCE[nodeType] ?? 0.12)) gears.push(rollGear(bias));
-  if (named) gears.push(rollGear(bias + 1));
-  if (mapClear) gears.push(rollGear(bias, Math.max(LOOT_TIERS.indexOf('Rare'), Math.min(LOOT_TIERS.length - 1, T - 1 + bias))));
+  if (rng() < (GEAR_CHANCE[nodeType] ?? 0.12)) gears.push(rollGear());
+  if (named) gears.push(rollGear(1)); // named variant: one extra roll at +1 band (RouteMap §5)
+  if (mapClear) gears.push(rollGear(0, 'Rare')); // map clear: one guaranteed Rare-or-better roll (§6)
   return { worldvein, attuneBonus, mapClearBonus, gears, gear: gears[0] || null };
 }

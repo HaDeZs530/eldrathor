@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { newCharId, ARCHETYPES, WEAPONS, STATS, STAT_LABELS, ARCHETYPE_SEEDS } from '../data.js';
+import { newCharId, ARCHETYPES, STATS, STAT_LABELS, ARCHETYPE_SEEDS, TIER_COLOR } from '../data.js';
+import { starterWeapon, validName, NAME_MAX, equippedIds as equippedOf } from '../progression/progression.js';
+import { MAT_QUALITY } from '../theme/tokens.js';
 import GearPaperdoll from './GearPaperdoll.jsx';
-import { deriveDisplay } from '../combat/derive.js';
+import { deriveDisplay, equip } from '../combat/derive.js';
 import { INNATES } from '../combat/simulate.js';
 
 const CLASS_GLYPH = {
@@ -17,7 +19,8 @@ const CLASS_GLYPH = {
  * Top: party-of-3 list. Below: extra roster + Create character.
  * Tap member → detail (stats top, purchasable upgrades below) — same shape as Player.
  */
-export default function PartyScreen({ party, setParty, roster, setRoster, locked = false }) {
+export default function PartyScreen({ party, setParty, roster, setRoster, locked = false, stash = [], setStash, armor = [], equipped }) {
+  const taken = equipped || equippedOf(party, roster);
   const [detail, setDetail] = useState(null); // { source: 'party'|'roster', index }
   const [creating, setCreating] = useState(false);
 
@@ -26,7 +29,10 @@ export default function PartyScreen({ party, setParty, roster, setRoster, locked
       <CreateCharacter
         onCancel={() => setCreating(false)}
         onCreate={(n) => {
-          setRoster((r) => [...r, { ...n, id: newCharId() }]);
+          // M1b: a recruit starts with an equipped Common weapon of their class default (DESIGN-OPEN: recruit gear)
+          const w = starterWeapon(n.weapon);
+          if (setStash) setStash((st) => [...st, w]);
+          setRoster((r) => [...r, { ...n, id: newCharId(), xp: 0, weaponId: w.id }]);
           setCreating(false);
         }}
       />
@@ -41,7 +47,12 @@ export default function PartyScreen({ party, setParty, roster, setRoster, locked
     }
     return (
       <MemberDetail
+        key={member.id}
         member={member}
+        stash={stash}
+        armor={armor}
+        taken={taken}
+        locked={locked}
         onBack={() => setDetail(null)}
         onChange={(next) => {
           if (detail.source === 'party') {
@@ -198,7 +209,7 @@ function CreateCharacter({ onCancel, onCreate }) {
         className="eld-btn"
         disabled={!ready}
         style={{ ...S.createBtn, opacity: ready ? 1 : 0.5 }}
-        onClick={() => ready && onCreate({ name: trimmed, archetype, weapon: DEFAULT_WEAPON[archetype], level: 1 })}
+        onClick={() => ready && onCreate({ name: trimmed.slice(0, NAME_MAX), archetype, weapon: DEFAULT_WEAPON[archetype], level: 1 })}
       >
         Confirm
       </button>
@@ -222,14 +233,19 @@ function MemberRow({ m, badge, onClick }) {
   );
 }
 
-function MemberDetail({ member, onBack, onChange, onPromoteToParty }) {
+function MemberDetail({ member, stash, armor, taken, locked, onBack, onChange, onPromoteToParty }) {
   const a = ARCHETYPES[member.archetype];
-  const d = deriveDisplay(member);
+  const geared = equip(member, stash, armor);
+  const d = deriveDisplay(geared);
   const inn = INNATES[member.archetype];
+  const [nameDraft, setNameDraft] = useState(member.name);
+  const nameOk = validName(nameDraft);
+  const weaponItem = geared.weaponItem;
+  const armorItem = geared.armorItem;
 
-  // Derived combat values (combat v2 §2) — seeds × level × weapon; gems multiply later.
+  // Derived combat values (combat v2 §2) — seeds × level × weapon item × armor; gems multiply later.
   const stats = [
-    { k: 'Level', v: String(member.level) },
+    { k: 'Level', v: `${member.level}${member.level >= 50 ? ' (max)' : ` · ${Math.floor(member.xp || 0)} XP`}` },
     { k: 'Role', v: a.role },
     { k: 'Max HP', v: String(d.maxHp) },
     { k: 'Hit / swing', v: `${d.hitDamage} / ${d.swingInterval}s` },
@@ -241,13 +257,26 @@ function MemberDetail({ member, onBack, onChange, onPromoteToParty }) {
     { k: 'Aura', v: inn ? `${inn.aura.glyph} ${inn.aura.name}` : '—' },
   ];
 
-  // DESIGN-OPEN: per-adventurer upgrade economy.
-  const upgrades = [
-    { id: 'lvl', tree: 'Growth', name: 'Train Level', blurb: 'Raise level (+HP/ATK).', cost: '???' },
-    { id: 'weapon', tree: 'Gear', name: 'Weapon Affinity', blurb: 'Slight tempo/dmg from current weapon.', cost: '???' },
-    { id: 'gem', tree: 'Gems', name: 'Class Gem Slot', blurb: 'Unlock a class-gem active (DESIGN-OPEN).', cost: '???' },
-    { id: 'armor', tree: 'Craft', name: 'Armor Fitting', blurb: 'Armor is crafted only — fitting stub.', cost: '???' },
+  // Progression Loop Lock §7: no archetype editing; the growth paths below are not built yet.
+  const coming = [
+    { id: 'gem', tree: 'Gems', name: 'Class Gem Slot', blurb: 'Class-gem actives (Class Gem Trees lock).' },
+    { id: 'armorgem', tree: 'Gems', name: 'Armor Gems', blurb: 'Passive armor gems.' },
   ];
+
+  // Swap diff: what equipping `item` would change, versus what is equipped now.
+  const diffFor = (patch) => {
+    const n = deriveDisplay(equip({ ...member, ...patch }, stash, armor));
+    const parts = [];
+    if (n.hitDamage !== d.hitDamage) parts.push(`Hit ${d.hitDamage} → ${n.hitDamage}`);
+    if (n.maxHp !== d.maxHp) parts.push(`HP ${d.maxHp} → ${n.maxHp}`);
+    if (n.mitigation !== d.mitigation) parts.push(`Mit ${d.mitigation}% → ${n.mitigation}%`);
+    if (n.swingInterval !== d.swingInterval) parts.push(`Swing ${d.swingInterval}s → ${n.swingInterval}s`);
+    return parts.length ? parts.join(' · ') : 'No change';
+  };
+  const weaponChoices = stash.filter((w) => w.id !== member.weaponId && !taken.has(w.id));
+  const armorChoices = armor.filter((x) => x.id !== member.armorId && !taken.has(x.id));
+  const equipWeapon = (w) => onChange({ ...member, weaponId: w.id, weapon: w.weaponType });
+  const equipArmor = (x) => onChange({ ...member, armorId: x ? x.id : undefined });
 
   return (
     <div style={S.wrap}>
@@ -285,37 +314,80 @@ function MemberDetail({ member, onBack, onChange, onPromoteToParty }) {
         accent={a.color}
         classGlyph={CLASS_GLYPH[member.archetype] || '♟'}
         classLabel={member.archetype}
-        weaponLabel={member.weapon}
+        weaponLabel={weaponItem ? weaponItem.name : 'Unarmed'}
       />
 
       <div style={S.editBlock}>
-        <label style={S.editLbl}>Name</label>
+        <label style={S.editLbl} htmlFor="eld-member-name">Name</label>
         <input
-          style={S.input}
-          value={member.name}
-          onChange={(e) => onChange({ ...member, name: e.target.value })}
+          id="eld-member-name"
+          style={{ ...S.input, borderColor: nameOk ? undefined : '#e05d6f' }}
+          value={nameDraft}
+          maxLength={NAME_MAX}
+          aria-invalid={!nameOk}
+          onChange={(e) => {
+            const v = e.target.value;
+            setNameDraft(v);
+            if (validName(v)) onChange({ ...member, name: v.trim() });
+          }}
         />
-        <label style={S.editLbl}>Archetype</label>
-        <select
-          style={S.input}
-          value={member.archetype}
-          onChange={(e) => onChange({ ...member, archetype: e.target.value })}
-        >
-          {Object.keys(ARCHETYPES).map((k) => (
-            <option key={k}>{k}</option>
-          ))}
-        </select>
-        <label style={S.editLbl}>Weapon</label>
-        <select
-          style={S.input}
-          value={member.weapon}
-          onChange={(e) => onChange({ ...member, weapon: e.target.value })}
-        >
-          {Object.keys(WEAPONS).map((k) => (
-            <option key={k}>{k}</option>
-          ))}
-        </select>
+        {!nameOk && <div style={S.err}>A name is 1–{NAME_MAX} characters.</div>}
       </div>
+
+      <div style={S.secHead}>Weapon</div>
+      <div className="eld-card" style={{ ...S.upRow, borderColor: TIER_COLOR[weaponItem?.tier] || undefined }}>
+        {weaponItem ? (
+          <>
+            <div style={{ ...S.upName, color: TIER_COLOR[weaponItem.tier] }}>{weaponItem.name}</div>
+            <div style={S.upBlurb}>{weaponItem.tier} · rating {weaponItem.baseRating}/100 · empower +{weaponItem.empower || 0} · ×{d.weaponMult} hit</div>
+          </>
+        ) : (
+          <div style={S.upBlurb}>Unarmed — hits at ×0.8. Equip a weapon from the stash.</div>
+        )}
+      </div>
+      {locked && <div style={S.note}>Your bond is on the mountain — gear changes at Rally.</div>}
+      {!locked && (
+        <div style={S.rosterList}>
+          {weaponChoices.length === 0 && <div style={S.note}>No other weapons in the stash. Weapons drop on the Mountain.</div>}
+          {weaponChoices.map((w) => (
+            <button key={w.id} type="button" className="eld-card" style={{ ...S.pick, borderColor: TIER_COLOR[w.tier] || undefined }} onClick={() => equipWeapon(w)}>
+              <div style={S.rowTop}>
+                <span style={{ ...S.upName, color: TIER_COLOR[w.tier] }}>{w.name}</span>
+                <span style={S.cost}>{w.baseRating}/100{w.empower ? ` +${w.empower}` : ''}</span>
+              </div>
+              <div style={S.upBlurb}>{diffFor({ weaponId: w.id })}</div>
+              <div style={S.pickCta}>Equip</div>
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div style={S.secHead}>Armor · body</div>
+      <div className="eld-card" style={{ ...S.upRow, borderColor: MAT_QUALITY[armorItem?.quality]?.color || undefined }}>
+        {armorItem ? (
+          <>
+            <div style={{ ...S.upName, color: MAT_QUALITY[armorItem.quality]?.color }}>{armorItem.name}</div>
+            <div style={S.upBlurb}>{armorItem.quality} · rating {armorItem.rating}/100 · +{d.armorHp} HP · +{d.armorMit}% mitigation</div>
+            {!locked && <button type="button" className="eld-btn eld-btn-ghost" style={S.buyBtn} onClick={() => equipArmor(null)}>Unequip</button>}
+          </>
+        ) : (
+          <div style={S.upBlurb}>No armor. Armor is crafted at the Crafter in Veinharbor.</div>
+        )}
+      </div>
+      {!locked && (
+        <div style={S.rosterList}>
+          {armorChoices.map((x) => (
+            <button key={x.id} type="button" className="eld-card" style={{ ...S.pick, borderColor: MAT_QUALITY[x.quality]?.color || undefined }} onClick={() => equipArmor(x)}>
+              <div style={S.rowTop}>
+                <span style={{ ...S.upName, color: MAT_QUALITY[x.quality]?.color }}>{x.name}</span>
+                <span style={S.cost}>{x.rating}/100</span>
+              </div>
+              <div style={S.upBlurb}>{diffFor({ armorId: x.id })}</div>
+              <div style={S.pickCta}>Equip</div>
+            </button>
+          ))}
+        </div>
+      )}
 
       {onPromoteToParty && (
         <button type="button" className="eld-btn" onClick={onPromoteToParty} style={S.promote}>
@@ -323,20 +395,17 @@ function MemberDetail({ member, onBack, onChange, onPromoteToParty }) {
         </button>
       )}
 
-      <div style={{ ...S.secHead, marginTop: 16 }}>Upgrades</div>
-      <div style={S.note}>Purchasable stubs — costs DESIGN-OPEN.</div>
+      <div style={{ ...S.secHead, marginTop: 16 }}>Growth</div>
+      <div style={S.note}>Levels come from fights and Train. Weapons grow at the Smith (empowerment). Armor is crafted.</div>
       <div style={S.rosterList}>
-        {upgrades.map((u) => (
-          <div key={u.id} className="eld-card" style={S.upRow}>
+        {coming.map((u) => (
+          <div key={u.id} className="eld-card" style={{ ...S.upRow, opacity: 0.7 }}>
             <div style={S.rowTop}>
               <span style={S.treeTag}>{u.tree}</span>
-              <span style={S.cost}>{u.cost} ❖</span>
+              <span style={S.comingTag}>Coming — not yet active</span>
             </div>
             <div style={S.upName}>{u.name}</div>
             <div style={S.upBlurb}>{u.blurb}</div>
-            <button type="button" className="eld-btn" disabled style={S.buyBtn}>
-              Purchase (locked)
-            </button>
           </div>
         ))}
       </div>
@@ -438,6 +507,10 @@ const S = {
     boxSizing: 'border-box',
   },
   promote: { width: '100%', padding: '10px 8px', marginBottom: 4, minHeight: 'var(--mv-tap, 52px)' },
+  err: { color: '#e05d6f', fontSize: 'var(--mv-label, 15px)', marginTop: 4 },
+  pick: { padding: 12, width: '100%', textAlign: 'left', color: 'inherit', fontFamily: 'inherit', cursor: 'pointer', borderLeftWidth: 3 },
+  pickCta: { marginTop: 8, fontSize: 'var(--mv-label, 15px)', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--eld-accent, #5fc7e0)' },
+  comingTag: { fontSize: 'var(--mv-label, 15px)', letterSpacing: '0.08em', textTransform: 'uppercase', color: '#e0c090' },
   note: { fontSize: 'var(--mv-label, 15px)', color: 'var(--eld-muted)', fontStyle: 'italic', margin: '4px 0 8px' },
   upRow: { padding: 12 },
   treeTag: {

@@ -61,12 +61,26 @@ export default function LootResults({ area, nodeLabel, fight, onContinue }) {
               <div style={{ ...S.line, color: '#e0a04d' }}>Map cleared ▸ +{rewards.mapClearBonus} Worldvein · a guaranteed Rare-tier weapon</div>
             )}
             {fight.named && <div style={{ ...S.line, color: '#e0c090' }}>Named variant ▸ one extra weapon roll at +1 tier</div>}
+            {fight.xp && (
+              <div style={S.xpBox}>
+                <div style={S.row}>
+                  <span style={S.lbl}>Experience</span>
+                  <span style={{ ...S.val, color: '#7fd6a0' }}>+{fight.xp.total} XP</span>
+                </div>
+                {fight.xp.per.map((p) => (
+                  <div key={p.id} style={{ ...S.line, color: p.levelsGained ? '#e0c090' : '#8fb2bf' }}>
+                    {p.name} +{p.gain} XP{p.fallen ? ' (fallen · half)' : ''}
+                    {p.levelsGained ? ` ▸ Level ${p.from} → ${p.to}!` : ` · ${p.xpAfter} / ${p.xpNeeded} to Lv ${p.to + 1}`}
+                  </div>
+                ))}
+              </div>
+            )}
             {rewards.gears.length ? (
               rewards.gears.map((g, i) => (
                 <div key={i} style={{ ...S.gear, borderColor: TIER_COLOR[g.tier] || accent }}>
                   <div style={{ color: TIER_COLOR[g.tier] || '#e0a04d', fontWeight: 700 }}>{g.name}</div>
                   <div style={S.gearMeta}>
-                    {g.tier} · rating {g.rating}/100 · weapon drop
+                    {g.tier} · rating {g.baseRating}/100 · weapon drop
                   </div>
                 </div>
               ))
@@ -104,6 +118,7 @@ const S = {
   lbl: { fontSize: 'var(--mv-label, 15px)', color: '#5f8494', letterSpacing: '0.1em', textTransform: 'uppercase' },
   val: { fontSize: 'var(--mv-num, 24px)', fontWeight: 700 },
   gear: { border: '1px solid', borderLeftWidth: 3, padding: '10px 12px', borderRadius: 8 },
+  xpBox: { display: 'flex', flexDirection: 'column', gap: 4, paddingTop: 6, borderTop: '1px solid rgba(255,255,255,0.06)' },
   gearMeta: { fontSize: 'var(--mv-label, 15px)', color: '#5f8494', marginTop: 4 },
   line: { fontSize: 'var(--mv-text, 18px)', lineHeight: 1.45 },
   btn: { marginTop: 'auto', padding: '14px 12px', width: '100%', minHeight: 'var(--mv-tap, 52px)', fontSize: 'var(--mv-text, 18px)' },

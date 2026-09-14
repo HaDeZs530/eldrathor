@@ -10,8 +10,9 @@
  */
 import { mulberry32 } from '../combat/simulate.js';
 import { newId } from '../data.js';
+import { withStarterWeapons } from '../progression/progression.js';
 
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 export const SAVE_KEY = 'eldrathor.save.v1';
 export const QUARANTINE_PREFIX = 'eldrathor.save.quarantine.';
 export const SAVE_DEBOUNCE_MS = 1000;
@@ -34,9 +35,38 @@ export function ensureIds(state) {
   return s;
 }
 
+const legendary = (q) => (q === 'Mythic' ? 'Legendary' : q);
+const weaponV2 = (w) => (isObj(w) && w.baseRating == null ? { ...w, baseRating: Math.max(1, Math.min(100, Math.round(w.rating ?? 1))), empower: 0, rating: undefined } : w);
+const memberV2 = (m) => (isObj(m) ? { ...m, xp: typeof m.xp === 'number' ? m.xp : 0 } : m);
+/**
+ * v1 → v2 (M1b, Progression Loop Lock §2–§4): weapons carry an immutable `baseRating` plus `empower`
+ * (0–100) instead of a mutable `rating`; the Mythic tier becomes Legendary; Adventurers carry `xp`;
+ * anyone without an equipped weapon gets a Common starter of their default type in the stash.
+ */
+export function migrateV1toV2(state) {
+  if (!isObj(state) || !Array.isArray(state.party) || !Array.isArray(state.roster)) return state; // validate() will refuse it
+  const s = { ...state };
+  s.stash = Array.isArray(s.stash) ? s.stash.map(weaponV2) : [];
+  const armorList = (l) => (Array.isArray(l) ? l.map((a) => (isObj(a) ? { ...a, quality: legendary(a.quality) } : a)) : l);
+  if (isObj(s.inventory)) {
+    s.inventory = { ...s.inventory, armor: armorList(s.inventory.armor) };
+    if (Array.isArray(s.inventory.infused)) s.inventory.infused = s.inventory.infused.map((m) => (isObj(m) ? { ...m, quality: legendary(m.quality) } : m));
+  }
+  const party = (s.party || []).map(memberV2); const roster = (s.roster || []).map(memberV2);
+  const geared = withStarterWeapons([...party, ...roster], s.stash);
+  s.party = geared.members.slice(0, party.length); s.roster = geared.members.slice(party.length); s.stash = geared.stash;
+  if (isObj(s.run)) {
+    const rp = Array.isArray(s.run.runParty) ? s.run.runParty.map((m) => { const live = geared.members.find((x) => x.id === m?.id); return live ? { ...memberV2(m), weaponId: live.weaponId, armorId: live.armorId } : memberV2(m); }) : s.run.runParty;
+    s.run = { ...s.run, runParty: rp };
+    if (isObj(s.run.fight) && Array.isArray(s.run.fight.rewards?.gears)) s.run.fight = { ...s.run.fight, rewards: { ...s.run.fight.rewards, gears: s.run.fight.rewards.gears.map(weaponV2) } };
+  }
+  return JSON.parse(JSON.stringify(s)); // drop the `rating: undefined` keys
+}
+
 /** Migrations, keyed by the version they upgrade FROM. 0 = unversioned (pre-M1a positional data). */
 export const MIGRATIONS = {
   0: (s) => ensureIds(s),
+  1: (s) => migrateV1toV2(s),
 };
 
 /** Minimal shape check so a truncated or foreign JSON object can't be loaded as a game. */
