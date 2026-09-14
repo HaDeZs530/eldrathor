@@ -18,7 +18,7 @@ All Mind-view screens (route map HUD, scout card, fight, results) scale up: body
 ## Help copy — first pass (Design Chat; edit in place later)
 - **Island map:** "The island. Each pin is an area with its own route map and boss. Beat an area's boss to unlock the next pin — permanently. Tap a pin to rally your party. + / − switches between close and overview."
 - **Rally:** "Read the area, pick your three, then Explore. Tap an Adventurer to swap them from your roster."
-- **Route map:** "You see only what you've reached. Tap an unknown node to scout it, then Engage or Leave. Every scout or clear moves the clock: cleared nodes can repopulate, and rares roam. Kill all rares to break the boss seal. Extract any time to bank what you have — the map is gone when you leave."
+- **Route map:** "You see only what you've reached. Tap an unknown node to scout it, then Engage or Leave. Every scout or clear moves the clock: cleared nodes can repopulate, and rares roam. Rares are optional hunts with the best loot; the boss is fightable once you find it. Extract any time to bank what you have — the map is gone when you leave."
 - **Scout card:** "What's on this node and how it measures against your party. Leave costs nothing but time."
 - **Fight:** "Your bond fights for you. Innates fire on their own — watch the buttons. 2× to hurry, Skip to jump to the result."
 - **Results:** "What each Adventurer did, what you earned, what dropped. Weapon ratings run 1–100; higher is better and never changes."
@@ -26,4 +26,4 @@ All Mind-view screens (route map HUD, scout card, fight, results) scale up: body
 - **Town:** "Veinharbor. Spend Worldvein: merge weapons at the Upgrade bench, craft armor from gathered materials, trade at the Market."
 - **Seam (AFK):** "Bench Adventurers work while you're away: Gather materials, Process them, or Train to level. One job per Adventurer."
 - **Player:** "You — the Veinbinder. Your trees strengthen the whole bond (Bond) or your economy (Craft)."
-- **Game basics:** "You are a Veinbinder. You don't fight — your bonded Adventurers do. Send three into an area, explore its route map, hunt the rares, break the seal, beat the boss. Bring home Worldvein and weapons; spend them to come back stronger. Nothing you earn is ever lost."
+- **Game basics:** "You are a Veinbinder. You don't fight — your bonded Adventurers do. Send three into an area, explore its route map, hunt the rares if you want their loot, beat the boss. Bring home Worldvein and weapons; spend them to come back stronger. Nothing you earn is ever lost."
