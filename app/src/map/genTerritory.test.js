@@ -65,7 +65,7 @@ test('depth: entrance 0, boss = max normalised 1, first reveal shows 2–3 front
   assert.ok(frontier.length >= 2 && frontier.length <= 3, `frontier ${frontier.length}`);
 });
 
-test('named variants roll at generation: 10% of Fight nodes, at least one, gold-rim state only after scouting', () => {
+test('named variants roll at generation: ~10% of Fight nodes, at least one, only on Fight nodes, no respawned field', () => {
   for (let seed = 1; seed <= 10; seed++) {
     const t = genTerritory(area(1), { rng: mulberry32(seed * 11) });
     const fights = t.nodes.filter((n) => n.type === 'normal' && n.id !== t.entranceId);
@@ -133,10 +133,15 @@ test('planar outward web (v3 §11): zero crossing edges over 200 maps; every edg
 test('segmentsCross: proper crossings, shared endpoints, parallel segments', () => {
   const P = (x, y) => ({ x, y });
   assert.ok(segmentsCross(P(0, 0), P(10, 10), P(0, 10), P(10, 0)));
-  assert.ok(!segmentsCross(P(0, 0), P(10, 10), P(0, 0), P(10, 0)) === false || true); // shared endpoint objects only count when identical refs
+  // endpoints are compared by REFERENCE (the generator shares node objects): two distinct point objects at the
+  // same coordinates touch, and touching counts as a crossing
+  assert.ok(segmentsCross(P(0, 0), P(10, 10), P(0, 0), P(10, 0)), 'value-equal but distinct endpoint objects touch → crossing');
+  assert.ok(segmentsCross(P(0, 0), P(10, 0), P(5, 0), P(5, 5)), 'a T-junction touches → crossing');
   const a = P(0, 0); const b = P(10, 0); const c = P(20, 0);
   assert.ok(!segmentsCross(a, b, b, c), 'segments sharing an endpoint object do not cross');
   assert.ok(!segmentsCross(P(0, 0), P(10, 0), P(0, 5), P(10, 5)), 'parallel segments do not cross');
+  assert.ok(!segmentsCross(P(0, 0), P(10, 0), P(11, 0), P(20, 0)), 'disjoint collinear segments do not cross');
+  assert.ok(!segmentsCross(P(0, 0), P(10, 0), P(20, 20), P(30, 20)), 'far-apart segments do not cross');
 });
 
 test('frontier never strands: exploring greedily, an unexplored node is always visible until the map is fully cleared (200 maps)', () => {

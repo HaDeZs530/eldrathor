@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { clearTrace, isTraceOn, onTraceChange, setTraceOn, traceEntries, traceText, isAutosave, lastUpload, traceSession, uploadNow } from './trace.js';
+import { clearTrace, isTraceOn, onTraceChange, setTraceOn, traceEntries, traceText, isAutosave, lastUpload, traceSession, uploadNow, BUILD } from './trace.js';
 import '../components/shell/shell.css';
 import { Sheet } from '../components/ui/index.jsx';
 
@@ -31,7 +31,7 @@ export default function DebugTraceSheet({ onClose }) {
 
   return (
     <Sheet onClose={onClose} label="Debug trace" title={<>🐞 Debug trace</>} maxHeight="88%">
-        <div className="eld-sheet-sub">{on ? `Recording · ${count} events kept` : 'Off — nothing is recorded'}</div>
+        <div className="eld-sheet-sub">{on ? `Recording · ${count} events kept` : 'Off — nothing is recorded'} · build {BUILD}</div>
         {isAutosave() && (
           <div className="eld-sheet-sub" style={{ color: lastUpload && !lastUpload.ok ? '#e05d6f' : undefined }}>
             {!on ? 'Auto-save to the dev server: on while recording'

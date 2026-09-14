@@ -1,5 +1,5 @@
 # BRIEF — M1d: engineering hygiene
-**Status:** READY · **Date:** 2026-09-14 · **Author:** Claude Design Chat
+**Status:** DONE (Claude Code, 2026-09-14, PR #54 `chore: CI, test integrity, node pin, trace hardening, doc refresh`; PR #15 closed as superseded) · **Date:** 2026-09-14 · **Author:** Claude Design Chat
 1. GitHub Actions CI on PR + main: `npm ci`, build, tests. Branch protection on main requiring the check (Tony enables the ruleset; you add the workflow).
 2. Fix the `|| true` segment-intersection assertion and any test whose description outruns its assertion.
 3. Pin Node (`.nvmrc` + `engines`) and update `DEV_SETUP.md`.

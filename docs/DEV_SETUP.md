@@ -11,7 +11,7 @@ GitHub is the sync hub — every machine pulls from and pushes to it. Never work
 
 1. **Install prerequisites**
    - **Git** — <https://git-scm.com/downloads>
-   - **Node.js** (LTS) — <https://nodejs.org> (gives you `node` and `npm`)
+   - **Node.js 24** — <https://nodejs.org> (gives you `node` and `npm`). The version is pinned in `app/.nvmrc` and `app/package.json` → `engines`; with nvm / fnm, `nvm use` inside `app/` picks it up. CI runs on the same version.
    - **GitHub CLI** (optional but easiest for auth) — <https://cli.github.com>
 
 2. **Authenticate to GitHub** (so you can pull/push the private repo)
@@ -26,14 +26,29 @@ GitHub is the sync hub — every machine pulls from and pushes to it. Never work
 4. **Install the app's dependencies** (they're not in git by design)
    ```
    cd eldrathor/app
-   npm install
+   npm ci
    ```
+   (`npm ci` installs exactly what `package-lock.json` says — the same thing CI does. Use `npm install` only when you mean to change dependencies.)
 
 5. **Run it**
    ```
    npm run dev
    ```
    Open the printed URL (usually <http://localhost:5173>).
+
+6. **Check it** — the tests are the spec (`CLAUDE.md`):
+   ```
+   npm test        # Node's built-in runner
+   npm run lint
+   npm run build
+   ```
+   The same three run in GitHub Actions on every pull request and on `main` (`.github/workflows/ci.yml`, check `build-and-test`); `main` should require that check (Settings → Rules → Rulesets).
+
+**Phone playtest (same Wi-Fi or Tailscale):**
+```
+npm run dev:phone
+```
+That is Vite with `--host` on port 5173: it prints the LAN URL(s) (`http://192.168.x.x:5173`); on Tailscale use the PC's Tailscale IP (`http://100.x.y.z:5173`). Open it in Safari on the phone. The debug trace (☰ → Debug trace) auto-saves to `app/playtest-traces/` on the PC while served this way (`docs/DEBUG_TRACE.md`).
 
 **Every work session on that machine:**
 ```
@@ -79,5 +94,8 @@ Notes:
 | Repo (private) | https://github.com/HaDeZs530/eldrathor |
 | Clone command | `git clone https://github.com/HaDeZs530/eldrathor.git` |
 | GitHub account | HaDeZs530 |
-| Run the app | `cd eldrathor/app && npm install && npm run dev` |
+| Run the app | `cd eldrathor/app && npm ci && npm run dev` |
+| Phone playtest | `npm run dev:phone` → open the printed LAN / Tailscale URL |
+| Node | 24 (`app/.nvmrc`) |
+| CI | `.github/workflows/ci.yml` — lint, build, test on PRs + main |
 | Mobile dev | https://claude.ai/code → connect GitHub → open `eldrathor` |

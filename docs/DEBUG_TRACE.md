@@ -4,7 +4,7 @@ A developer/playtest trace, separate from the player-facing **run log** (📜 on
 
 ## How to use it (Anthony)
 1. ☰ Menu → **Debug trace** → **Turn on**. It stays on across reloads (stored in the browser's localStorage) until you turn it off.
-2. Play. Everything below is recorded into a ring buffer of the last **600** events, also persisted so it survives a reload or a run ending.
+2. Play. Everything below is recorded into a ring buffer of the last **1500** events (M1d; was 600 — a run's opening was scrolling out), also persisted so it survives a reload or a run ending. The header and every `trace` line carry the **build** (git short hash @ build time), and a `snapshot` line at run start records the party (level, weapon, armor), banked Worldvein and unlocks.
 3. **Auto-save (PR #41):** when the app is served by the dev server (the phone playtest), the trace is POSTed to it every ~3 s while recording (and immediately when the app goes to the background), and lands in the repo checkout at `app/playtest-traces/latest.txt` (+ one file per app session, `app/playtest-traces/<session>.txt`). The sheet shows "Auto-saved Ns ago → file". So: play, then just tell Claude Code what felt wrong and roughly when — it reads the file itself. **Save now** forces an upload. The folder is git-ignored (local to the machine running the dev server). Nothing is uploaded from a production build.
 4. Fallback without the dev server: ☰ → Debug trace → **Copy** and paste the text to Claude Code. **Clear** empties the buffer before a fresh attempt.
    - On plain `http://` over the LAN the clipboard API is unavailable on iOS; the sheet then selects the text in the box for a manual copy (long-press → Select All → Copy).
@@ -42,3 +42,10 @@ Positions are sheet-space pans in CSS px (the map's `translate3d`), rounded to 0
 - `app/src/debug/trace.js` — ring buffer, localStorage persistence, `trace(kind, data)`, text formatter, long-frame monitor, dev-only auto-upload (`fetch` every 3 s while dirty, `sendBeacon` on background/pagehide). `trace()` returns immediately when off.
 - `app/src/debug/DebugTraceSheet.jsx` — the ☰ sheet (toggle / copy / clear / text box).
 - Hooks: `AppRoot.jsx` (tabs, island, rally, run, taps, cards, camera dispatch, trips, overlays, ambush, extract) and `map/RouteMapScreen.jsx` (gestures, tap pans, tween start / arrival / settle / jumps).
+
+## Receiver hardening (M1d, `app/vite.config.js`)
+- **LAN only:** the POST is accepted from loopback, RFC1918 private ranges, Tailscale CGNAT (100.64/10) and IPv6 ULA / link-local; anything else gets 403. A browser `Origin`, when present, must be the dev server's own host.
+- **Body limit:** 1 MiB (413 above it — a full 1500-event trace is ~200 KB).
+- **Bounded retention:** `latest.txt` plus the newest **20** session files; older sessions are deleted on each upload.
+- **Async writes** (`fs/promises`), so a slow disk never blocks the dev server.
+- Tests: `app/src/debug/traceReceiver.test.js`.

@@ -15,7 +15,9 @@ const KEY_SESSION = 'eld.debug.trace.session';
 const UPLOAD_URL = '/__eld/trace';
 const UPLOAD_EVERY_MS = 3000;
 const AUTOSAVE = typeof import.meta !== 'undefined' && !!import.meta.env?.DEV;
-export const TRACE_MAX = 600;
+export const TRACE_MAX = 1500; // M1d: a whole run's opening (start snapshot, first pans, first fight) must survive
+/** Build identity (git short hash @ build time), baked in by vite.config.js `define`. */
+export const BUILD = typeof __ELD_BUILD__ !== 'undefined' ? __ELD_BUILD__ : 'dev';
 const LONG_FRAME_MS = 50;
 
 let on = false;
@@ -47,7 +49,7 @@ export function initTrace() {
     document.addEventListener('visibilitychange', () => { if (document.hidden) flushNow(); });
     window.addEventListener('pagehide', flushNow);
   }
-  if (on) { startFrameMonitor(); trace('trace', { restored: buf.length, ua: navigator.userAgent, vp: `${window.innerWidth}x${window.innerHeight}`, dpr: window.devicePixelRatio }); }
+  if (on) { startFrameMonitor(); trace('trace', { restored: buf.length, build: BUILD, ua: navigator.userAgent, vp: `${window.innerWidth}x${window.innerHeight}`, dpr: window.devicePixelRatio }); }
 }
 
 export const isTraceOn = () => on;
@@ -55,7 +57,7 @@ export const isTraceOn = () => on;
 export function setTraceOn(next) {
   on = !!next;
   safeSet(KEY_ON, on ? '1' : '0');
-  if (on) { startFrameMonitor(); trace('trace', { on: true, ua: navigator.userAgent, vp: `${window.innerWidth}x${window.innerHeight}`, dpr: window.devicePixelRatio }); }
+  if (on) { startFrameMonitor(); trace('trace', { on: true, build: BUILD, ua: navigator.userAgent, vp: `${window.innerWidth}x${window.innerHeight}`, dpr: window.devicePixelRatio }); }
   else { stopFrameMonitor(); }
   notify();
 }
@@ -112,7 +114,7 @@ export function traceEntries() { return buf; }
 
 /** Human-readable text: one line per event, `+delta` since the previous line. */
 export function traceText() {
-  const head = `# Eldrathor debug trace · ${new Date().toISOString()} · ${buf.length} events (max ${TRACE_MAX})`;
+  const head = `# Eldrathor debug trace · build ${BUILD} · ${new Date().toISOString()} · ${buf.length} events (max ${TRACE_MAX})`;
   let prev = null;
   const lines = buf.map((e) => {
     const dt = prev == null ? 0 : e.t - prev;

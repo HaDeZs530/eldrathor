@@ -6,7 +6,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   assignJob, resolveCharKey, emptyGatherSlot, emptyAfkState, reconcileAfk, trainXpGain, maxUnlockedTier, IDLE_CYCLE_MS,
-  GATHER_CYCLE_MS, PROCESS_CYCLE_MS, PROCESS_VEIN_COST, startJob, stopJob, toggleJob, suspendJobs, resumeJobs, cyclesElapsed,
+  PROCESS_CYCLE_MS, PROCESS_VEIN_COST, startJob, stopJob, toggleJob, suspendJobs, resumeJobs, cyclesElapsed,
   wantsOfflineSummary, summaryLines, normalizeAfk, OFFLINE_SUMMARY_MS, gatherYield,
 } from './afkRuntime.js';
 import { trainXpPerMinute, xpToNext } from './progression/progression.js';

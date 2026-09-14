@@ -3,12 +3,14 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "engines": { "node": ">=24" },
   "scripts": {
     "dev": "vite",
+    "dev:phone": "vite --host --port 5173 --strictPort",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "node --test src/theme/styleBible.test.js src/art/manifest.test.js src/progression/progression.test.js src/combat/derive.test.js src/combat/balance.test.js src/combat/simulate.test.js src/combat/enemies.test.js src/map/genTerritory.test.js src/map/camera.test.js src/map/cameraController.test.js src/theme/modeSwitch.test.js src/afkRuntime.test.js src/town/townLayout.test.js src/save/save.test.js"
+    "test": "node --test src/theme/styleBible.test.js src/art/manifest.test.js src/progression/progression.test.js src/combat/derive.test.js src/combat/balance.test.js src/combat/simulate.test.js src/combat/enemies.test.js src/map/genTerritory.test.js src/map/camera.test.js src/map/cameraController.test.js src/theme/modeSwitch.test.js src/afkRuntime.test.js src/town/townLayout.test.js src/save/save.test.js src/debug/traceReceiver.test.js"
   },
   "dependencies": {
     "react": "^19.2.7",
