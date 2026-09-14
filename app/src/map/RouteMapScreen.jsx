@@ -1,7 +1,7 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { biomeForArea, renderBiomeLayer } from './biomeStamps.jsx';
 import { rareAt, isSealed, isWalkable, nodeState } from './routeState.js';
-import { centerOn, resolveFocus, easeInOut, easeOut, polylinePointAt, SKIP_MS } from './camera.js';
+import { resolveFocus, keepInFrame, easeInOut, easeOut, polylinePointAt, SKIP_MS, FOLLOW_TAU_MS } from './camera.js';
 import './parchment.css';
 
 /**
@@ -45,8 +45,6 @@ function marginFor(vp) {
 }
 const TOAST_MS = 3000;
 
-/** The camera eases from its current position into "follow the marker" over this long at trip start (§17: ≥ 250 ms, never a cut). */
-const CAMERA_BLEND_MS = 700;
 
 /** The sheet's CURRENT on-screen translate (mid-transition included), from the computed transform matrix. */
 function readSheetPan(el) {
@@ -95,7 +93,8 @@ export default function RouteMapScreen({
   camera, setCamera, travel, onTravelEnd,
   card, onTapNode, onCardAction, onExtract,
 }) {
-  const vpRef = useRef(null);
+  const vpEl = useRef(null);
+  const vpRO = useRef(null);
   const sheetRef = useRef(null);
   const markerRef = useRef(null);
   const [vp, setVp] = useState({ w: 0, h: 0 });
@@ -124,19 +123,23 @@ export default function RouteMapScreen({
   const sheetPt = (n) => ({ x: sx(n.x), y: sy(n.y) });
   const ptOf = (id) => (byId[id] ? sheetPt(byId[id]) : null);
 
-  useEffect(() => {
-    const el = vpRef.current;
-    if (!el) return undefined;
+  // Measure synchronously on mount (callback ref) — ResizeObserver only delivers on a VISIBLE document,
+  // so a map mounted while the app is backgrounded would otherwise never learn its viewport.
+  const vpRef = useCallback((el) => {
+    if (vpRO.current) { vpRO.current.disconnect(); vpRO.current = null; }
+    vpEl.current = el;
+    if (!el) return;
+    setVp({ w: el.clientWidth, h: el.clientHeight });
     const ro = new ResizeObserver(() => setVp({ w: el.clientWidth, h: el.clientHeight }));
     ro.observe(el);
-    return () => ro.disconnect();
+    vpRO.current = ro;
   }, []);
 
   // §17: a pending framing request resolves to a pan here, at render time (needs vp + sheet).
   // Nothing else ever derives the camera from the party's node — no recentre on mount or return.
   const cur = byId[currentId];
   const measured = vp.w > 0 && vp.h > 0;
-  const focusPan = measured && camera?.focus ? resolveFocus(camera.focus, ptOf, vp, sheet, MARGIN) : null;
+  const focusPan = measured && camera?.focus ? resolveFocus(camera.focus, ptOf, vp, sheet, MARGIN, camera.pan) : null;
   const pan = focusPan || camera?.pan || { x: 0, y: 0 };
 
   // ---------- §16 continuous travel tween (rAF; writes the marker + sheet directly) ----------
@@ -149,11 +152,12 @@ export default function RouteMapScreen({
     const dest = points[points.length - 1];
     const t0 = travel.startTs;
     const dur = Math.max(1, travel.duration);
-    // §17 never a cut: the camera BLENDS from wherever it is (a framed far node, a half-finished
-    // ease, a drag) into the follow position over the first CAMERA_BLEND_MS of the trip.
+    // Dead-zone follow: the camera starts EXACTLY where it is (a framed node, a half-finished ease, a
+    // drag) and only drifts, smoothly, when the marker would leave the safe frame. No swing back to
+    // the party, no recentre, no cut.
     const startPan = readSheetPan(sheetRef.current) || pan;
-    const blendT0 = performance.now();
-    tween.current = { active: true, pos: points[0], pan: null, skipFrom: null, skipAt: null, raf: null };
+    let lastTs = null;
+    tween.current = { active: true, pos: points[0], pan: startPan, skipFrom: null, skipAt: null, raf: null };
     let done = false;
     const sheetEl = sheetRef.current;
     if (sheetEl) sheetEl.style.transition = 'none'; // from here on the tween owns the transform, frame by frame
@@ -176,18 +180,38 @@ export default function RouteMapScreen({
       }
       if (finished) pos = { ...dest };
       tw.pos = pos;
-      const follow = centerOn(pos, vp, sheet, MARGIN);
-      const b = finished ? 1 : easeInOut(Math.min(1, (now - blendT0) / CAMERA_BLEND_MS), 0.5);
-      tw.pan = { x: startPan.x + (follow.x - startPan.x) * b, y: startPan.y + (follow.y - startPan.y) * b };
+      const target = keepInFrame(pos, tw.pan, vp, sheet); // minimal pan that keeps the marker in the safe frame
+      if (target !== tw.pan) {
+        const dt = lastTs == null ? 16 : Math.min(100, now - lastTs);
+        const k = 1 - Math.exp(-dt / FOLLOW_TAU_MS); // exponential lag — fluid, frame-rate independent
+        tw.pan = { x: tw.pan.x + (target.x - tw.pan.x) * k, y: tw.pan.y + (target.y - tw.pan.y) * k };
+      }
+      lastTs = now;
       if (markerRef.current) markerRef.current.style.transform = markerTransform(pos);
       if (sheetRef.current) sheetRef.current.style.transform = sheetTransform(tw.pan);
       if (finished) {
         done = true;
-        tw.active = false;
-        if (sheetEl) sheetEl.style.transition = '';
-        // the camera is now exactly where the tween left it — no correction, no snap
-        setCamera({ type: 'travelEnd', pan: tw.pan });
-        onTravelEnd();
+        onTravelEnd(); // the party is placed on arrival; the camera may still be drifting
+        // settle: keep the same smooth follow until the marker rests inside the safe frame (or ~700 ms), then hand
+        // the camera back exactly where the drift left it — no correction, no snap
+        const settleT0 = now;
+        let lastSettle = now;
+        const settle = (t) => {
+          const dt = Math.min(100, t - lastSettle); lastSettle = t;
+          const target = keepInFrame(tw.pos, tw.pan, vp, sheet);
+          const dist = target === tw.pan ? 0 : Math.hypot(target.x - tw.pan.x, target.y - tw.pan.y);
+          if (dist > 0.5 && t - settleT0 < 700) {
+            const k = 1 - Math.exp(-dt / FOLLOW_TAU_MS);
+            tw.pan = { x: tw.pan.x + (target.x - tw.pan.x) * k, y: tw.pan.y + (target.y - tw.pan.y) * k };
+            if (sheetRef.current) sheetRef.current.style.transform = sheetTransform(tw.pan);
+            tw.raf = schedule(settle);
+            return;
+          }
+          tw.active = false;
+          if (sheetEl) sheetEl.style.transition = '';
+          setCamera({ type: 'travelEnd', pan: tw.pan });
+        };
+        tw.raf = schedule(settle);
         return;
       }
       tw.raf = schedule(step);
@@ -221,12 +245,18 @@ export default function RouteMapScreen({
   }, [toast]);
 
   function localPt(e) {
-    const r = vpRef.current.getBoundingClientRect();
+    const r = vpEl.current.getBoundingClientRect();
     return { x: e.clientX - r.left, y: e.clientY - r.top };
   }
   function activateNode(id) {
     const n = byId[id];
     if (!n || busy || !n.revealed) return;
+    // dead-zone framing: a tapped node that is on screen means NO camera move; one under the card zone
+    // or off the edge comes in by the minimum, eased (700 ms)
+    if (measured && n.id !== currentId && !n.cleared) {
+      const target = keepInFrame(sheetPt(n), pan, vp, sheet);
+      if (target !== pan) setCamera({ type: 'set', pan: target, motion: 'ease' });
+    }
     onTapNode(n);
   }
   function onPointerDown(e) {
@@ -234,7 +264,7 @@ export default function RouteMapScreen({
     if (g.active) return;
     g.active = true; g.dist = 0; g.moved = false; g.start = localPt(e); g.basePan = pan;
     g.target = e.target.closest?.('[data-node]')?.dataset.node || null;
-    capturePointer(vpRef.current, e.pointerId);
+    capturePointer(vpEl.current, e.pointerId);
   }
   function onPointerMove(e) {
     const g = gesture.current;

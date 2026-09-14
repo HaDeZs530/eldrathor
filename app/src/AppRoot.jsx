@@ -300,7 +300,7 @@ export default function Eldrathor() {
   }
   /**
    * §15 tap: never moves the party. Party node / completed node → nothing. Unexplored, or revealed
-   * but not adjacent → frame it, Explore / Cancel. Revealed + adjacent → the reveal card directly.
+   * but not adjacent → Explore / Cancel. Revealed + adjacent → the reveal card directly.
    */
   function onTapNode(n) {
     if (busy || !territory) return;
@@ -311,13 +311,12 @@ export default function Eldrathor() {
     if (st === 'completed') return;
     const adjacent = isAdjacent(t, currentId, n.id);
     if (st === 'revealed' && adjacent) {
-      dispatchCamera({ type: 'tapAdjacent', partyId: currentId, nodeId: n.id });
       setCard(buildReveal(t, n, { onNode: false }));
       return;
     }
     const path = explorePath(t, currentId, n.id);
     if (!path) return;
-    dispatchCamera(adjacent ? { type: 'tapAdjacent', partyId: currentId, nodeId: n.id } : { type: 'tapFar', nodeId: n.id });
+    // camera: the map itself pans the minimum (if any) to keep the tapped node in frame — never a fixed framing
     setCard(buildExplore(n, path.length - 1));
   }
   /** One handler for every card button (§15). */
@@ -428,7 +427,7 @@ export default function Eldrathor() {
   // ---------- sanctuary ----------
   function onSanctuaryChoose(bonusId) {
     const n = fightNode; if (!n || !territory) return;
-    // Anthony 2026-09-13: never auto-centre — the camera PANS onto the party as the overlay fades (amends §17's hidden recentre)
+    // never auto-centre: only the minimal pan (usually none) that keeps the party in frame as the overlay fades
     dispatchCamera({ type: 'overlayClose', partyId: n.id });
     applySanctuary(bonusId);
   }
@@ -499,7 +498,7 @@ export default function Eldrathor() {
   function onResultsContinue() {
     const f = fight; const n = fightNode;
     if (f && n && territory && f.result.win && f.eff !== 'boss') {
-      // Anthony 2026-09-13: never auto-centre — the camera PANS onto the party as Results fades (amends §17's hidden recentre)
+      // never auto-centre: only the minimal pan (usually none) that keeps the party in frame as Results fades
       dispatchCamera({ type: 'overlayClose', partyId: n.id });
     }
     applyLootAndReturnToRoute();
