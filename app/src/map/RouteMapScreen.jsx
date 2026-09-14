@@ -315,6 +315,47 @@ export default function RouteMapScreen({
 
   const revealed = territory.nodes.filter((n) => n.revealed);
   const completedCount = territory.nodes.filter((n) => n.cleared).length;
+
+  // ---------- fog of war: drawn ONCE per change into a bitmap ----------
+  // Performance: the previous SVG <mask> (one radial gradient per revealed node over a sheet several
+  // screens tall) was re-rasterised by the compositor for every tile that scrolled into view on a
+  // Retina phone — pans and glides stuttered, more with every revealed node. A canvas is a plain
+  // bitmap: painted here on change, then just copied while the camera moves.
+  const fogRef = useRef(null);
+  const fogKey = `${sheet.w}x${sheet.h}|${biome.interior ? 1 : 0}|${revealed.map((n) => `${n.id}${n.cleared ? 'c' : ''}`).join(',')}`;
+  useLayoutEffect(() => {
+    const cv = fogRef.current;
+    if (!cv || !sheet.w || !sheet.h) return;
+    const scale = 1; // fog is soft — a 1× backing store keeps the bitmap small on DPR 3 phones
+    cv.width = Math.ceil(sheet.w * scale); cv.height = Math.ceil(sheet.h * scale);
+    const g = cv.getContext('2d');
+    g.setTransform(scale, 0, 0, scale, 0, 0);
+    g.globalCompositeOperation = 'source-over';
+    g.fillStyle = 'rgba(226, 210, 171, 0.95)';
+    g.fillRect(0, 0, sheet.w, sheet.h);
+    // mist: soft diagonal wisps
+    g.save(); g.translate(sheet.w / 2, sheet.h / 2); g.rotate(-18 * Math.PI / 180);
+    const R = Math.hypot(sheet.w, sheet.h);
+    g.strokeStyle = 'rgba(255, 250, 236, 0.16)'; g.lineWidth = 2;
+    for (let y = -R; y < R; y += 26) {
+      g.beginPath();
+      for (let x = -R; x < R; x += 26) { g.moveTo(x, y); g.quadraticCurveTo(x + 6.5, y - 6, x + 13, y); g.quadraticCurveTo(x + 19.5, y + 6, x + 26, y); }
+      g.stroke();
+    }
+    g.restore();
+    // holes around revealed nodes (larger once completed)
+    g.globalCompositeOperation = 'destination-out';
+    const inner = biome.interior ? 0.62 : 0.5;
+    for (const n of revealed) {
+      const r = (biome.interior ? (n.cleared ? 128 : 104) : n.cleared ? 150 : 118) * ZOOM;
+      const cx = sx(n.x); const cy = sy(n.y);
+      const grad = g.createRadialGradient(cx, cy, 0, cx, cy, r);
+      grad.addColorStop(0, 'rgba(0,0,0,1)'); grad.addColorStop(inner, 'rgba(0,0,0,1)'); grad.addColorStop(1, 'rgba(0,0,0,0)');
+      g.fillStyle = grad; g.beginPath(); g.arc(cx, cy, r, 0, Math.PI * 2); g.fill();
+    }
+    g.globalCompositeOperation = 'source-over';
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fogKey]);
   const markerPos = cur ? sheetPt(cur) : { x: 0, y: 0 };
 
   return (
@@ -322,22 +363,6 @@ export default function RouteMapScreen({
       <div ref={vpRef} className="eld-route-viewport eld-route-viewport--full" onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}>
         <div ref={sheetRef} className="eld-parchment-sheet" style={{ width: sheet.w, height: sheet.h, transform: sheetTransform(pan) }}>
           <svg className="eld-parchment-svg" width={sheet.w} height={sheet.h} viewBox={`${-M.x} ${-M.top} ${VW} ${VH}`}>
-            <defs>
-              <radialGradient id="eld-fog-hole">
-                <stop offset="0" stopColor="#000" />
-                <stop offset={biome.interior ? '0.62' : '0.5'} stopColor="#000" />
-                <stop offset="1" stopColor="#fff" />
-              </radialGradient>
-              <pattern id="eld-mist" width="26" height="26" patternUnits="userSpaceOnUse" patternTransform="rotate(-18)">
-                <path d="M0 13 q6.5 -6 13 0 t13 0" fill="none" stroke="rgba(255,250,236,0.4)" strokeWidth="2" />
-              </pattern>
-              <mask id="eld-fog-mask" maskUnits="userSpaceOnUse" x={-M.x} y={-M.top} width={VW} height={VH}>
-                <rect x={-M.x} y={-M.top} width={VW} height={VH} fill="#fff" />
-                {revealed.map((n) => (
-                  <circle key={n.id} cx={n.x} cy={n.y} r={biome.interior ? (n.cleared ? 128 : 104) : n.cleared ? 150 : 118} fill="url(#eld-fog-hole)" />
-                ))}
-              </mask>
-            </defs>
             {renderBiomeLayer({ territory, byId, biome })}
             {/* edges: completed trail vs frontier; the planned trip lights up gold while travelling (§15: no lit path to the boss) */}
             <g>
@@ -351,11 +376,9 @@ export default function RouteMapScreen({
                 return <line key={`${a}-${b}`} x1={na.x} y1={na.y} x2={nb.x} y2={nb.y} className={cls} fill="none" />;
               })}
             </g>
-            <g mask="url(#eld-fog-mask)">
-              <rect x={-M.x} y={-M.top} width={VW} height={VH} fill="#e2d2ab" opacity="0.95" />
-              <rect x={-M.x} y={-M.top} width={VW} height={VH} fill="url(#eld-mist)" opacity="0.4" />
-            </g>
           </svg>
+          {/* fog of war — one pre-rendered bitmap (see the fog effect), not an SVG mask rasterised per tile per pan */}
+          <canvas ref={fogRef} className="eld-fog" style={{ position: 'absolute', left: 0, top: 0, width: sheet.w, height: sheet.h, pointerEvents: 'none' }} aria-hidden="true" />
 
           {revealed.map((n) => {
             const here = n.id === currentId;
