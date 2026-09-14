@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# playtest debug traces uploaded by the phone (docs/DEBUG_TRACE.md) — local only
+playtest-traces/
