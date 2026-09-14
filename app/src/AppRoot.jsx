@@ -23,7 +23,7 @@ import ScreenHeaderActions from './components/shell/ScreenHeaderActions.jsx';
 import HelpSheet from './components/shell/HelpSheet.jsx';
 import MenuSheet from './components/shell/MenuSheet.jsx';
 import RunLogSheet from './map/RunLogSheet.jsx';
-import { travelDuration, cameraReducer, CARD_PAUSE_MS, OVERLAY_FADE_MS, FRAME_EASE_MS } from './map/camera.js';
+import { travelDuration, cameraReducer, CARD_PAUSE_MS, OVERLAY_FADE_MS } from './map/camera.js';
 
 const HUB_LABELS = {
   player: 'Veinbinder',
@@ -80,7 +80,6 @@ export default function Eldrathor() {
   const [travel, setTravel] = useState(null); // §14 trip: { path, startTs, duration, after, skipAt? }
   const [camera, dispatchCamera] = useReducer(cameraReducer, { pan: null, motion: 'none', focus: null }); // §13/§17 explicit run camera
   const [card, setCard] = useState(null); // §15 the one card under the map: explore / reveal / seal / ambush
-  const leavingRef = useRef(false); // Continue / sanctuary choice already taken (camera easing under the overlay)
   const [overlayLeaving, setOverlayLeaving] = useState(null); // snapshot of the last overlay while it fades out (350 ms)
   const overlayTimer = useRef(null);
   const [prevId, setPrevId] = useState(null); // node the party came from (flee steps back here)
@@ -146,7 +145,7 @@ export default function Eldrathor() {
     clearFightTimers(); exitMindView(); setRunStage('island'); setSelectedArea(null);
     setTerritory(null); setArea(null); setCurrentId(null); setRunVein(0); setFightNode(null);
     setFight(null); setFightElapsed(0); setFightSpeed(1); setRunHpFrac(null);
-    clearTravel(); setTravel(null); setAmbush(null); setCard(null); setPrevId(null); dispatchCamera({ type: 'set', pan: null }); setOverlayLeaving(null); leavingRef.current = false;
+    clearTravel(); setTravel(null); setAmbush(null); setCard(null); setPrevId(null); dispatchCamera({ type: 'set', pan: null }); setOverlayLeaving(null);
     setRunMods({ dmgMult: 1, mitAdd: 0 }); setBusy(false);
   }
 
@@ -277,8 +276,10 @@ export default function Eldrathor() {
   function runAfter(t, curId, after) {
     if (!after) return;
     if (after.type === 'settle') { maybeAmbush(t, curId, null); return; }
-    if (after.type !== 'arrive') return;
     const n = t.nodes.find((x) => x.id === after.nodeId);
+    if (after.type === 'fight') { if (n) startFight(n, { enemies: after.enemies }); return; }
+    if (after.type === 'use') { if (n) { setFightNode(n); setRunStage('sanctuary'); enterMindView(); } return; }
+    if (after.type !== 'arrive') return;
     if (!n) return;
     revealOnArrival(t, curId, n);
   }
@@ -351,13 +352,14 @@ export default function Eldrathor() {
       case 'fight': {
         setCard(null);
         pushLog(`⚔ Fight — ${c.title}.`, 'sys');
-        if (!c.onNode) { setPrevId(currentId); setCurrentId(n.id); } // adjacent revealed node: Fight moves the party onto it
+        // adjacent revealed node: the party PANS onto it (one eased hop), then the fight opens — never a jump
+        if (!c.onNode) { beginTrip([currentId, n.id], { type: 'fight', nodeId: n.id, enemies: c.enemies }); return; }
         startFight(n, { enemies: c.enemies });
         return;
       }
       case 'use': {
         setCard(null);
-        if (!c.onNode) { setPrevId(currentId); setCurrentId(n.id); }
+        if (!c.onNode) { beginTrip([currentId, n.id], { type: 'use', nodeId: n.id }); return; }
         setFightNode(n); setRunStage('sanctuary'); enterMindView();
         return;
       }
@@ -425,11 +427,10 @@ export default function Eldrathor() {
   }
   // ---------- sanctuary ----------
   function onSanctuaryChoose(bonusId) {
-    const n = fightNode; if (!n || !territory || leavingRef.current) return;
-    // §17: ease the camera onto the party's node while the overlay is still up, then apply + fade
-    leavingRef.current = true;
+    const n = fightNode; if (!n || !territory) return;
+    // Anthony 2026-09-13: never auto-centre — the camera PANS onto the party as the overlay fades (amends §17's hidden recentre)
     dispatchCamera({ type: 'overlayClose', partyId: n.id });
-    overlayTimer.current = window.setTimeout(() => { leavingRef.current = false; applySanctuary(bonusId); }, FRAME_EASE_MS);
+    applySanctuary(bonusId);
   }
   function applySanctuary(bonusId) {
     const n = fightNode; if (!n || !territory) return;
@@ -497,12 +498,11 @@ export default function Eldrathor() {
   }
   function onResultsContinue() {
     const f = fight; const n = fightNode;
-    if (!f || !n || !territory || leavingRef.current) { if (!leavingRef.current) applyLootAndReturnToRoute(); return; }
-    if (!f.result.win || f.eff === 'boss') { applyLootAndReturnToRoute(); return; } // wipe / area clear: no map to return to
-    // §17: ease the camera onto the party's node (= the fought node) while Results is still up
-    leavingRef.current = true;
-    dispatchCamera({ type: 'overlayClose', partyId: n.id });
-    overlayTimer.current = window.setTimeout(() => { leavingRef.current = false; applyLootAndReturnToRoute(); }, FRAME_EASE_MS);
+    if (f && n && territory && f.result.win && f.eff !== 'boss') {
+      // Anthony 2026-09-13: never auto-centre — the camera PANS onto the party as Results fades (amends §17's hidden recentre)
+      dispatchCamera({ type: 'overlayClose', partyId: n.id });
+    }
+    applyLootAndReturnToRoute();
   }
   function applyLootAndReturnToRoute() {
     const f = fight; const n = fightNode;

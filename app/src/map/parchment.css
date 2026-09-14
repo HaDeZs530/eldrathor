@@ -36,10 +36,6 @@
   outline-offset: -2px;
 }
 
-.eld-parchment-sheet.is-anim {
-  transition: transform 380ms ease;
-}
-
 .eld-parchment-svg {
   position: absolute;
   inset: 0;
@@ -532,8 +528,9 @@
 .eld-edge-plan { stroke-width: 7; }
 
 /* --- v3 §12: every camera move eased ≥ 250 ms; cards slide up in 250 ms --- */
+/* every camera move that is not the travel tween is a visible PAN: 450 ms, soft in and out, never a cut */
 .eld-parchment-sheet.is-anim {
-  transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 450ms cubic-bezier(0.45, 0, 0.25, 1);
 }
 
 /* --- §13: the map stays mounted for the whole run; fight / results / sanctuary are overlays --- */
