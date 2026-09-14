@@ -1,0 +1,255 @@
+/*
+ * Veinharbor (Town) — VISUAL PASS, REVISION 1 (2026-09-14). Scoped to `.eld-town` so nothing else
+ * changes: painted pixel-art harbor, dark warm panel fills, restrained 1 px antique-gold/brown
+ * borders, Cinzel display titles, a readable system face for controls, numbers and supporting text.
+ * Overrides the hub-rpg bevels (3 px borders, hard offset shadows) inside Town only.
+ * Numbers that the spec sets come from town/townLayout.js via inline styles; this file carries the
+ * treatment (colour, borders, states, transitions).
+ */
+
+.eld-town {
+  --town-panel: #2c1f13;
+  --town-panel-2: #3a2917;
+  --town-line: #8b5a2b;
+  --town-gold: #c9a45c;
+  --town-gold-soft: rgba(201, 164, 92, 0.55);
+  --town-text: #f0e0c0;
+  --town-muted: #c4a070;
+  --town-ui: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --town-display: Cinzel, Marcellus, Georgia, serif;
+  font-family: var(--town-ui);
+  color: var(--town-text);
+}
+
+/* ---- typography (Town only) ---- */
+.eld-town .eld-town-display {
+  font-family: var(--town-display);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+/* ---- hero ---- */
+.eld-town-hero {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  background: var(--town-panel);
+  border-bottom: 1px solid var(--town-line);
+}
+
+.eld-town-hero .eld-town-art,
+.eld-town-hero .eld-town-art img {
+  width: 100%;
+  height: 100%;
+}
+
+.eld-town-hero-scrim {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 46%;
+  background: linear-gradient(180deg, rgba(20, 13, 7, 0) 0%, rgba(20, 13, 7, 0.72) 70%, rgba(20, 13, 7, 0.88) 100%);
+  pointer-events: none;
+}
+
+.eld-town-hero-title {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 14px;
+  color: var(--town-gold);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6), 0 0 14px rgba(0, 0, 0, 0.55);
+  line-height: 1.1;
+}
+
+.eld-town-hero-kicker {
+  font-family: var(--town-ui);
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--town-muted);
+  margin-bottom: 4px;
+}
+
+/* ---- art slots ---- */
+.eld-town-art {
+  position: relative;
+  overflow: hidden;
+  background: var(--town-panel-2);
+  flex-shrink: 0;
+}
+
+.eld-town-art img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  image-rendering: auto; /* painted art: no pixel snapping */
+}
+
+.eld-town-art-fallback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background:
+    radial-gradient(ellipse at 50% 35%, rgba(201, 164, 92, 0.18), transparent 65%),
+    linear-gradient(180deg, #3a2917 0%, #241809 100%);
+  color: var(--town-gold-soft);
+}
+
+.eld-town-art-glyph { font-size: 26px; line-height: 1; }
+.eld-town-hero .eld-town-art-glyph { font-size: 48px; }
+.eld-town-art-name { font-family: var(--town-ui); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.7; }
+
+/* ---- destination rows ---- */
+.eld-town-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.eld-town-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: stretch;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  text-align: left;
+  color: var(--town-text);
+  font-family: var(--town-ui);
+  background: var(--town-panel);
+  border: 1px solid var(--town-line);
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: border-color 150ms ease, background-color 150ms ease, transform 120ms ease;
+}
+
+.eld-town-row .eld-town-art {
+  border-right: 1px solid rgba(139, 90, 43, 0.6);
+  align-self: stretch;
+}
+
+.eld-town-row-text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  padding: 10px 12px;
+  min-width: 0;
+}
+
+.eld-town-row-title { color: var(--town-gold); line-height: 1.15; }
+.eld-town-row-sub { color: var(--town-muted); line-height: 1.35; }
+
+.eld-town-row-chev {
+  display: flex;
+  align-items: center;
+  padding: 0 14px 0 4px;
+  color: var(--town-gold-soft);
+  font-size: 18px;
+}
+
+/* interactive states */
+.eld-town-row:hover { border-color: var(--town-gold); background: var(--town-panel-2); }
+.eld-town-row:active { transform: translateY(1px); background: #241809; }
+.eld-town-row:focus-visible { outline: 2px solid var(--town-gold); outline-offset: 2px; }
+.eld-town-row:disabled { opacity: 0.45; cursor: default; transform: none; }
+
+/* ---- destination header (Back to Veinharbor) ---- */
+.eld-town-dest-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.eld-town-back {
+  font-family: var(--town-ui);
+  font-size: 14px;
+  padding: 0 12px;
+  min-height: 40px;
+  background: transparent;
+  color: var(--town-gold);
+  border: 1px solid var(--town-line);
+  border-radius: 8px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.eld-town-back:hover { border-color: var(--town-gold); }
+.eld-town-back:active { background: #241809; }
+.eld-town-back:focus-visible { outline: 2px solid var(--town-gold); outline-offset: 2px; }
+
+.eld-town-dest-title { color: var(--town-gold); }
+
+/* ---- restrained panel / button treatment inside Town (overrides hub-rpg bevels; higher specificity) ---- */
+.eld-root.hub-rpg:not(.mode-mind) .eld-town .eld-panel,
+.eld-root.hub-rpg:not(.mode-mind) .eld-town .eld-card,
+.eld-root.mode-world.hub-rpg .eld-town .eld-panel,
+.eld-root.mode-world.hub-rpg .eld-town .eld-card {
+  background: var(--town-panel);
+  border: 1px solid var(--town-line);
+  border-radius: 10px;
+  box-shadow: none;
+  color: var(--town-text);
+}
+
+.eld-root.hub-rpg:not(.mode-mind) .eld-town .eld-btn,
+.eld-root.mode-world.hub-rpg .eld-town .eld-btn {
+  font-family: var(--town-ui);
+  font-size: 15px;
+  letter-spacing: 0.02em;
+  min-height: 44px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--town-gold);
+  background: linear-gradient(180deg, #5a3d20 0%, #3d2a18 100%);
+  color: var(--town-text);
+  box-shadow: none;
+  transition: border-color 150ms ease, background-color 150ms ease, transform 120ms ease, opacity 150ms ease;
+}
+
+.eld-root.hub-rpg:not(.mode-mind) .eld-town .eld-btn-ghost,
+.eld-root.mode-world.hub-rpg .eld-town .eld-btn-ghost {
+  background: transparent;
+  border-color: var(--town-line);
+  color: var(--town-muted);
+}
+
+.eld-root.hub-rpg:not(.mode-mind) .eld-town .eld-btn:hover,
+.eld-root.mode-world.hub-rpg .eld-town .eld-btn:hover { border-color: #e2c27a; }
+.eld-root.hub-rpg:not(.mode-mind) .eld-town .eld-btn:active,
+.eld-root.mode-world.hub-rpg .eld-town .eld-btn:active { transform: translateY(1px); background: #241809; }
+.eld-root.hub-rpg:not(.mode-mind) .eld-town .eld-btn:focus-visible,
+.eld-root.mode-world.hub-rpg .eld-town .eld-btn:focus-visible { outline: 2px solid var(--town-gold); outline-offset: 2px; }
+.eld-root.hub-rpg:not(.mode-mind) .eld-town .eld-btn:disabled,
+.eld-root.mode-world.hub-rpg .eld-town .eld-btn:disabled { opacity: 0.45; cursor: default; transform: none; }
+
+/* selected state (Smith weapon list) */
+.eld-root.hub-rpg:not(.mode-mind) .eld-town .eld-card.is-selected,
+.eld-root.mode-world.hub-rpg .eld-town .eld-card.is-selected {
+  border-color: var(--town-gold);
+  box-shadow: inset 0 0 0 1px var(--town-gold-soft);
+}
+
+/* ---- section transition: opacity + 6 px rise, 220 ms, nothing else animates ---- */
+.eld-town-section {
+  animation: eld-town-in var(--town-transition-ms, 220ms) ease-out both;
+}
+
+@keyframes eld-town-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .eld-town-section { animation: none; }
+  .eld-town-row, .eld-town-back, .eld-town .eld-btn { transition: none; }
+}

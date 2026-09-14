@@ -14,6 +14,7 @@
 _(none queued — waiting on the Design Chat's next brief)_
 
 ## Recently DONE (don't redo)
+- PR #48 — Veinharbor visual pass rev 1 (ChatGPT visual spec): viewport fit (no document overflow), harbor hero + four illustrated destination rows, Back to Veinharbor, Town-scoped Cinzel/gold treatment, art slots pending (`app/public/town/`). Lock note: Town typography/chrome now diverges from the micro-pixel kit in the Dual-Mode Art Lock — Design Chat to amend.
 - PR #47 — gold ring party marker (§18): 44 px ring + bobbing pennant around the occupied node, node icon stays visible; §19 seal remnants removed for good (`isSealed`, `sealBroken`, `is-unsealed`, comments, test names)
 - PR #46 — bug-fix pass 1: depth/named modifiers on normal enemies, single extraction credit, pointercancel + pointerId gestures, controls excluded from map gestures, owned theme timers, feed scroll by last event, run-party freeze (Party tab locked during a run, HP by character id), AFK one-job-per-id, one camera owner, pure updaters
 - PR #33 — route explore model (v3 lock §15–17): three node states, nothing auto-marked, tap never moves the party (Explore/Cancel → travel → Fight/Flee), 600 ms/hop + 250 ms skip, §17 camera framing, recentre on the party under the overlay before it fades

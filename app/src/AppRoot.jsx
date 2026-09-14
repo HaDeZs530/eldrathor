@@ -605,7 +605,7 @@ export default function Eldrathor() {
   const canExtract = inRun && runStage === 'route'; // DESIGN-OPEN: menu Extract mid-fight/results is held until the fight resolves
   const mountainHubLabel = { island: 'The Island', rally: 'Rally', route: 'Route Map', fight: 'Combat', loot: 'Spoils', sanctuary: 'Sanctuary' }[runStage] || HUB_LABELS.mountain;
   return (
-    <div style={S.root}>
+    <div className="eld-page" style={S.root}>
       <style>{BASE_CSS}</style>
       <div className="eld-frame" style={S.frame}>
         <Header worldvein={worldvein} mode={currentMode} colors={colors} hubLabel={tab === 'mountain' ? mountainHubLabel : HUB_LABELS[tab]} actions={<ScreenHeaderActions onMenu={() => setSheet('menu')} onHelp={() => setSheet('help')} />} />
@@ -658,7 +658,9 @@ export default function Eldrathor() {
 }
 
 const S = {
-  root: { minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'flex-start', padding: '12px 0', background: '#05080a', boxSizing: 'border-box' },
-  frame: { width: frame.width, height: frame.height, maxWidth: '100%', maxHeight: '100svh', display: 'flex', flexDirection: 'column', overflow: 'hidden', borderRadius: 12, color: 'var(--eld-text, #cfe0e8)', fontFamily: 'var(--eld-font-body, system-ui, sans-serif)', position: 'relative' },
+  // Viewport fit (Veinharbor pass §1): the decorative 12 px vertical padding lives in CSS (`.eld-page`) and is
+  // removed on compact viewports; the frame budget is 100svh minus that padding, so the document never scrolls.
+  root: { minHeight: '100svh', display: 'flex', justifyContent: 'center', alignItems: 'flex-start', background: '#05080a', boxSizing: 'border-box' },
+  frame: { width: frame.width, height: frame.height, maxWidth: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', borderRadius: 12, color: 'var(--eld-text, #cfe0e8)', fontFamily: 'var(--eld-font-body, system-ui, sans-serif)', position: 'relative' },
   flash: { textAlign: 'center', padding: '8px', margin: '8px 12px 0', border: '1px solid', borderRadius: 8, fontSize: 12, letterSpacing: '0.06em', background: 'rgba(0,0,0,0.35)', animation: 'fadein 0.3s ease', flexShrink: 0 },
 };
