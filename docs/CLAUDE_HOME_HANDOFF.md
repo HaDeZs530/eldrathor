@@ -10,7 +10,8 @@
 4. Open PRs; don't invent LOCKED design — use `// DESIGN-OPEN:` for gaps.
 
 ## Active briefs (priority)
-0. **`docs/CLAUDE_BRIEFS/2026-09-14_party-ring-marker.md`** — gold ring marker so the node icon stays visible; seal text cleanup. Spec: v3 lock §18–19.
+0. **`docs/CLAUDE_BRIEFS/2026-09-14_bugfix-pass-1.md`** — verified bug list incl. inert depth scaling, double extract, pointer cancel, run-party freeze. Do FIRST.
+1. **`docs/CLAUDE_BRIEFS/2026-09-14_party-ring-marker.md`** — gold ring marker so the node icon stays visible; seal text cleanup. Spec: v3 lock §18–19.
 _(none queued — waiting on the Design Chat's next brief)_
 
 ## Recently DONE (don't redo)
