@@ -54,7 +54,7 @@ export function Harbor({ party, stash, setTab }) {
         {stash.slice(-6).reverse().map((g, i) => (
           <div key={i} style={{ ...S.lootChip, borderColor: TIER_COLOR[g.tier] }}>
             <span style={{ color: TIER_COLOR[g.tier] }}>{g.name}</span>
-            <span style={S.rating}>{g.rating}/100</span>
+            <span style={S.rating}>{g.baseRating}/100{g.empower ? ` +${g.empower}` : ''}</span>
           </div>
         ))}
       </div>

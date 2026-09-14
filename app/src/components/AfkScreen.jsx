@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { AREAS, ARCHETYPES } from '../data.js';
 import { GATHER_FAMILIES, MAT_QUALITY } from '../theme/tokens.js';
+import { trainXpGain, maxUnlockedTier } from '../afkRuntime.js';
+import { xpToNext, LEVEL_CAP } from '../progression/progression.js';
 import { GATHER_CYCLE_MS, PROCESS_CYCLE_MS, IDLE_CYCLE_MS, PROCESS_VEIN_COST } from '../afkRuntime.js';
 
 const SUBS = [
@@ -41,7 +43,7 @@ export default function AfkScreen({
           skillXp={afk.processSkillXp} onUpdate={onUpdateProcess} onToggle={onToggleProcess} />
       )}
       {sub === 'idle' && (
-        <IdlePanel idle={afk.idle} bench={bench} party={party} roster={roster}
+        <IdlePanel idle={afk.idle} bench={bench} party={party} roster={roster} unlocked={unlocked}
           onUpdate={onUpdateIdle} onToggle={onToggleIdle} />
       )}
     </div>
@@ -183,17 +185,16 @@ function ProcessPanel({ process, bench, inventory, worldvein, skillXp, onUpdate,
   );
 }
 
-function IdlePanel({ idle, bench, party, roster, onUpdate, onToggle }) {
-  const topLevel = Math.max(1, ...party.map((m) => m.level), ...roster.map((m) => m.level || 1));
+function IdlePanel({ idle, bench, party, roster, unlocked, onUpdate, onToggle }) {
   const trainee = bench.find((b) => b.key === idle.charKey);
-  const rateNote = trainee
-    ? (trainee.level < topLevel ? `Catch-up rate (below roster top Lv ${topLevel})` : `Near-top soft-cap (roster top Lv ${topLevel})`)
-    : 'Assign a trainee for catch-up XP';
+  const live = trainee ? [...party, ...roster].find((m) => m.id === trainee.key) : null;
+  const perMin = trainXpGain(unlocked, 60000);
+  const rateNote = `${perMin.toFixed(1)} XP / min at tier ${maxUnlockedTier(unlocked)} (your highest unlocked area)`;
   return (
     <div style={S.col}>
       <div className="eld-panel" style={S.help}>
-        <div style={S.helpH}>Train — catch-up levels for benched Adventurers</div>
-        <div>Assign one Adventurer. Every cycle (~{Math.round(IDLE_CYCLE_MS / 1000)}s) they roll for a level. It's fast while they're below your highest-level Adventurer and slows to a crawl near the top. No materials, no cost — but the Mountain is still the best place for XP and loot. {/* DESIGN-OPEN: curve numbers */}</div>
+        <div style={S.helpH}>Train — steady XP for one Adventurer</div>
+        <div>Assign one Adventurer. They earn a flat trickle of XP every cycle (~{Math.round(IDLE_CYCLE_MS / 1000)}s), scaled by your highest unlocked area — slower than fighting, with no cap. No materials, no cost.</div>
       </div>
       <div className="eld-card" style={S.card}>
         <div style={S.row}><span style={S.h}>Training berth</span>
@@ -203,12 +204,12 @@ function IdlePanel({ idle, bench, party, roster, onUpdate, onToggle }) {
           onChange={(e) => onUpdate({ charKey: e.target.value || null })}>
           <option value="">— assign —</option>
           {bench.map((b) => (
-            <option key={b.key} value={b.key}>{b.name} · Lv {b.level}{b.level < topLevel ? ' · catch-up' : ''}</option>
+            <option key={b.key} value={b.key}>{b.name} · Lv {b.level}</option>
           ))}
         </select>
         <Bar value={idle.progress} accent="#7fd6a0" />
         <div style={S.meta}>{rateNote}</div>
-        {trainee && <div style={S.ok}>{trainee.name} · Lv {trainee.level} · XP bar {Math.round((idle.progress || 0) * 100)}%</div>}
+        {live && <div style={S.ok}>{live.name} · Lv {live.level}{live.level >= LEVEL_CAP ? ' · max' : ` · ${Math.floor(live.xp || 0)} / ${xpToNext(live.level)} XP`}</div>}
         <button type="button" className="eld-btn" style={S.wide} disabled={!idle.charKey} onClick={onToggle}>
           {idle.running ? 'Stop training' : 'Start training'}
         </button>

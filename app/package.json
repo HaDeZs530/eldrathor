@@ -8,7 +8,7 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "node --test src/combat/simulate.test.js src/combat/enemies.test.js src/map/genTerritory.test.js src/map/camera.test.js src/map/cameraController.test.js src/theme/modeSwitch.test.js src/afkRuntime.test.js src/town/townLayout.test.js src/save/save.test.js"
+    "test": "node --test src/progression/progression.test.js src/combat/derive.test.js src/combat/balance.test.js src/combat/simulate.test.js src/combat/enemies.test.js src/map/genTerritory.test.js src/map/camera.test.js src/map/cameraController.test.js src/theme/modeSwitch.test.js src/afkRuntime.test.js src/town/townLayout.test.js src/save/save.test.js"
   },
   "dependencies": {
     "react": "^19.2.7",

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useReducer, useCallback } from 'react';
+import { useState, useEffect, useRef, useReducer, useCallback, useMemo } from 'react';
 import { useTheme } from './theme/ThemeProvider.jsx';
 import { frame, colors, nodeTypeMeta } from './theme/tokens.js';
 import { genTerritory } from './map/genTerritory.js';
@@ -6,6 +6,8 @@ import { rareAt, effectiveType, raresAlive, allCleared, scoutNode, clearNode, ki
 import RouteMapScreen from './map/RouteMapScreen.jsx';
 import { DEFAULT_PARTY, AREAS, withIds } from './data.js';
 import { simulateFight, spawnEnemies, rollRewards, deriveStats, mulberry32 } from './combat.js';
+import { equip } from './combat/derive.js';
+import { withStarterWeapons, equippedIds, fightXp, splitXp, applyXp, xpToNext } from './progression/progression.js';
 import { Header } from './components/HarborViews.jsx';
 import PlayerScreen from './components/PlayerScreen.jsx';
 import PartyScreen from './components/PartyScreen.jsx';
@@ -38,6 +40,18 @@ const SAVER = createSaver({ store: SAVE_STORE });
 const BOOT = SAVE_STORE.load();
 const S0 = BOOT.state || {};
 const R0 = S0.run || null;
+// M1b: every Adventurer boots with an equipped weapon (fresh game: Common starters; migrated saves are
+// already geared, so this is a no-op for them). Party and roster are split back by their counts.
+const DEFAULT_ROSTER = [
+  { name: 'Nyra', archetype: 'Adept', weapon: 'Staff', level: 1, xp: 0 },
+  { name: 'Thalen', archetype: 'Resonator', weapon: 'Orb + Tome', level: 1, xp: 0 },
+];
+const P0 = S0.party ? withIds(S0.party) : withIds(DEFAULT_PARTY);
+const RO0 = withIds(S0.roster || DEFAULT_ROSTER);
+const GEARED = withStarterWeapons([...P0, ...RO0], S0.stash || []);
+const PARTY0 = GEARED.members.slice(0, P0.length);
+const ROSTER0 = GEARED.members.slice(P0.length);
+const STASH0 = GEARED.stash;
 
 const HUB_LABELS = {
   player: 'Veinbinder',
@@ -62,16 +76,13 @@ export default function Eldrathor() {
   // a run saved mid-fight resumes at its Results (the fight is pre-rolled data); otherwise at its own stage
   const [runStage, setRunStage] = useState(() => (R0 ? (R0.runStage === 'fight' ? 'loot' : R0.runStage) : 'island')); // island | rally | route | fight | loot | sanctuary
   const [selectedArea, setSelectedArea] = useState(null);
-  const [party, setParty] = useState(() => (S0.party ? withIds(S0.party) : withIds(DEFAULT_PARTY)));
-  const [roster, setRoster] = useState(() => withIds(S0.roster || [
-    { name: 'Nyra', archetype: 'Adept', weapon: 'Staff', level: 1 },
-    { name: 'Thalen', archetype: 'Resonator', weapon: 'Orb + Tome', level: 1 },
-  ]));
+  const [party, setParty] = useState(() => PARTY0);
+  const [roster, setRoster] = useState(() => ROSTER0);
   // bug-fix pass 1 §7 (design ruling 2026-09-14): the fielded party is SNAPSHOT at Rally → Explore and
   // frozen for the run; the Party tab can't swap/promote while a territory exists.
   const [runParty, setRunParty] = useState(() => R0?.runParty || null);
   const [worldvein, setWorldvein] = useState(() => (typeof S0.worldvein === 'number' ? S0.worldvein : 80));
-  const [stash, setStash] = useState(() => S0.stash || []);
+  const [stash, setStash] = useState(() => STASH0);
   const [inventory, setInventory] = useState(() => S0.inventory || { raw: { wood: 4, metal: 2, hunt: 1 }, infused: [], scrap: 0, armor: [] });
   const [area, setArea] = useState(() => (R0 ? AREAS.find((a) => a.id === R0.areaId) || null : null));
   const [territory, setTerritory] = useState(() => R0?.territory || null);
@@ -116,8 +127,11 @@ export default function Eldrathor() {
   const travelTimer = useRef(null);
   const [runMods, setRunMods] = useState(() => R0?.runMods || { dmgMult: 1, mitAdd: 0 }); // sanctuary bonuses, per run
   const [runHp, setRunHp] = useState(() => R0?.runHp || null); // per-Adventurer HP carried across fights, keyed by character id (0 = fallen); null = fresh
-  const fielded = runParty || party; // the party that fights this run
+  const fieldedRaw = runParty || party; // the party that fights this run
+  // M1b §4: equipment applies — the simulator and stat sheets see the equipped weapon / armor items
+  const fielded = useMemo(() => fieldedRaw.map((m) => equip(m, stash, inventory.armor || [])), [fieldedRaw, stash, inventory.armor]);
   const hpArrFor = (list) => (runHp ? list.map((m) => runHp[m.id] ?? 1) : undefined);
+  const equipped = useMemo(() => equippedIds(party, roster), [party, roster]);
   const extractingRef = useRef(false); // §2: one extraction credit per run
   const fightRef = useRef(null); // §10: latest fight for finishFightToLoot (no setter inside an updater)
   const [fightNode, setFightNode] = useState(() => R0?.fightNode || null);
@@ -524,7 +538,18 @@ export default function Eldrathor() {
       ? rollRewards({ tier: area.tier, nodeType: eff, attuneVein: sim.result.attuneVein, rng, named: !!n.namedRare, mapClear })
       : null;
     const derived = fielded.map((m) => deriveStats(m));
-    setFight({ enemies, derived, events: sim.events, result: sim.result, stats: sim.stats, rewards, seed, named: !!n.namedRare, rare: !!rare, eff, mapClear, ambush: !!opts.ambush });
+    // Progression Loop Lock §3: fight XP on a win, split evenly, the fallen at half; applied at Continue
+    let xp = null;
+    if (sim.result.win) {
+      const total = Math.round(fightXp(enemies, area.tier));
+      const gains = splitXp(total, fielded, sim.result.partyHpFrac);
+      const per = fielded.map((m, i) => {
+        const r = applyXp(m, gains[i]);
+        return { id: m.id, name: m.name, gain: gains[i], fallen: (sim.result.partyHpFrac[i] ?? 1) <= 0, from: m.level || 1, to: r.member.level, levelsGained: r.levelsGained, xpAfter: Math.floor(r.member.xp), xpNeeded: xpToNext(r.member.level) };
+      });
+      xp = { total, per };
+    }
+    setFight({ enemies, derived, events: sim.events, result: sim.result, stats: sim.stats, rewards, xp, seed, named: !!n.namedRare, rare: !!rare, eff, mapClear, ambush: !!opts.ambush });
     setFightNode({ ...n, tier: area.tier, type: eff });
     setFightElapsed(0); setFightSpeed(1);
     trace('overlay', { open: 'fight', node: n.id, type: eff, win: sim.result.win, durMs: sim.result.durationMs, ambush: !!opts.ambush });
@@ -576,7 +601,8 @@ export default function Eldrathor() {
     setPartyHP(res.hpPct); setRunHp(Object.fromEntries(fielded.map((m, i) => [m.id, res.partyHpFrac[i] ?? 1])));
     setRunVein((v) => v + (rewards?.worldvein || 0));
     pushLog(`✔ Cleared in ${res.durationSec}s. +${rewards?.worldvein || 0} Worldvein.${f.eff === 'crystal' ? ' The deposit splinters — ×2 harvest.' : ''}`, 'good');
-    for (const g of rewards?.gears || []) { setStash((s) => [...s, g]); pushLog(`  ⬥ Loot: ${g.name} (${g.rating}/100)`, 'loot'); }
+    for (const g of rewards?.gears || []) { setStash((s) => [...s, g]); pushLog(`  ⬥ Loot: ${g.name} (${g.baseRating}/100)`, 'loot'); }
+    if (f.xp) applyFightXp(f.xp);
     if (f.rare) pushLog(`☠ Rare slain. ${t.rares.filter((r) => r.alive).length} remain.`, 'rare');
     if (lastRareDown) { pushLog('☠ Every rare on this map is slain.', 'rare'); doFlash('All rares slain', colors.mythros); }
     if (f.eff === 'boss') {
@@ -589,6 +615,16 @@ export default function Eldrathor() {
     }
     clearFightTimers(); setFightNode(null); setFight(null); setBusy(false); setRunStage('route'); setCard(null);
     maybeAmbush(t, n.id, prevId);
+  }
+  /** §3: credit the fight's XP to the run party AND the persistent Adventurers (by id); log level-ups. */
+  function applyFightXp(xp) {
+    const gainOf = Object.fromEntries(xp.per.map((p) => [p.id, p.gain]));
+    const bump = (m) => (gainOf[m.id] != null ? applyXp(m, gainOf[m.id]).member : m);
+    setRunParty((rp) => (rp ? rp.map(bump) : rp));
+    setParty((p) => p.map(bump));
+    setRoster((r) => r.map(bump));
+    pushLog(`  ✦ +${xp.total} XP shared by the bond.`, 'good');
+    for (const p of xp.per) if (p.levelsGained) { pushLog(`  ✦ ${p.name} reaches level ${p.to}!`, 'good'); }
   }
   function extract() {
     if (extractingRef.current) return; // §2: a second tap before the 600 ms reset must not credit twice
@@ -640,8 +676,8 @@ export default function Eldrathor() {
       <div className="eld-frame" style={S.frame}>
         <Header worldvein={worldvein} mode={currentMode} colors={colors} hubLabel={tab === 'mountain' ? mountainHubLabel : HUB_LABELS[tab]} actions={<ScreenHeaderActions onMenu={() => setSheet('menu')} onHelp={() => setSheet('help')} />} />
         {flash && <div style={{ ...S.flash, borderColor: flash.color, color: flash.color }}>{flash.msg}</div>}
-        {tab === 'town' && <TownScreen party={party} stash={stash} setStash={setStash} inventory={inventory} setInventory={setInventory} worldvein={worldvein} setWorldvein={setWorldvein} setTab={selectTab} />}
-        {tab === 'party' && <PartyScreen party={party} setParty={setParty} roster={roster} setRoster={setRoster} locked={!!territory} />}
+        {tab === 'town' && <TownScreen party={party} stash={stash} setStash={setStash} inventory={inventory} setInventory={setInventory} worldvein={worldvein} setWorldvein={setWorldvein} setTab={selectTab} equipped={equipped} />}
+        {tab === 'party' && <PartyScreen party={party} setParty={setParty} roster={roster} setRoster={setRoster} locked={!!territory} stash={stash} setStash={setStash} armor={inventory.armor || []} equipped={equipped} />}
         {tab === 'player' && <PlayerScreen worldvein={worldvein} />}
         {tab === 'afk' && <AfkScreen unlocked={unlocked} party={party} roster={roster} inventory={inventory} afk={afk} worldvein={worldvein} onUpdateGatherSlot={onUpdateGatherSlot} onToggleGather={onToggleGather} onUpdateProcess={onUpdateProcess} onToggleProcess={onToggleProcess} onUpdateIdle={onUpdateIdle} onToggleIdle={onToggleIdle} />}
         {tab === 'mountain' && runStage === 'island' && <IslandWorldMap areas={AREAS} unlocked={unlocked} onSelectArea={onSelectArea} onHarbor={() => selectTab('town')} />}

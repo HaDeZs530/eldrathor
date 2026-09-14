@@ -88,7 +88,7 @@ export const MAT_QUALITY = {
   Fine: { color: '#7fd6a0', weight: 25 },
   Rare: { color: '#6fb7d6', weight: 12 },
   Epic: { color: '#b58fe0', weight: 6 },
-  Mythic: { color: '#e0a04d', weight: 2 },
+  Legendary: { color: '#e0a04d', weight: 2 }, // Progression Loop Lock §2: Mythic retired, the ladder tops at Legendary
 };
 
 export const GATHER_FAMILIES = [

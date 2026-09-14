@@ -1,11 +1,21 @@
 import { AREAS } from './data.js';
 import { MAT_QUALITY } from './theme/tokens.js';
+import { trainXpPerMinute, applyXp } from './progression/progression.js';
 
 export const AFK_TICK_MS = 100; // DESIGN-OPEN: persistence/offline
 export const GATHER_CYCLE_MS = 4000;
 export const PROCESS_CYCLE_MS = 5000;
 export const IDLE_CYCLE_MS = 6000;
 export const PROCESS_VEIN_COST = 5;
+
+/** Highest unlocked area tier (Tmax in the lock's Train formula). */
+export function maxUnlockedTier(unlocked) {
+  return AREAS.filter((a) => a.id <= (unlocked || 1)).reduce((t, a) => Math.max(t, a.tier || 1), 1);
+}
+/** XP one Train cycle of `cycleMs` grants at the highest unlocked tier. */
+export function trainXpGain(unlocked, cycleMs = IDLE_CYCLE_MS) {
+  return trainXpPerMinute(maxUnlockedTier(unlocked)) * (cycleMs / 60000);
+}
 
 export function emptyGatherSlot() {
   return { charKey: null, areaId: 1, family: 'wood', running: false, progress: 0 };
@@ -122,15 +132,12 @@ export function tickAfk({ state, inventory, worldvein, party, roster, unlocked, 
       progress = 0;
       const resolved = resolveCharKey(next.idle.charKey, party, roster);
       if (resolved?.member) {
-        const top = Math.max(1, ...party.map((m) => m.level), ...roster.map((m) => m.level || 1));
-        const lvl = resolved.member.level;
-        const catchUp = lvl < top;
-        const levelChance = catchUp ? 0.55 : 0.12;
-        if ((Math.random() < levelChance || (catchUp && Math.random() < 0.08)) && lvl < top) {
-          const bumped = { ...resolved.member, level: lvl + 1 };
-          if (resolved.source === 'party') partyNext = party.map((m, i) => (i === resolved.index ? bumped : m));
-          else rosterNext = roster.map((m, i) => (i === resolved.index ? bumped : m));
-        }
+        // Progression Loop Lock §3: Train grants trainXpPerMinute(Tmax) XP per minute at the highest
+        // unlocked area tier — a flat rate, no catch-up cap, slower than fighting.
+        const gain = trainXpGain(unlocked, IDLE_CYCLE_MS);
+        const { member: bumped } = applyXp(resolved.member, gain);
+        if (resolved.source === 'party') partyNext = party.map((m, i) => (i === resolved.index ? bumped : m));
+        else rosterNext = roster.map((m, i) => (i === resolved.index ? bumped : m));
       }
     }
     next.idle = { ...next.idle, progress };
