@@ -10,6 +10,11 @@
 
 const KEY_ON = 'eld.debug.trace.on';
 const KEY_LOG = 'eld.debug.trace.log';
+const KEY_SESSION = 'eld.debug.trace.session';
+/** Dev-only auto-save: POST the trace to the Vite dev server (vite.config.js `traceReceiver`) → app/playtest-traces/. */
+const UPLOAD_URL = '/__eld/trace';
+const UPLOAD_EVERY_MS = 3000;
+const AUTOSAVE = typeof import.meta !== 'undefined' && !!import.meta.env?.DEV;
 export const TRACE_MAX = 600;
 const LONG_FRAME_MS = 50;
 
@@ -18,6 +23,11 @@ let buf = [];
 let seq = 0;
 let flushTimer = null;
 let frameMon = null;
+let uploadTimer = null;
+let uploadDirty = false;
+let session = null;
+/** Last auto-save outcome for the sheet: { at, ok, file | error } */
+export let lastUpload = null;
 const listeners = new Set();
 
 function safeGet(k) { try { return window.localStorage.getItem(k); } catch { return null; } }
@@ -29,6 +39,14 @@ export function initTrace() {
   on = safeGet(KEY_ON) === '1';
   try { buf = JSON.parse(safeGet(KEY_LOG) || '[]'); if (!Array.isArray(buf)) buf = []; } catch { buf = []; }
   seq = buf.length ? (buf[buf.length - 1].n || 0) : 0;
+  session = safeGet(KEY_SESSION) || null;
+  if (!session) { session = `${new Date().toISOString().slice(0, 10)}-${Math.random().toString(36).slice(2, 8)}`; safeSet(KEY_SESSION, session); }
+  if (AUTOSAVE) {
+    // flush what we have when the app goes to the background / the page is torn down (sendBeacon survives both)
+    const flushNow = () => { if (on && uploadDirty) beacon(); };
+    document.addEventListener('visibilitychange', () => { if (document.hidden) flushNow(); });
+    window.addEventListener('pagehide', flushNow);
+  }
   if (on) { startFrameMonitor(); trace('trace', { restored: buf.length, ua: navigator.userAgent, vp: `${window.innerWidth}x${window.innerHeight}`, dpr: window.devicePixelRatio }); }
 }
 
@@ -49,8 +67,40 @@ export function trace(kind, data) {
   buf.push({ n: seq, t: Math.round(performance.now()), k: kind, d: round(data) });
   if (buf.length > TRACE_MAX) buf.splice(0, buf.length - TRACE_MAX);
   scheduleFlush();
+  scheduleUpload();
   notify();
 }
+
+export const isAutosave = () => AUTOSAVE;
+export const traceSession = () => session;
+
+function scheduleUpload() {
+  if (!AUTOSAVE || uploadTimer) { uploadDirty = true; return; }
+  uploadDirty = true;
+  uploadTimer = window.setTimeout(upload, UPLOAD_EVERY_MS);
+}
+async function upload() {
+  uploadTimer = null;
+  if (!on || !uploadDirty) return;
+  uploadDirty = false;
+  try {
+    const r = await fetch(`${UPLOAD_URL}?session=${encodeURIComponent(session || 'unknown')}`, { method: 'POST', body: traceText(), keepalive: true, headers: { 'Content-Type': 'text/plain' } });
+    const j = r.ok ? await r.json() : null;
+    lastUpload = { at: Date.now(), ok: r.ok, file: j?.file || null, error: r.ok ? null : `HTTP ${r.status}` };
+  } catch (e) {
+    lastUpload = { at: Date.now(), ok: false, file: null, error: String(e?.message || e) };
+  }
+  notify();
+  if (uploadDirty) scheduleUpload();
+}
+function beacon() {
+  try {
+    uploadDirty = false;
+    navigator.sendBeacon?.(`${UPLOAD_URL}?session=${encodeURIComponent(session || 'unknown')}`, new Blob([traceText()], { type: 'text/plain' }));
+  } catch { /* best effort */ }
+}
+/** Force an upload now (the sheet's Save button). */
+export function uploadNow() { if (!AUTOSAVE) return Promise.resolve(); uploadDirty = true; if (uploadTimer) { window.clearTimeout(uploadTimer); uploadTimer = null; } return upload(); }
 
 export function clearTrace() {
   buf = []; seq = 0;

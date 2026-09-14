@@ -5,7 +5,8 @@ A developer/playtest trace, separate from the player-facing **run log** (📜 on
 ## How to use it (Anthony)
 1. ☰ Menu → **Debug trace** → **Turn on**. It stays on across reloads (stored in the browser's localStorage) until you turn it off.
 2. Play. Everything below is recorded into a ring buffer of the last **600** events, also persisted so it survives a reload or a run ending.
-3. When something feels wrong, note roughly what you did (e.g. "tapped the far node then Explore — the swing back"), then ☰ → Debug trace → **Copy** and paste the text to Claude Code together with that note. **Clear** empties the buffer before a fresh attempt.
+3. **Auto-save (PR #41):** when the app is served by the dev server (the phone playtest), the trace is POSTed to it every ~3 s while recording (and immediately when the app goes to the background), and lands in the repo checkout at `app/playtest-traces/latest.txt` (+ one file per app session, `app/playtest-traces/<session>.txt`). The sheet shows "Auto-saved Ns ago → file". So: play, then just tell Claude Code what felt wrong and roughly when — it reads the file itself. **Save now** forces an upload. The folder is git-ignored (local to the machine running the dev server). Nothing is uploaded from a production build.
+4. Fallback without the dev server: ☰ → Debug trace → **Copy** and paste the text to Claude Code. **Clear** empties the buffer before a fresh attempt.
    - On plain `http://` over the LAN the clipboard API is unavailable on iOS; the sheet then selects the text in the box for a manual copy (long-press → Select All → Copy).
 
 ## What is recorded (one line per event: `time +delta kind key=value …`)
@@ -36,6 +37,7 @@ Positions are sheet-space pans in CSS px (the map's `translate3d`), rounded to 0
 - `tap … ignored=…` lines show taps that did nothing and why.
 
 ## Code
-- `app/src/debug/trace.js` — ring buffer, localStorage persistence, `trace(kind, data)`, text formatter, long-frame monitor. `trace()` returns immediately when off.
+- `app/vite.config.js` `traceReceiver()` — dev-server-only middleware: `POST /__eld/trace?session=<id>` writes `app/playtest-traces/latest.txt` and `<session>.txt`.
+- `app/src/debug/trace.js` — ring buffer, localStorage persistence, `trace(kind, data)`, text formatter, long-frame monitor, dev-only auto-upload (`fetch` every 3 s while dirty, `sendBeacon` on background/pagehide). `trace()` returns immediately when off.
 - `app/src/debug/DebugTraceSheet.jsx` — the ☰ sheet (toggle / copy / clear / text box).
 - Hooks: `AppRoot.jsx` (tabs, island, rally, run, taps, cards, camera dispatch, trips, overlays, ambush, extract) and `map/RouteMapScreen.jsx` (gestures, tap pans, tween start / arrival / settle / jumps).

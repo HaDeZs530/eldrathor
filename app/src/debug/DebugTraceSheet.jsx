@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { clearTrace, isTraceOn, onTraceChange, setTraceOn, traceEntries, traceText } from './trace.js';
+import { clearTrace, isTraceOn, onTraceChange, setTraceOn, traceEntries, traceText, isAutosave, lastUpload, traceSession, uploadNow } from './trace.js';
 import '../components/shell/shell.css';
 
 /**
@@ -34,8 +34,16 @@ export default function DebugTraceSheet({ onClose }) {
         <div className="eld-sheet-grip" />
         <div className="eld-sheet-title">🐞 Debug trace</div>
         <div className="eld-sheet-sub">{on ? `Recording · ${count} events kept` : 'Off — nothing is recorded'}</div>
+        {isAutosave() && (
+          <div className="eld-sheet-sub" style={{ color: lastUpload && !lastUpload.ok ? '#e05d6f' : undefined }}>
+            {!on ? 'Auto-save to the dev server: on while recording'
+              : !lastUpload ? `Auto-save: waiting for the first event · session ${traceSession()}`
+                : lastUpload.ok ? `Auto-saved at ${new Date(lastUpload.at).toLocaleTimeString()} → ${lastUpload.file}`
+                  : `Auto-save failed: ${lastUpload.error} (Copy still works)`}
+          </div>
+        )}
         <div style={{ fontSize: 'var(--mv-label, 15px)', lineHeight: 1.4, color: 'var(--eld-muted)', margin: '4px 0 8px' }}>
-          Logs every tap, card action, camera move, trip and long frame for testing. Survives reloads. Copy it and paste it to Claude Code with what felt wrong.
+          Logs every tap, card action, camera move, trip and long frame for testing. Survives reloads. On the dev server it auto-saves into the repo every few seconds, so just tell Claude Code what felt wrong; Copy is the fallback.
         </div>
         <textarea
           ref={taRef}
@@ -47,6 +55,7 @@ export default function DebugTraceSheet({ onClose }) {
         {copied && <div className="eld-sheet-sub" style={{ marginTop: 6 }}>{copied}</div>}
         <div className="eld-sheet-actions" style={{ flexWrap: 'wrap' }}>
           <button type="button" className="eld-btn" onClick={() => setTraceOn(!on)}>{on ? 'Turn off' : 'Turn on'}</button>
+          {isAutosave() && <button type="button" className="eld-btn eld-btn-ghost" onClick={() => uploadNow()} disabled={!on || !count}>Save now</button>}
           <button type="button" className="eld-btn eld-btn-ghost" onClick={copy} disabled={!count}>Copy</button>
           <button type="button" className="eld-btn eld-btn-ghost" onClick={() => { clearTrace(); setCopied(null); }} disabled={!count}>Clear</button>
           <button type="button" className="eld-btn eld-btn-ghost" onClick={onClose}>Close</button>
