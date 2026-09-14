@@ -9,7 +9,7 @@ Active coding tasks for **Claude Code**. The **Claude Design Chat** writes these
 - When a brief is done, mark **DONE** at the top and note it in `docs/SESSION_LOG.md`.
 
 ## Queue (2026-09-14)
-- M1: `2026-09-14_m1a-save-and-ids.md` (DONE #50) → `m1b-progression-chain` → `m1c-afk-true-idle` → `m1d-engineering-hygiene` — **READY** (after bugfix-pass-1 and ring marker)
+- M1: `2026-09-14_m1a-save-and-ids.md` (DONE #50) → `m1b-progression-chain` (DONE #51) → `m1c-afk-true-idle` → `m1d-engineering-hygiene` — **READY** (after bugfix-pass-1 and ring marker)
 - `2026-09-14_bugfix-pass-1.md` — DONE (#46)
 - `2026-09-14_party-ring-marker.md` — DONE (#47)
 - `2026-09-13_route-explore-model.md` — DONE (#33)

@@ -10,10 +10,11 @@
 4. Open PRs; don't invent LOCKED design — use `// DESIGN-OPEN:` for gaps.
 
 ## Active briefs (priority)
-0. **Milestone 1 — one real area** (spec `docs/Eldrathor_Progression_Loop_Lock.md`), in order: ~~`2026-09-14_m1a-save-and-ids.md`~~ (DONE #50) → `2026-09-14_m1b-progression-chain.md` → `2026-09-14_m1c-afk-true-idle.md` → `2026-09-14_m1d-engineering-hygiene.md`. Each its own PR; "next" takes the next one. — gold ring marker so the node icon stays visible; seal text cleanup. Spec: v3 lock §18–19.
+0. **Milestone 1 — one real area** (spec `docs/Eldrathor_Progression_Loop_Lock.md`), in order: ~~`2026-09-14_m1a-save-and-ids.md`~~ (DONE #50) → ~~`2026-09-14_m1b-progression-chain.md`~~ (DONE #51) → `2026-09-14_m1c-afk-true-idle.md` → `2026-09-14_m1d-engineering-hygiene.md`. Each its own PR; "next" takes the next one. — gold ring marker so the node icon stays visible; seal text cleanup. Spec: v3 lock §18–19.
 _(none queued — waiting on the Design Chat's next brief)_
 
 ## Recently DONE (don't redo)
+- PR #51 — M1b: rarity ladder (Mythic → Legendary) + §2 loot roll, fight/Train XP per §3 with level-ups on Results/run log, equipment that applies (weapon item rating+empower, body armor) with a swap diff on the Party sheet, Smith empowerment bench per §4 (merge removed), additive crit fix, no archetype editing + name validation + "Coming — not yet active" tags, enforced §8 balance gates — boss retuned to ×22 hp / ×20 dmg (Combat v2 Lock §4 superseded; Design Chat to amend). New game starts at level 1 with equipped Common starters (rating 30 DESIGN-OPEN). Save v2.
 - PR #50 — M1a: permanent ids on Adventurers/weapons/armor, versioned save `eldrathor.save.v1` with migrations + quarantine, debounced save/resume incl. the active run (counted RNG), Menu → Settings export/import/reset
 - PR #49 — Veinharbor artwork live in all five Town slots (originals in `app/art-src/town/`)
 - PR #48 — Veinharbor visual pass rev 1 (ChatGPT visual spec): viewport fit (no document overflow), harbor hero + four illustrated destination rows, Back to Veinharbor, Town-scoped Cinzel/gold treatment, art slots pending (`app/public/town/`). Lock note: Town typography/chrome now diverges from the micro-pixel kit in the Dual-Mode Art Lock — Design Chat to amend.
