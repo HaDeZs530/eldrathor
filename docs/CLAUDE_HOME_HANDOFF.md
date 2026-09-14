@@ -10,11 +10,11 @@
 4. Open PRs; don't invent LOCKED design — use `// DESIGN-OPEN:` for gaps.
 
 ## Active briefs (priority)
-0. **`docs/CLAUDE_BRIEFS/2026-09-14_bugfix-pass-1.md`** — verified bug list incl. inert depth scaling, double extract, pointer cancel, run-party freeze. Do FIRST.
-1. **`docs/CLAUDE_BRIEFS/2026-09-14_party-ring-marker.md`** — gold ring marker so the node icon stays visible; seal text cleanup. Spec: v3 lock §18–19.
+0. **`docs/CLAUDE_BRIEFS/2026-09-14_party-ring-marker.md`** — gold ring marker so the node icon stays visible; seal text cleanup. Spec: v3 lock §18–19.
 _(none queued — waiting on the Design Chat's next brief)_
 
 ## Recently DONE (don't redo)
+- PR #46 — bug-fix pass 1: depth/named modifiers on normal enemies, single extraction credit, pointercancel + pointerId gestures, controls excluded from map gestures, owned theme timers, feed scroll by last event, run-party freeze (Party tab locked during a run, HP by character id), AFK one-job-per-id, one camera owner, pure updaters
 - PR #33 — route explore model (v3 lock §15–17): three node states, nothing auto-marked, tap never moves the party (Explore/Cancel → travel → Fight/Flee), 600 ms/hop + 250 ms skip, §17 camera framing, recentre on the party under the overlay before it fades
 - PR #31 / #32 — Rally: Explore under the lore; island map opens in Overview
 - PR #30 — route transitions: map stays mounted under fight/results/sanctuary overlays (350 ms crossfade, camera untouched), one continuous 450 ms/hop travel tween, 200 ms skip (v3 lock §13–14)

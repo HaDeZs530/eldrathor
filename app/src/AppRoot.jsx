@@ -4,7 +4,7 @@ import { frame, colors, nodeTypeMeta } from './theme/tokens.js';
 import { genTerritory } from './map/genTerritory.js';
 import { rareAt, effectiveType, raresAlive, allCleared, scoutNode, clearNode, killRare, tickClock, threatBand, explorePath, isAdjacent, nodeState, fleeChance } from './map/routeState.js';
 import RouteMapScreen from './map/RouteMapScreen.jsx';
-import { DEFAULT_PARTY, AREAS } from './data.js';
+import { DEFAULT_PARTY, AREAS, withIds } from './data.js';
 import { simulateFight, spawnEnemies, rollRewards, deriveStats, mulberry32 } from './combat.js';
 import { Header } from './components/HarborViews.jsx';
 import PlayerScreen from './components/PlayerScreen.jsx';
@@ -17,7 +17,7 @@ import RallyScreen from './components/RallyScreen.jsx';
 import FightScreen from './components/FightScreen.jsx';
 import LootResults from './components/LootResults.jsx';
 import SanctuaryScreen from './components/SanctuaryScreen.jsx';
-import { AFK_TICK_MS, emptyGatherSlot, tickAfk } from './afkRuntime.js';
+import { AFK_TICK_MS, emptyGatherSlot, tickAfk, assignJob } from './afkRuntime.js';
 import { BASE_CSS } from './appChromeCss.js';
 import ScreenHeaderActions from './components/shell/ScreenHeaderActions.jsx';
 import HelpSheet from './components/shell/HelpSheet.jsx';
@@ -49,11 +49,14 @@ export default function Eldrathor() {
   const [tab, setTab] = useState('mountain');
   const [runStage, setRunStage] = useState('island'); // island | rally | route | fight | loot | sanctuary
   const [selectedArea, setSelectedArea] = useState(null);
-  const [party, setParty] = useState(DEFAULT_PARTY);
-  const [roster, setRoster] = useState([
+  const [party, setParty] = useState(() => withIds(DEFAULT_PARTY));
+  const [roster, setRoster] = useState(() => withIds([
     { name: 'Nyra', archetype: 'Adept', weapon: 'Staff', level: 1 },
     { name: 'Thalen', archetype: 'Resonator', weapon: 'Orb + Tome', level: 1 },
-  ]);
+  ]));
+  // bug-fix pass 1 §7 (design ruling 2026-09-14): the fielded party is SNAPSHOT at Rally → Explore and
+  // frozen for the run; the Party tab can't swap/promote while a territory exists.
+  const [runParty, setRunParty] = useState(null);
   const [worldvein, setWorldvein] = useState(80);
   const [stash, setStash] = useState([]);
   const [inventory, setInventory] = useState({ raw: { wood: 4, metal: 2, hunt: 1 }, infused: [], scrap: 0, armor: [] });
@@ -99,9 +102,14 @@ export default function Eldrathor() {
   const [prevId, setPrevId] = useState(null); // node the party came from (flee steps back here)
   const travelTimer = useRef(null);
   const [runMods, setRunMods] = useState({ dmgMult: 1, mitAdd: 0 }); // sanctuary bonuses, per run
-  const [runHpFrac, setRunHpFrac] = useState(null); // per-Adventurer HP carried across fights (0 = fallen)
+  const [runHp, setRunHp] = useState(null); // per-Adventurer HP carried across fights, keyed by character id (0 = fallen); null = fresh
+  const fielded = runParty || party; // the party that fights this run
+  const hpArrFor = (list) => (runHp ? list.map((m) => runHp[m.id] ?? 1) : undefined);
+  const extractingRef = useRef(false); // §2: one extraction credit per run
+  const fightRef = useRef(null); // §10: latest fight for finishFightToLoot (no setter inside an updater)
   const [fightNode, setFightNode] = useState(null);
   const [fight, setFight] = useState(null); // { enemies, derived, events, result, stats, rewards, named, rare }
+  useEffect(() => { fightRef.current = fight; }, [fight]);
   const [fightElapsed, setFightElapsed] = useState(0);
   const [fightSpeed, setFightSpeed] = useState(1);
   const runRng = useRef(Math.random);
@@ -158,7 +166,7 @@ export default function Eldrathor() {
   function resetRunToIsland() {
     clearFightTimers(); exitMindView(); setRunStage('island'); setSelectedArea(null);
     setTerritory(null); setArea(null); setCurrentId(null); setRunVein(0); setFightNode(null);
-    setFight(null); setFightElapsed(0); setFightSpeed(1); setRunHpFrac(null);
+    setFight(null); setFightElapsed(0); setFightSpeed(1); setRunHp(null); setRunParty(null); extractingRef.current = false;
     clearTravel(); setTravel(null); setAmbush(null); setCard(null); setPrevId(null); dispatchCamera({ type: 'set', pan: null }); setOverlayLeaving(null);
     setRunMods({ dmgMult: 1, mitAdd: 0 }); setBusy(false);
   }
@@ -183,7 +191,7 @@ export default function Eldrathor() {
     setArea(a); setTerritory(t); setCurrentId(t.entranceId); setCard(null);
     dispatchCamera({ type: 'runStart', partyId: t.entranceId }); // the only centring of a run: its first frame
     setLog([{ t: `You unroll the route map. ${a.name} lies unexplored beyond the entry — ${t.rares.length} rares roam it (optional hunts, big loot) and ${a.boss} waits at the far end.`, k: 'sys' }]);
-    setRunHpFrac(null); setRunMods({ dmgMult: 1, mitAdd: 0 }); setLogSeen(0);
+    setRunHp(null); setRunParty(party.map((m) => ({ ...m }))); setRunMods({ dmgMult: 1, mitAdd: 0 }); setLogSeen(0);
     setPartyHP(1); setRunVein(0); setRunStage('route');
   }
 
@@ -230,7 +238,7 @@ export default function Eldrathor() {
     if (enemies.length) {
       let wins = 0;
       for (let i = 0; i < THREAT_DRY_RUNS; i++) {
-        const r = simulateFight({ party, enemies: enemies.map((e) => ({ ...e })), seed: i * 7919 + 1, startHpFrac: runHpFrac || undefined, runMods });
+        const r = simulateFight({ party: fielded, enemies: enemies.map((e) => ({ ...e })), seed: i * 7919 + 1, startHpFrac: hpArrFor(fielded), runMods });
         if (r.result.win) wins += 1;
       }
       threat = threatBand(wins / THREAT_DRY_RUNS);
@@ -392,7 +400,7 @@ export default function Eldrathor() {
     const isRare = halt.kind === 'rare';
     const rng = mulberry32((runSeed.current ^ Math.imul(t.clock + 7, 0x27d4eb2f)) >>> 0);
     const enemies = enemiesFor(t, node, rng);
-    const chance = fleeChance(party, isRare);
+    const chance = fleeChance(fielded, isRare);
     const count = enemies.length;
     setCard(null);
     setAmbush({
@@ -448,7 +456,7 @@ export default function Eldrathor() {
     if (bonusId === 'dmg') { setRunMods((m) => ({ ...m, dmgMult: m.dmgMult + 0.1 })); pushLog('✧ Sanctuary: the bond strikes +10% harder this run.', 'heal'); }
     if (bonusId === 'mit') { setRunMods((m) => ({ ...m, mitAdd: m.mitAdd + 0.1 })); pushLog('✧ Sanctuary: the bond takes 10% less this run.', 'heal'); }
     if (bonusId === 'vein') { setRunVein((v) => v + pouch); pushLog(`✧ Sanctuary: a pouch of ${pouch} Worldvein.`, 'loot'); }
-    setRunHpFrac(party.map(() => 1)); setPartyHP(1);
+    setRunHp(Object.fromEntries(fielded.map((m) => [m.id, 1]))); setPartyHP(1);
     pushLog('✧ The party rests at the crystal — healed, restored, the fallen revived.', 'heal');
     let t = { ...territory, nodes: territory.nodes.map((x) => (x.id === n.id ? { ...x, sanctuaryUsed: true } : x)) };
     t = clearNode(t, n.id, runRng.current);
@@ -463,7 +471,7 @@ export default function Eldrathor() {
     if (fightTimers.current.finished) return; // the playback tick and Skip can both land here
     clearFightTimers();
     fightTimers.current.finished = true; // (clearFightTimers resets the record; startFight clears it for the next fight)
-    setFight((f) => { if (f) setFightElapsed(f.result.durationMs); return f; });
+    const f = fightRef.current; if (f) setFightElapsed(f.result.durationMs); // §10: no setter inside an updater
     trace('overlay', { open: 'results' });
     setRunStage('loot'); setBusy(false);
   }, []);
@@ -479,13 +487,13 @@ export default function Eldrathor() {
     const seed = (runSeed.current ^ Math.imul(fightIndex.current, 0x9e3779b1)) >>> 0;
     const rng = mulberry32(seed ^ 0x5bd1e995);
     const enemies = (opts.enemies && opts.enemies.length ? opts.enemies : enemiesFor(t, n, rng)).map((e) => ({ ...e }));
-    const sim = simulateFight({ party, enemies, seed, startHpFrac: runHpFrac || undefined, runMods, enemyFirst: !!opts.enemyFirst });
+    const sim = simulateFight({ party: fielded, enemies, seed, startHpFrac: hpArrFor(fielded), runMods, enemyFirst: !!opts.enemyFirst });
     const bossKill = sim.result.win && eff === 'boss';
     const mapClear = bossKill && allCleared({ ...t, nodes: t.nodes.map((x) => (x.id === n.id ? { ...x, cleared: true } : x)) });
     const rewards = sim.result.win
       ? rollRewards({ tier: area.tier, nodeType: eff, attuneVein: sim.result.attuneVein, rng, named: !!n.namedRare, mapClear })
       : null;
-    const derived = party.map((m) => deriveStats(m));
+    const derived = fielded.map((m) => deriveStats(m));
     setFight({ enemies, derived, events: sim.events, result: sim.result, stats: sim.stats, rewards, seed, named: !!n.namedRare, rare: !!rare, eff, mapClear, ambush: !!opts.ambush });
     setFightNode({ ...n, tier: area.tier, type: eff });
     setFightElapsed(0); setFightSpeed(1);
@@ -535,7 +543,7 @@ export default function Eldrathor() {
     const lastRareDown = f.rare && raresAlive(t) === 0;
     t = advanceClock(t, n.id);
     setTerritory(t);
-    setPartyHP(res.hpPct); setRunHpFrac(res.partyHpFrac);
+    setPartyHP(res.hpPct); setRunHp(Object.fromEntries(fielded.map((m, i) => [m.id, res.partyHpFrac[i] ?? 1])));
     setRunVein((v) => v + (rewards?.worldvein || 0));
     pushLog(`✔ Cleared in ${res.durationSec}s. +${rewards?.worldvein || 0} Worldvein.${f.eff === 'crystal' ? ' The deposit splinters — ×2 harvest.' : ''}`, 'good');
     for (const g of rewards?.gears || []) { setStash((s) => [...s, g]); pushLog(`  ⬥ Loot: ${g.name} (${g.rating}/100)`, 'loot'); }
@@ -553,6 +561,8 @@ export default function Eldrathor() {
     maybeAmbush(t, n.id, prevId);
   }
   function extract() {
+    if (extractingRef.current) return; // §2: a second tap before the 600 ms reset must not credit twice
+    extractingRef.current = true;
     trace('run', { extract: true, vein: runVein });
     pushLog(`⇱ Extracted with ${runVein} Worldvein banked.`, 'good');
     doFlash(`Extracted ${runVein} Worldvein`, colors.mythros);
@@ -561,17 +571,28 @@ export default function Eldrathor() {
   }
 
   // ---------- AFK handlers ----------
+  // §8: assigning a character to a job clears them from any other job (assignJob); other fields patch in place
   function onUpdateGatherSlot(index, patch) {
-    setAfk((a) => ({ ...a, gatherSlots: a.gatherSlots.map((s, i) => (i === index ? { ...s, ...patch } : s)) }));
+    const { charKey, ...rest } = patch;
+    setAfk((a) => {
+      const base = 'charKey' in patch ? assignJob(a, { kind: 'gather', index }, charKey) : a;
+      return Object.keys(rest).length ? { ...base, gatherSlots: base.gatherSlots.map((s, i) => (i === index ? { ...s, ...rest } : s)) } : base;
+    });
   }
   function onToggleGather(index) {
     setAfk((a) => ({ ...a, gatherSlots: a.gatherSlots.map((s, i) => (i !== index || !s.charKey ? s : { ...s, running: !s.running, progress: s.running ? 0 : s.progress })) }));
   }
-  function onUpdateProcess(patch) { setAfk((a) => ({ ...a, process: { ...a.process, ...patch } })); }
+  function onUpdateProcess(patch) {
+    const { charKey, ...rest } = patch;
+    setAfk((a) => { const base = 'charKey' in patch ? assignJob(a, { kind: 'process' }, charKey) : a; return Object.keys(rest).length ? { ...base, process: { ...base.process, ...rest } } : base; });
+  }
   function onToggleProcess() {
     setAfk((a) => { if (!a.process.charKey) return a; const starting = !a.process.running; return { ...a, process: { ...a.process, running: starting, progress: starting ? a.process.progress : 0 } }; });
   }
-  function onUpdateIdle(patch) { setAfk((a) => ({ ...a, idle: { ...a.idle, ...patch } })); }
+  function onUpdateIdle(patch) {
+    const { charKey, ...rest } = patch;
+    setAfk((a) => { const base = 'charKey' in patch ? assignJob(a, { kind: 'idle' }, charKey) : a; return Object.keys(rest).length ? { ...base, idle: { ...base.idle, ...rest } } : base; });
+  }
   function onToggleIdle() {
     setAfk((a) => { if (!a.idle.charKey) return a; const starting = !a.idle.running; return { ...a, idle: { ...a.idle, running: starting, progress: starting ? a.idle.progress : 0 } }; });
   }
@@ -590,25 +611,25 @@ export default function Eldrathor() {
         <Header worldvein={worldvein} mode={currentMode} colors={colors} hubLabel={tab === 'mountain' ? mountainHubLabel : HUB_LABELS[tab]} actions={<ScreenHeaderActions onMenu={() => setSheet('menu')} onHelp={() => setSheet('help')} />} />
         {flash && <div style={{ ...S.flash, borderColor: flash.color, color: flash.color }}>{flash.msg}</div>}
         {tab === 'town' && <TownScreen party={party} stash={stash} setStash={setStash} inventory={inventory} setInventory={setInventory} worldvein={worldvein} setWorldvein={setWorldvein} setTab={selectTab} />}
-        {tab === 'party' && <PartyScreen party={party} setParty={setParty} roster={roster} setRoster={setRoster} />}
+        {tab === 'party' && <PartyScreen party={party} setParty={setParty} roster={roster} setRoster={setRoster} locked={!!territory} />}
         {tab === 'player' && <PlayerScreen worldvein={worldvein} />}
         {tab === 'afk' && <AfkScreen unlocked={unlocked} party={party} roster={roster} inventory={inventory} afk={afk} worldvein={worldvein} onUpdateGatherSlot={onUpdateGatherSlot} onToggleGather={onToggleGather} onUpdateProcess={onUpdateProcess} onToggleProcess={onToggleProcess} onUpdateIdle={onUpdateIdle} onToggleIdle={onToggleIdle} />}
         {tab === 'mountain' && runStage === 'island' && <IslandWorldMap areas={AREAS} unlocked={unlocked} onSelectArea={onSelectArea} onHarbor={() => selectTab('town')} />}
         {tab === 'mountain' && runStage === 'rally' && selectedArea && <RallyScreen area={selectedArea} party={party} roster={roster} onSwap={onRallySwap} onExplore={onRallyExplore} onBack={onRallyBack} />}
         {tab === 'mountain' && RUN_STAGES.has(runStage) && area && territory && (
           <div className="eld-stage">
-            <RouteMapScreen area={area} territory={territory} currentId={currentId} busy={busy} partyHP={partyHP} runVein={runVein} party={party} log={log} logUnread={Math.max(0, log.length - logSeen)} onOpenLog={() => { setSheet('runlog'); setLogSeen(log.length); }} camera={camera} setCamera={dispatchCamera} travel={travel} onTravelEnd={onTravelEnd} card={ambushCard || card} onTapNode={onTapNode} onCardAction={onCardAction} onExtract={extract} />
+            <RouteMapScreen area={area} territory={territory} currentId={currentId} busy={busy} partyHP={partyHP} runVein={runVein} party={fielded} log={log} logUnread={Math.max(0, log.length - logSeen)} onOpenLog={() => { setSheet('runlog'); setLogSeen(log.length); }} camera={camera} setCamera={dispatchCamera} travel={travel} onTravelEnd={onTravelEnd} card={ambushCard || card} onTapNode={onTapNode} onCardAction={onCardAction} onExtract={extract} />
             {MIND_STAGES.has(runStage) && (
               <div className="eld-overlay" key={fightIndex.current}>
-                {runStage === 'sanctuary' && fightNode && <SanctuaryScreen area={area} party={party} runHpFrac={runHpFrac} pouch={10 * area.tier} onChoose={onSanctuaryChoose} />}
-                {runStage === 'fight' && fightNode && fight && <FightScreen area={area} node={fightNode} party={party} fight={fight} elapsedMs={fightElapsed} speed={fightSpeed} onSpeed={setFightSpeed} onSkip={skipFight} />}
+                {runStage === 'sanctuary' && fightNode && <SanctuaryScreen area={area} party={fielded} runHpFrac={hpArrFor(fielded)} pouch={10 * area.tier} onChoose={onSanctuaryChoose} />}
+                {runStage === 'fight' && fightNode && fight && <FightScreen area={area} node={fightNode} party={fielded} fight={fight} elapsedMs={fightElapsed} speed={fightSpeed} onSpeed={setFightSpeed} onSkip={skipFight} />}
                 {runStage === 'loot' && fight && <LootResults area={area} nodeLabel={fightNode ? (nodeTypeMeta[fightNode.type]?.label || 'Node') : null} fight={fight} onContinue={onResultsContinue} />}
               </div>
             )}
             {!MIND_STAGES.has(runStage) && overlayLeaving && (
               <div className="eld-overlay is-leaving" aria-hidden="true">
                 {overlayLeaving.kind === 'loot' && overlayLeaving.fight && <LootResults area={overlayLeaving.area} nodeLabel={overlayLeaving.fightNode ? (nodeTypeMeta[overlayLeaving.fightNode.type]?.label || 'Node') : null} fight={overlayLeaving.fight} onContinue={() => {}} />}
-                {overlayLeaving.kind === 'sanctuary' && <SanctuaryScreen area={overlayLeaving.area} party={party} runHpFrac={runHpFrac} pouch={10 * (overlayLeaving.area?.tier || 1)} onChoose={() => {}} />}
+                {overlayLeaving.kind === 'sanctuary' && <SanctuaryScreen area={overlayLeaving.area} party={fielded} runHpFrac={hpArrFor(fielded)} pouch={10 * (overlayLeaving.area?.tier || 1)} onChoose={() => {}} />}
               </div>
             )}
           </div>

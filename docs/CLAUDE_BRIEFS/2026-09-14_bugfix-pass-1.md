@@ -1,6 +1,6 @@
 # BRIEF — Bug-fix pass 1 (from external code review, verified by Design Chat)
 
-**Status:** READY · **Date:** 2026-09-14 · **Author:** Claude Design Chat (source: ChatGPT source-inspection review, findings verified against main)  
+**Status:** DONE (Claude Code, 2026-09-14, PR #46 `fix: bug-fix pass 1 (enemy modifiers, extraction, pointer cancel, theme timers, feed scroll, run-party freeze, AFK ids)`) · **Date:** 2026-09-14 · **Author:** Claude Design Chat (source: ChatGPT source-inspection review, findings verified against main)  
 **Scope:** fixes only — no balance changes, no feature expansion, no broad rewrites. Preserve the camera and fight-finish work from PRs #35–#45.
 
 ## Confirmed — fix each with a focused regression test

@@ -1,4 +1,5 @@
-import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { createModeSwitcher } from './modeSwitch.js';
 import { MODE, HUB_SKIN, TAB_HUB_SKIN } from './tokens.js';
 import './world.css';
 import './mind.css';
@@ -16,30 +17,16 @@ export function ThemeProvider({ children }) {
   const [hubSkin, setHubSkinState] = useState(HUB_SKIN.RPG);
   const [transitioning, setTransitioning] = useState(false);
 
-  const enterMindView = useCallback(() => {
-    setCurrentMode((prev) => {
-      if (prev === MODE.MIND) return prev;
-      setTransitioning(true);
-      // Brief intentional pulse so the mode switch reads as "reaching through the Vein"
-      window.setTimeout(() => {
-        setCurrentMode(MODE.MIND);
-        window.setTimeout(() => setTransitioning(false), 280);
-      }, 120);
-      return prev;
-    });
+  // Bug-fix pass 1 §5/§10: the crossfade timers are owned by one switcher (every request cancels the
+  // previous, a token guards stale callbacks, unmount disposes) and no state is set inside an updater.
+  // "Brief intentional pulse so the mode switch reads as reaching through the Vein" (120 ms → mode → 280 ms).
+  const switcher = useRef(null);
+  useEffect(() => {
+    switcher.current = createModeSwitcher({ initial: MODE.WORLD, onMode: setCurrentMode, onTransitioning: setTransitioning });
+    return () => { switcher.current?.dispose(); switcher.current = null; };
   }, []);
-
-  const exitMindView = useCallback(() => {
-    setCurrentMode((prev) => {
-      if (prev === MODE.WORLD) return prev;
-      setTransitioning(true);
-      window.setTimeout(() => {
-        setCurrentMode(MODE.WORLD);
-        window.setTimeout(() => setTransitioning(false), 280);
-      }, 120);
-      return prev;
-    });
-  }, []);
+  const enterMindView = useCallback(() => { switcher.current?.go(MODE.MIND); }, []);
+  const exitMindView = useCallback(() => { switcher.current?.go(MODE.WORLD); }, []);
 
   const setHubSkin = useCallback((skin) => {
     if (!skin || skin === hubSkin) return;
