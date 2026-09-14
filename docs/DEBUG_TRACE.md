@@ -9,7 +9,7 @@ A developer/playtest trace, separate from the player-facing **run log** (📜 on
 4. Fallback without the dev server: ☰ → Debug trace → **Copy** and paste the text to Claude Code. **Clear** empties the buffer before a fresh attempt.
    - On plain `http://` over the LAN the clipboard API is unavailable on iOS; the sheet then selects the text in the box for a manual copy (long-press → Select All → Copy).
 
-## What is recorded (one line per event: `time +delta kind key=value …`)
+## What is recorded (one line per event: `HH:MM:SS.mmm time-since-load +delta kind key=value …`)
 | kind | when | fields |
 |---|---|---|
 | `trace` | trace turned on / restored | `ua`, `vp` (viewport), `dpr` |
@@ -24,7 +24,8 @@ A developer/playtest trace, separate from the player-facing **run log** (📜 on
 | `trip` | travel planned / skipped / arrived | `start`, `to`, `hops`, `ms`, `after` · `skip=true` · `arrived`, `elapsed`, `skipped` |
 | `tween` | the map's frame-by-frame tween | `start=[pan] marker=[pos] hops ms` · `arrived elapsed frames camPx maxStep skipped` · `settled settleMs pan restPx` |
 | `camjump` | a single tween frame moved the camera > 40 px | `px`, `frameMs`, `at` (ms into the trip) — **this is what a "jump" looks like** |
-| `longframe` | a frame gap > 50 ms while the page is visible | `ms` — **this is what "laggy" looks like** |
+| `longframe` | a frame gap of 50 ms – 1 s while the page is visible | `ms` — **this is what "laggy" looks like** |
+| `paused` | a frame gap ≥ 1 s | `ms` — the app was backgrounded / the phone locked; not lag |
 | `ambush` | a roaming rare lands on the party | `node`, `kind`, `prev` |
 | `overlay` | fight / results / sanctuary opened or closed | `open=fight node type win durMs ambush` · `open=results` · `open=sanctuary` · `close=loot|sanctuary fadeMs` |
 

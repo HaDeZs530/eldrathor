@@ -471,7 +471,9 @@ export default function Eldrathor() {
 
   // ---------- fights ----------
   const finishFightToLoot = useCallback(() => {
+    if (fightTimers.current.finished) return; // the playback tick and Skip can both land here
     clearFightTimers();
+    fightTimers.current.finished = true; // (clearFightTimers resets the record; startFight clears it for the next fight)
     setFight((f) => { if (f) setFightElapsed(f.result.durationMs); return f; });
     trace('overlay', { open: 'results' });
     setRunStage('loot'); setBusy(false);

@@ -162,6 +162,9 @@ export default function RouteMapScreen({
     const target = resolveFocus(camera.focus, ptOf, vp, sheet, MARGIN, cam.current.pan);
     if (!target) return;
     panTo(target, camera.motion === 'ease' ? FRAME_EASE_MS : 0, camera.focus.mode === 'centre' && camera.motion !== 'ease' ? 'runStart' : 'overlayClose');
+    // consume the request: a tap that cancels this pan must not leave it behind to be replayed by the
+    // next layout change (a fight opening) — that pulled the camera back to the previous node mid-fade
+    setCamera({ type: 'focusTaken' });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [camera?.focus, vp.w, vp.h]);
 
