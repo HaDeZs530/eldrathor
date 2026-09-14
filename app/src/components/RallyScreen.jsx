@@ -16,7 +16,7 @@ export default function RallyScreen({ area, party, roster, onSwap, onExplore, on
     <div style={S.wrap}>
       <div style={S.head}>
         <div style={S.kick}>Rally the bond</div>
-        <div className="eld-brand-name" style={S.title}>{area.name}</div>
+        <div className="eld-display eld-screen-title" style={S.title}>{area.name}</div>
         <div style={S.sub}>
           Tier {area.tier} · Boss: {area.boss}
           {area.bossBlurb ? ` — ${area.bossBlurb}` : ''}
@@ -49,7 +49,7 @@ export default function RallyScreen({ area, party, roster, onSwap, onExplore, on
                 type="button"
                 className="eld-card"
                 onClick={() => setPickingSlot(i)}
-                style={{ ...S.member, borderLeftColor: m ? a.color || 'var(--eld-accent)' : '#e05d6f' }}
+                style={{ ...S.member, borderLeftColor: m ? a.color || 'var(--eld-accent)' : 'var(--eld-danger)' }}
               >
                 {m ? (
                   <>
@@ -59,7 +59,7 @@ export default function RallyScreen({ area, party, roster, onSwap, onExplore, on
                     </div>
                   </>
                 ) : (
-                  <div style={{ ...S.memberName, color: '#e05d6f' }}>Empty slot — tap to field an Adventurer</div>
+                  <div style={{ ...S.memberName, color: 'var(--eld-danger)' }}>Empty slot — tap to field an Adventurer</div>
                 )}
                 <div style={S.swapHint}>⇄</div>
               </button>
@@ -121,7 +121,7 @@ const S = {
   memberName: { fontSize: 'var(--mv-text, 18px)', fontWeight: 700 },
   memberMeta: { fontSize: 'var(--mv-label, 15px)', color: 'var(--eld-muted)', marginTop: 3 },
   swapHint: { position: 'absolute', right: 12, top: 12, color: 'var(--eld-muted)', fontSize: 'var(--mv-text, 18px)' },
-  warn: { marginTop: 10, fontSize: 'var(--mv-label, 15px)', color: '#e05d6f' },
+  warn: { marginTop: 10, fontSize: 'var(--mv-label, 15px)', color: 'var(--eld-danger)' },
   actions: { display: 'flex', gap: 10, flexShrink: 0 },
   btn: { flex: 1, padding: '12px 10px', minHeight: 'var(--mv-tap, 52px)', fontSize: 'var(--mv-label, 15px)' },
   sheetBackdrop: { position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'flex-end', zIndex: 30 },

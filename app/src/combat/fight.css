@@ -1,4 +1,5 @@
-/* Combat v2 fight screen — Mind-view playback effects (docs/Eldrathor_Combat_v2_Lock.md §5–§6) */
+/* Combat v2 fight screen — Mind-view playback effects (docs/Eldrathor_Combat_v2_Lock.md §5–§6)
+   on the Style Bible stage: enemy backdrop art with the HP bars overlaid at the top. */
 
 .eld-fight-unit {
   position: relative;
@@ -6,7 +7,7 @@
 }
 
 .eld-fight-unit.is-hit {
-  box-shadow: 0 0 0 2px rgba(224, 93, 111, 0.55), 0 0 18px rgba(224, 93, 111, 0.35);
+  box-shadow: 0 0 0 2px rgba(229, 72, 77, 0.55), 0 0 18px rgba(229, 72, 77, 0.35);
 }
 
 .eld-fight-unit.is-hit::after {
@@ -14,7 +15,7 @@
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: rgba(255, 120, 130, 0.22);
+  background: rgba(229, 72, 77, 0.22);
   animation: eld-hitflash 260ms ease-out forwards;
   pointer-events: none;
 }
@@ -32,13 +33,93 @@
   box-shadow: 0 0 0 2px rgba(181, 143, 224, 0.6), 0 0 14px rgba(181, 143, 224, 0.4);
 }
 
+/* ---- stage: 2.2:1 backdrop, scrim at the top for the bars ---- */
+.eld-fight-stage {
+  position: relative;
+  flex-shrink: 0;
+  min-height: 150px; /* ≈ the 2.2:1 backdrop at 390 wide; grows with the enemy rows */
+  overflow: hidden;
+  padding: 0;
+  border-radius: 8px;
+}
+
+.eld-fight-stage.is-hit { box-shadow: 0 0 0 1px rgba(229, 72, 77, 0.6), 0 0 6px rgba(44, 171, 248, 0.25); }
+
+.eld-fight-stage-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.eld-fight-stage-art .eld-art-ph {
+  background: linear-gradient(180deg, #0c1a2b 0%, #1a2b3b 100%);
+}
+
+.eld-fight-stage-scrim {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 70%;
+  background: linear-gradient(180deg, rgba(12, 26, 43, 0.85) 0%, rgba(12, 26, 43, 0.35) 60%, rgba(12, 26, 43, 0) 100%);
+  pointer-events: none;
+}
+
+.eld-fight-stage-top {
+  position: relative;
+  padding: 8px 10px 40px; /* the bars sit at the top; the backdrop shows beneath */
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* several foes: side by side so the stage stays one block */
+.eld-fight-stage-enemies {
+  display: grid;
+  grid-template-columns: repeat(var(--foes, 1), minmax(0, 1fr));
+  gap: 4px;
+}
+
+.eld-fight-stage-pending { margin-top: 6px; }
+
+.eld-fight-stage-title {
+  font-family: var(--eld-font-display, Cinzel, Georgia, serif);
+  font-weight: 700;
+  font-size: 20px;
+  color: #dfe9f5;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6), 0 0 8px rgba(0, 0, 0, 0.5);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.eld-fight-enemy {
+  border-radius: 6px;
+  padding: 2px 4px;
+}
+
+.eld-fight-enemy-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--mv-label, 15px);
+  color: #dfe9f5;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6);
+  margin-bottom: 2px;
+}
+
+.eld-fight-enemy-glyph { font-size: 16px; line-height: 1; }
+.eld-fight-enemy-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.eld-fight-enrage { margin-left: auto; font-size: 12px; letter-spacing: 0.12em; color: #ff7a6e; font-weight: 700; }
+
 .eld-innate-btn {
   position: relative;
   width: 100%;
-  border: 1px solid #1c4a54;
+  border: 1px solid #3d6fa8;
   border-radius: 8px;
-  background: #0e2830;
-  color: #5fc7e0;
+  background: #1a2b3b;
+  color: #2cabf8;
   font-family: var(--eld-font-display, Cinzel, Georgia, serif);
   font-size: var(--mv-label, 15px);
   letter-spacing: 0.06em;
@@ -58,8 +139,8 @@
 
 .eld-innate-btn.is-fired {
   opacity: 1;
-  box-shadow: 0 0 0 3px rgba(95, 199, 224, 0.5), 0 0 22px rgba(95, 199, 224, 0.75);
-  background: #164a58;
+  box-shadow: 0 0 0 3px rgba(44, 171, 248, 0.5), 0 0 22px rgba(44, 171, 248, 0.75);
+  background: #23353f;
   color: #e6f7ff;
 }
 
@@ -68,7 +149,7 @@
   position: absolute;
   inset: -4px;
   border-radius: 12px;
-  border: 2px solid rgba(95, 199, 224, 0.9);
+  border: 2px solid rgba(44, 171, 248, 0.9);
   animation: eld-ring 520ms ease-out forwards;
   pointer-events: none;
 }
@@ -78,7 +159,7 @@
   left: 0;
   bottom: 0;
   height: 3px;
-  background: #5fc7e0;
+  background: #2cabf8;
   border-radius: 0 0 8px 8px;
   opacity: 0.7;
 }
@@ -87,18 +168,20 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  border: 1px solid #1c3a44;
-  font-size: var(--mv-label, 15px);
-  color: #5f8494;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid #3d6fa8;
+  background: rgba(0, 0, 0, 0.25);
+  color: #7f97b0;
+  font-size: 16px;
+  transition: color 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
 }
 
 .eld-aura-icon.is-lit {
-  color: #e0c090;
-  border-color: rgba(224, 160, 77, 0.6);
-  box-shadow: 0 0 10px rgba(224, 160, 77, 0.45);
+  color: #e8c46a;
+  border-color: rgba(232, 196, 106, 0.6);
+  box-shadow: 0 0 10px rgba(232, 196, 106, 0.45);
 }
 
 .eld-speed-btn {
@@ -108,23 +191,19 @@
   min-height: var(--mv-tap, 52px);
 }
 
-.eld-speed-btn.is-active {
-  box-shadow: 0 0 0 1px #5fc7e0, 0 0 14px rgba(95, 199, 224, 0.4);
-}
-
 .eld-feed-line {
   font-size: var(--mv-feed, 17px);
   line-height: var(--mv-feed-lh, 1.45);
-  color: #9fb2bd;
+  color: #b7c6d8;
 }
 
-.eld-feed-line.is-crit { color: #e0a04d; }
-.eld-feed-line.is-innate { color: #5fc7e0; }
-.eld-feed-line.is-heal { color: #7fd6a0; }
-.eld-feed-line.is-kill { color: #cfe0e8; }
-.eld-feed-line.is-bad { color: #e05d6f; }
+.eld-feed-line.is-crit { color: #f2c14e; }
+.eld-feed-line.is-innate { color: #2cabf8; }
+.eld-feed-line.is-heal { color: #20a95e; }
+.eld-feed-line.is-kill { color: #dfe9f5; }
+.eld-feed-line.is-bad { color: #e5484d; }
 .eld-feed-line.is-enrage { color: #ff7a6e; font-weight: 700; }
-.eld-feed-line.is-end { color: #e6f2f7; font-weight: 700; }
+.eld-feed-line.is-end { color: #dfe9f5; font-weight: 700; }
 
 @keyframes eld-hitflash {
   from { opacity: 1; }

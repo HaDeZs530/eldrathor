@@ -8,10 +8,10 @@
  */
 
 // DESIGN-OPEN: enemy names — placeholder labels until the roster lock lands.
-const TRASH_NAMES = ['Manifestation', 'Vein Husk', 'Shore Drake', 'Hollow Warden', 'Splinter Wraith'];
-const RARE_NAME = 'Rare Manifestation';
+export const TRASH_NAMES = ['Manifestation', 'Vein Husk', 'Shore Drake', 'Hollow Warden', 'Splinter Wraith'];
+export const RARE_NAME = 'Rare Manifestation';
 // DESIGN-OPEN: named-variant adjectives — `<Adjective> <Enemy>` until the area roster lock lands.
-const NAMED_ADJECTIVES = ['Grim', 'Hollow', 'Ashen', 'Vein-Scarred', 'Bright-Eyed', 'Old'];
+export const NAMED_ADJECTIVES = ['Grim', 'Hollow', 'Ashen', 'Vein-Scarred', 'Bright-Eyed', 'Old'];
 
 /**
  * Tuning knobs — Progression Loop Lock §8 (M1b): these numbers are set by the balance gates in

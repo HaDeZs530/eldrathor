@@ -6,7 +6,7 @@ import React from 'react';
  * Slots match design stack: weapon, armor pieces, gem sockets (placeholders).
  */
 export default function GearPaperdoll({
-  accent = '#5fc7e0',
+  accent = 'var(--eld-accent)',
   classGlyph = '♟',
   classLabel = 'Class',
   weaponLabel = 'Weapon',

@@ -1,38 +1,35 @@
 /**
- * Veinharbor visual pass, revision 1 — the spec's numbers are the test.
+ * Veinharbor layout — Style Bible §A (Veinharbor column) numbers are the test.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { TOWN_LAYOUT, TOWN_ART, TOWN_ART_TARGETS, TOWN_DESTINATIONS } from './townLayout.js';
+import { BY_NAME } from '../art/manifest.js';
 
-test('harbor landing composition: 250 px hero, list padding 12/14, rows ≥ 76 px with 8 px gap, 92 px art, 18/14 px type', () => {
+test('harbor landing composition: 250 px hero, list padding 12/14, rows 92 px with 8 px gap, 120 px illustration, Cinzel 22 / 13 px type, 57 px header, 76 px nav', () => {
   assert.equal(TOWN_LAYOUT.heroHeight, 250);
   assert.equal(TOWN_LAYOUT.listPaddingY, 12);
   assert.equal(TOWN_LAYOUT.listPaddingX, 14);
-  assert.equal(TOWN_LAYOUT.rowMinHeight, 76);
+  assert.equal(TOWN_LAYOUT.rowMinHeight, 92);
   assert.equal(TOWN_LAYOUT.rowGap, 8);
-  assert.equal(TOWN_LAYOUT.artWidth, 92);
-  assert.equal(TOWN_LAYOUT.titlePx, 18);
-  assert.equal(TOWN_LAYOUT.subtitlePx, 14);
+  assert.equal(TOWN_LAYOUT.artWidth, 120);
+  assert.equal(TOWN_LAYOUT.titlePx, 22);
+  assert.equal(TOWN_LAYOUT.subtitlePx, 13);
   assert.ok(TOWN_LAYOUT.transitionMs >= 200 && TOWN_LAYOUT.transitionMs <= 250, 'section transition in the 200–250 ms band');
   assert.equal(TOWN_LAYOUT.headerBase, 57);
   assert.equal(TOWN_LAYOUT.navBase, 76);
 });
 
-test('art slots: hero 1170×750 and four 276×228 thumbnails, all with object-position, all pending under /town/', () => {
-  assert.deepEqual(TOWN_ART_TARGETS.hero, { w: 1170, h: 750 });
-  assert.deepEqual(TOWN_ART_TARGETS.thumb, { w: 276, h: 228 });
+test('art slots: hero 1560×500 and four 240×184 rows from the manifest, all with object-position, all served from /art/', () => {
+  assert.deepEqual(TOWN_ART_TARGETS.hero, { w: 1560, h: 500 });
+  assert.deepEqual(TOWN_ART_TARGETS.thumb, { w: 240, h: 184 });
   const slots = Object.keys(TOWN_ART);
   assert.deepEqual(slots, ['veinharbor-hero', 'town-party', 'town-crafter', 'town-smith', 'town-market']);
   for (const s of slots) {
-    assert.ok(TOWN_ART[s].src.startsWith('/town/'), s);
+    assert.ok(BY_NAME[TOWN_ART[s].art], `${s} is in the manifest`);
+    assert.ok(TOWN_ART[s].src.startsWith('/art/'), s);
     assert.match(TOWN_ART[s].position, /^\d+% \d+%$/, s);
-    assert.ok(TOWN_ART[s].target.w > 0 && TOWN_ART[s].target.h > 0, s);
   }
-  // thumbnail target keeps the 92×76 CSS slot's aspect at 3×
-  assert.equal(TOWN_ART_TARGETS.thumb.w / 3, TOWN_LAYOUT.artWidth);
-  assert.equal(TOWN_ART_TARGETS.thumb.h / 3, TOWN_LAYOUT.rowMinHeight);
-  assert.equal(TOWN_ART_TARGETS.hero.h / 3, TOWN_LAYOUT.heroHeight);
 });
 
 test('four stacked destinations in order — Party opens the Party tab, the rest open existing Town sections', () => {

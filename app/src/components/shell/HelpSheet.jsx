@@ -1,5 +1,6 @@
 import { helpFor, HELP } from '../../help/helpText.js';
 import './shell.css';
+import { Sheet } from '../ui/index.jsx';
 
 /**
  * ? — screen help bottom sheet (docs/Eldrathor_UI_Shell_Lock.md). Title + 3–6 bullets for
@@ -8,10 +9,7 @@ import './shell.css';
 export default function HelpSheet({ screenId, showBasics = false, onClose }) {
   const h = helpFor(screenId);
   return (
-    <div className="eld-sheet-backdrop" onClick={onClose} role="presentation">
-      <div className="eld-sheet eld-panel" onClick={(e) => e.stopPropagation()} role="dialog" aria-label={`Help: ${h.title}`}>
-        <div className="eld-sheet-grip" />
-        <div className="eld-sheet-title">? {h.title}</div>
+    <Sheet onClose={onClose} label={`Help: ${h.title}`} title={<>? {h.title}</>}>
         <ul className="eld-sheet-bullets">
           {h.bullets.map((b, i) => <li key={i}>{b}</li>)}
         </ul>
@@ -26,7 +24,6 @@ export default function HelpSheet({ screenId, showBasics = false, onClose }) {
         <div className="eld-sheet-actions">
           <button type="button" className="eld-btn" onClick={onClose}>Got it</button>
         </div>
-      </div>
-    </div>
+    </Sheet>
   );
 }

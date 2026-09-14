@@ -1,0 +1,421 @@
+/*
+ * Shared chrome components — docs/Eldrathor_Style_Bible_Lock.md §A.
+ * Frame · Header · Panel · Buttons · Bar · DestinationRow · PartyCard · Sheet.
+ * Colours come from the mode tokens set on .eld-root (theme/world.css = Veinharbor, theme/hub.css
+ * hub-mountain = Exploration, theme/mind.css = Mind View); the numbers here are the lock's.
+ */
+
+/* ---------- shared frame: 2 px antique gold + 1 px inner line, 10 px radius ---------- */
+.eld-frame {
+  border: 2px solid #b8973f;
+  box-shadow: inset 0 0 0 1px #5a4a22;
+  border-radius: 10px;
+  background: var(--eld-bg, #080807);
+}
+
+/* ---------- header: 57 px, wordmark Cinzel 22 / 0.08 em #e6d6a8, Worldvein counter, 32 px round icons ---------- */
+.eld-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  height: calc(57px + env(safe-area-inset-top, 0px));
+  padding: env(safe-area-inset-top, 0px) 12px 0;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  min-width: 0;
+  background: var(--eld-header-bg, transparent);
+  border-bottom: 1px solid var(--eld-border, #5a4a22);
+}
+
+.eld-header-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  text-align: left;
+}
+
+.eld-header .eld-brand-name,
+.eld-wordmark {
+  font-family: var(--eld-font-display, Cinzel, Georgia, serif);
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: 0.08em;
+  color: #e6d6a8;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 44vw;
+}
+
+.eld-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.eld-vein-counter {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--eld-border, #5a4a22);
+  white-space: nowrap;
+  font-family: var(--eld-font-display, Cinzel, Georgia, serif);
+  font-weight: 700;
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+  color: var(--eld-display, #f0e2bd);
+}
+
+.eld-vein-counter .eld-vein-glyph {
+  color: var(--eld-mythros, #2cabf8);
+  font-size: 16px;
+  line-height: 1;
+}
+
+.eld-hdr-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.eld-hdr-btn {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid var(--eld-accent, #e8c46a);
+  background: transparent;
+  color: var(--eld-display, #f0e2bd);
+  font-family: var(--eld-font-display, Cinzel, Georgia, serif);
+  font-weight: 700;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.eld-hdr-btn:active { filter: brightness(1.3); }
+.eld-hdr-btn:focus-visible { outline: 2px solid var(--eld-accent, #e8c46a); outline-offset: 2px; }
+
+/* ---------- panels / cards (mode-aware through the tokens) ---------- */
+.eld-panel,
+.eld-card {
+  background: var(--eld-panel, #141210);
+  border: 1px solid var(--eld-border, #5a4a22);
+  border-radius: var(--eld-radius, 10px);
+  box-shadow: var(--eld-panel-shadow, inset 0 0 0 1px #292823);
+  color: var(--eld-text, #c9bfae);
+}
+
+.eld-card { background: var(--eld-card, var(--eld-panel, #141210)); }
+
+/* ---------- buttons ---------- */
+.eld-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 14px;
+  min-height: 44px;
+  border-radius: var(--eld-radius, 10px);
+  border: 1px solid var(--eld-btn-border, var(--eld-accent, #e8c46a));
+  background: var(--eld-btn-bg, var(--eld-panel, #141210));
+  color: var(--eld-btn-text, var(--eld-accent, #e8c46a));
+  font-family: var(--eld-font-display, Cinzel, Georgia, serif);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  box-shadow: var(--eld-btn-shadow, none);
+  -webkit-tap-highlight-color: transparent;
+  transition: border-color 150ms ease, background-color 150ms ease, transform 120ms ease, opacity 150ms ease, box-shadow 150ms ease;
+}
+
+.eld-btn:hover:not(:disabled) { filter: brightness(1.1); }
+.eld-btn:active:not(:disabled) { transform: translateY(1px); }
+.eld-btn:focus-visible { outline: 2px solid var(--eld-accent, #e8c46a); outline-offset: 2px; }
+.eld-btn:disabled { opacity: 0.45; cursor: default; transform: none; }
+
+/* secondary / ghost: outline only */
+.eld-btn-ghost,
+.eld-btn.eld-btn-secondary {
+  background: transparent;
+  border-color: var(--eld-btn-ghost-border, var(--eld-border, #5a4a22));
+  color: var(--eld-btn-ghost-text, var(--eld-text, #c9bfae));
+  box-shadow: none;
+}
+
+/* primary: filled */
+.eld-btn.eld-btn-primary {
+  background: var(--eld-btn-primary-bg, var(--eld-accent, #e8c46a));
+  color: var(--eld-btn-primary-text, #1a1206);
+  border-color: var(--eld-btn-primary-bg, var(--eld-accent, #e8c46a));
+}
+
+.eld-btn.is-active { border-color: #e8c46a; box-shadow: 0 0 0 1px #e8c46a; }
+
+/* ---------- bars: 14 px HP / MP ---------- */
+.eld-bar {
+  position: relative;
+  height: 14px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--eld-bar-track, rgba(0, 0, 0, 0.45));
+  border: 1px solid var(--eld-bar-border, rgba(255, 255, 255, 0.12));
+  box-sizing: border-box;
+}
+
+.eld-bar-fill {
+  height: 100%;
+  width: 0;
+  transition: width 120ms linear;
+}
+
+.eld-bar-lbl {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 4px;
+  font-family: var(--eld-font-display, Cinzel, Georgia, serif);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #fff;
+  text-shadow: 0 0 3px rgba(0, 0, 0, 0.9), 0 1px 0 rgba(0, 0, 0, 0.6);
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+.eld-bar-row {
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  align-items: center;
+  gap: 6px;
+}
+
+.eld-bar-row .eld-bar-key {
+  font-family: var(--eld-font-display, Cinzel, Georgia, serif);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--eld-muted, #a89c88);
+}
+
+/* ---------- destination rows: 92 px, 120 px illustration, Cinzel 22 + 13 px subtitle + chevron ---------- */
+.eld-dest-row {
+  display: grid;
+  grid-template-columns: 120px 1fr auto;
+  align-items: stretch;
+  width: 100%;
+  min-height: 92px;
+  padding: 0;
+  margin: 0;
+  text-align: left;
+  color: var(--eld-text, #c9bfae);
+  font-family: var(--eld-font-body, system-ui, sans-serif);
+  background: var(--eld-panel, #141210);
+  border: 1px solid var(--eld-border, #5a4a22);
+  box-shadow: inset 0 0 0 1px var(--eld-border-inner, #292823);
+  border-radius: var(--eld-radius, 10px);
+  overflow: hidden;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: border-color 150ms ease, background-color 150ms ease, transform 120ms ease;
+}
+
+.eld-dest-row .eld-art {
+  width: 120px;
+  height: 100%;
+  min-height: 90px;
+  border-right: 1px solid var(--eld-border, #5a4a22);
+}
+
+.eld-dest-text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  padding: 10px 12px;
+  min-width: 0;
+}
+
+.eld-dest-title {
+  font-family: var(--eld-font-display, Cinzel, Georgia, serif);
+  font-weight: 700;
+  font-size: 22px;
+  line-height: 1.1;
+  color: var(--eld-display, #f0e2bd);
+}
+
+.eld-dest-sub {
+  font-size: 13px;
+  line-height: 1.35;
+  color: #a89c88;
+}
+
+.eld-dest-chev {
+  display: flex;
+  align-items: center;
+  padding: 0 14px 0 4px;
+  color: var(--eld-accent, #e8c46a);
+  font-size: 20px;
+}
+
+.eld-dest-row:hover { border-color: var(--eld-accent, #e8c46a); }
+.eld-dest-row:active { transform: translateY(1px); }
+.eld-dest-row:focus-visible { outline: 2px solid var(--eld-accent, #e8c46a); outline-offset: 2px; }
+.eld-dest-row:disabled { opacity: 0.45; cursor: default; transform: none; }
+
+/* ---------- fight party cards: 3 across, ≥ 120 px, 64 px portrait in a 1 px gold frame, name Cinzel 15, 14 px bars, two 28 px icons ---------- */
+.eld-party-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.eld-party-card {
+  min-height: 120px;
+  padding: 6px 6px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  transition: opacity 200ms ease;
+}
+
+.eld-party-card.is-dead { opacity: 0.45; filter: grayscale(0.6); }
+
+.eld-party-card-name {
+  font-family: var(--eld-font-display, Cinzel, Georgia, serif);
+  font-weight: 700;
+  font-size: 15px;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  color: var(--eld-display, #dfe9f5);
+}
+
+.eld-party-card .eld-portrait {
+  width: 64px;
+  height: 64px;
+  border: 1px solid #b8973f;
+  border-radius: 6px;
+  box-sizing: border-box;
+  --eld-art-ph-bg: var(--eld-card, #23353f);
+}
+
+.eld-party-card .eld-portrait .eld-art-ph-name { font-size: 9px; }
+
+.eld-party-card-bars {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.eld-party-card-icons {
+  display: flex;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.eld-icon-28 {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  font-size: 18px;
+  line-height: 1;
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--eld-mythros, #2cabf8);
+  --eld-art-ph-bg: transparent;
+  --eld-art-ph-line: transparent;
+}
+
+.eld-icon-28 .eld-art { width: 28px; height: 28px; background: transparent; }
+.eld-icon-28.is-dim { opacity: 0.4; }
+.eld-icon-28.is-lit { box-shadow: 0 0 0 1px var(--eld-mythros, #2cabf8), 0 0 10px rgba(44, 171, 248, 0.6); }
+
+/* ---------- sheets ---------- */
+.eld-sheet-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: flex-end;
+  z-index: 40;
+  animation: fadein 0.2s ease;
+}
+
+.eld-sheet {
+  width: 100%;
+  max-height: 78%;
+  overflow-y: auto;
+  padding: 14px 16px calc(14px + env(safe-area-inset-bottom, 0px));
+  border-radius: 14px 14px 0 0;
+  box-sizing: border-box;
+  animation: eld-sheet-up 0.25s ease;
+  text-align: left;
+}
+
+.eld-sheet-grip {
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--eld-border, #5a4a22);
+  margin: 0 auto 10px;
+}
+
+.eld-sheet-title {
+  font-family: var(--eld-font-display, Cinzel, Georgia, serif);
+  font-weight: 700;
+  font-size: 20px;
+  letter-spacing: 0.04em;
+  margin-bottom: 8px;
+  color: var(--eld-display, #f0e2bd);
+}
+
+@keyframes eld-sheet-up {
+  from { transform: translateY(24px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* ---------- section titles / labels shared across screens ---------- */
+.eld-display {
+  font-family: var(--eld-font-display, Cinzel, Georgia, serif);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--eld-display, #f0e2bd);
+}
+
+.eld-kicker {
+  font-family: var(--eld-font-display, Cinzel, Georgia, serif);
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--eld-muted, #a89c88);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .eld-btn, .eld-dest-row, .eld-bar-fill, .eld-party-card { transition: none; }
+  .eld-sheet, .eld-sheet-backdrop { animation: none; }
+}

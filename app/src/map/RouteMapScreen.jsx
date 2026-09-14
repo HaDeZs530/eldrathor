@@ -4,6 +4,9 @@ import { rareAt, raresAlive, isWalkable, nodeState } from './routeState.js';
 import { resolveFocus, centerOn, clampPan, easeInOut, easeOut, polylinePointAt, SKIP_MS, FOLLOW_TAU_MS, FRAME_EASE_MS } from './camera.js';
 import { createCameraController } from './cameraController.js';
 import { trace, isTraceOn } from '../debug/trace.js';
+import Art from '../art/Art.jsx';
+import { useArtStatuses } from '../art/useArt.js';
+import { artSrc, areaSlug, NODE_KINDS } from '../art/manifest.js';
 import './parchment.css';
 
 /**
@@ -95,6 +98,12 @@ export default function RouteMapScreen({
 
   const byId = useMemo(() => Object.fromEntries(territory.nodes.map((n) => [n.id, n])), [territory.nodes]);
   const biome = biomeForArea(area);
+  // Style Bible §B art for this map: tiles, the area's biome, the ring, the node icons — placeholders until they land
+  const biomeName = `biome-${areaSlug(area)}`;
+  const mapArtNames = useMemo(() => ['parchment-tile', 'fog-tile', biomeName, 'party-ring', ...NODE_KINDS.map((k) => `node-${k}`)], [biomeName]);
+  const artStatus = useArtStatuses(mapArtNames);
+  const artReady = (n) => artStatus[n] === 'ready';
+  const pendingArt = mapArtNames.filter((n) => artStatus[n] === 'pending');
   const raresLeft = raresAlive(territory);
   const planEdges = useMemo(() => {
     const s = new Set();
@@ -342,7 +351,17 @@ export default function RouteMapScreen({
   // Retina phone — pans and glides stuttered, more with every revealed node. A canvas is a plain
   // bitmap: painted here on change, then just copied while the camera moves.
   const fogRef = useRef(null);
-  const fogKey = `${sheet.w}x${sheet.h}|${biome.interior ? 1 : 0}|${revealed.map((n) => `${n.id}${n.cleared ? 'c' : ''}`).join(',')}`;
+  // the manifest fog tile (transparent painterly cloud) is stamped over the flat fog once it has loaded
+  const fogImg = useRef(null);
+  const [fogTileTick, setFogTileTick] = useState(0);
+  const fogTileReady = artReady('fog-tile');
+  useEffect(() => {
+    if (!fogTileReady || fogImg.current) return;
+    const im = new Image();
+    im.onload = () => { fogImg.current = im; setFogTileTick((t) => t + 1); };
+    im.src = artSrc('fog-tile');
+  }, [fogTileReady]);
+  const fogKey = `${sheet.w}x${sheet.h}|${biome.interior ? 1 : 0}|${fogTileTick}|${revealed.map((n) => `${n.id}${n.cleared ? 'c' : ''}`).join(',')}`;
   useLayoutEffect(() => {
     const cv = fogRef.current;
     if (!cv || !sheet.w || !sheet.h) return;
@@ -351,18 +370,24 @@ export default function RouteMapScreen({
     const g = cv.getContext('2d');
     g.setTransform(scale, 0, 0, scale, 0, 0);
     g.globalCompositeOperation = 'source-over';
-    g.fillStyle = 'rgba(226, 210, 171, 0.95)';
+    // Style Bible: fog #f3ead9 at 85 % over unexplored regions
+    g.fillStyle = 'rgba(243, 234, 217, 0.85)';
     g.fillRect(0, 0, sheet.w, sheet.h);
-    // mist: soft diagonal wisps
-    g.save(); g.translate(sheet.w / 2, sheet.h / 2); g.rotate(-18 * Math.PI / 180);
-    const R = Math.hypot(sheet.w, sheet.h);
-    g.strokeStyle = 'rgba(255, 250, 236, 0.16)'; g.lineWidth = 2;
-    for (let y = -R; y < R; y += 26) {
-      g.beginPath();
-      for (let x = -R; x < R; x += 26) { g.moveTo(x, y); g.quadraticCurveTo(x + 6.5, y - 6, x + 13, y); g.quadraticCurveTo(x + 19.5, y + 6, x + 26, y); }
-      g.stroke();
+    if (fogImg.current) {
+      // the manifest tile on top (cloud texture), else soft diagonal wisps drawn here
+      const pat = g.createPattern(fogImg.current, 'repeat');
+      if (pat) { g.save(); g.scale(0.5, 0.5); g.fillStyle = pat; g.fillRect(0, 0, sheet.w * 2, sheet.h * 2); g.restore(); }
+    } else {
+      g.save(); g.translate(sheet.w / 2, sheet.h / 2); g.rotate(-18 * Math.PI / 180);
+      const R = Math.hypot(sheet.w, sheet.h);
+      g.strokeStyle = 'rgba(255, 250, 236, 0.16)'; g.lineWidth = 2;
+      for (let y = -R; y < R; y += 26) {
+        g.beginPath();
+        for (let x = -R; x < R; x += 26) { g.moveTo(x, y); g.quadraticCurveTo(x + 6.5, y - 6, x + 13, y); g.quadraticCurveTo(x + 19.5, y + 6, x + 26, y); }
+        g.stroke();
+      }
+      g.restore();
     }
-    g.restore();
     // holes around revealed nodes (larger once completed)
     g.globalCompositeOperation = 'destination-out';
     const inner = biome.interior ? 0.62 : 0.5;
@@ -381,9 +406,11 @@ export default function RouteMapScreen({
   return (
     <div className="eld-map-wrap" style={styles.wrap}>
       <div ref={vpRef} className="eld-route-viewport eld-route-viewport--full" onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerCancel}>
-        <div ref={sheetRef} className="eld-parchment-sheet" style={{ width: sheet.w, height: sheet.h, transform: sheetTransform(pan) }}>
+        <div ref={sheetRef} className={`eld-parchment-sheet${artReady('parchment-tile') ? ' has-tile' : ''}`} style={{ width: sheet.w, height: sheet.h, transform: sheetTransform(pan), '--eld-parchment-tile': artReady('parchment-tile') ? `url(${artSrc('parchment-tile')})` : undefined }}>
           <svg className="eld-parchment-svg" width={sheet.w} height={sheet.h} viewBox={`${-M.x} ${-M.top} ${VW} ${VH}`}>
-            {renderBiomeLayer({ territory, byId, biome })}
+            {/* painted biome terrain under the node web (manifest `biome-<area>`); the ink stamps stay as the fallback / overlay */}
+            {artReady(biomeName) && <image href={artSrc(biomeName)} x={0} y={0} width={W} height={H} preserveAspectRatio="xMidYMid slice" opacity={0.92} />}
+            {!artReady(biomeName) && renderBiomeLayer({ territory, byId, biome })}
             {/* edges: completed trail vs frontier; the planned trip lights up gold while travelling (§15: no lit path to the boss) */}
             <g>
               {territory.edges.map(([a, b]) => {
@@ -408,13 +435,14 @@ export default function RouteMapScreen({
             let glyph = 'ᚱ';
             let label = 'Unexplored';
             let color = TYPE_COLOR.normal;
-            if (st === 'completed') { state = 'is-cleared'; glyph = ''; label = 'Completed'; }
+            let kind = 'unknown'; // manifest node icon: node-<kind>
+            if (st === 'completed') { state = 'is-cleared'; glyph = ''; label = 'Completed'; kind = 'cleared'; }
             else if (st === 'revealed') {
               const rare = rareAt(territory, n.id);
               color = TYPE_COLOR[n.type] || TYPE_COLOR.normal;
-              if (rare) { state = 'is-rare'; glyph = '☠'; label = 'Rare'; }
-              else if (n.type === 'boss') { state = 'is-boss'; glyph = '♛'; label = 'Boss'; }
-              else { state = n.namedRare ? 'is-named' : 'is-scouted'; glyph = TYPE_GLYPH[n.type] || '⚔'; label = `${n.namedRare ? 'Named ' : ''}${TYPE_LABEL[n.type] || 'Node'}`; }
+              if (rare) { state = 'is-rare'; glyph = '☠'; label = 'Rare'; kind = 'rare'; }
+              else if (n.type === 'boss') { state = 'is-boss'; glyph = '♛'; label = 'Boss'; kind = 'boss'; }
+              else { state = n.namedRare ? 'is-named' : 'is-scouted'; glyph = TYPE_GLYPH[n.type] || '⚔'; label = `${n.namedRare ? 'Named ' : ''}${TYPE_LABEL[n.type] || 'Node'}`; kind = n.namedRare ? 'named' : n.type === 'normal' ? 'fight' : n.type; }
             }
             const cls = ['eld-pnode', state, here && 'is-here', st !== 'completed' && !here && 'is-tappable'].filter(Boolean).join(' ');
             return (
@@ -428,13 +456,15 @@ export default function RouteMapScreen({
                 style={{ left: sx(n.x) - NODE_HIT / 2, top: sy(n.y) - NODE_HIT / 2, '--type': color }}
                 onClick={(e) => { if (e.detail === 0) activateNode(n.id); }}
               >
-                <span className="eld-pnode-shape" aria-hidden="true">{glyph}</span>
+                <span className="eld-pnode-shape" aria-hidden="true">
+                  {artReady(`node-${kind}`) ? <Art name={`node-${kind}`} alt="" fit="contain" fallback={<span>{glyph}</span>} /> : glyph}
+                </span>
               </button>
             );
           })}
 
           {/* §18 gold ring + pennant around whichever node the party occupies (the node keeps its icon); §16 it glides along the polyline */}
-          {cur && <div ref={markerRef} className="eld-party-marker" style={{ transform: markerTransform(markerPos) }} aria-hidden="true" />}
+          {cur && <div ref={markerRef} className={`eld-party-marker${artReady('party-ring') ? ' has-art' : ''}`} style={{ transform: markerTransform(markerPos), '--eld-party-ring': artReady('party-ring') ? `url(${artSrc('party-ring')})` : undefined }} aria-hidden="true" />}
         </div>
 
         {/* §7 — single 44 px run HUD strip overlaid on the map */}
@@ -445,7 +475,7 @@ export default function RouteMapScreen({
             <span title="nodes completed">{completedCount}/{territory.nodes.length}</span>
           </div>
           <div className="eld-run-hud-right">
-            <span className="eld-run-hud-vein">❖ {runVein}</span>
+            <span className="eld-run-hud-vein"><span className="eld-vein-glyph">❖</span> {runVein}</span>
             <button type="button" className="eld-run-hud-log" aria-label={`Run log${logUnread ? `, ${logUnread} new` : ''}`} onClick={onOpenLog}>
               📜
               {logUnread > 0 && <span className="eld-run-hud-badge">{logUnread > 99 ? '99+' : logUnread}</span>}
@@ -458,6 +488,12 @@ export default function RouteMapScreen({
           </div>
         </div>
 
+        {/* Style Bible §C: missing map art is obvious on the phone — one chip per pending file */}
+        {pendingArt.length > 0 && !card && !confirmExtract && (
+          <div className="eld-art-pending-list eld-route-pending" aria-label="Pending art">
+            {pendingArt.map((n) => <span key={n}>{n}.png</span>)}
+          </div>
+        )}
         {toast && !card && !confirmExtract && (
           <div className="eld-run-toast" key={toast.id} aria-live="polite">
             <span>{travel ? 'Travelling… tap to skip' : toast.t}</span>

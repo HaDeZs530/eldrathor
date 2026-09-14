@@ -7,6 +7,8 @@ html, body {
   background: #05080a;
   /* phone: no rubber-band bounce / pull-to-refresh fighting the map drags */
   overscroll-behavior: none;
+  /* Style Bible: system UI body everywhere (Cinzel only on display text) */
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 }
 
 #root {

@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ISLAND_PINS, islandRoutePaths } from '../map/islandPath.js';
+import { useArtStatus } from '../art/useArt.js';
+import { artSrc } from '../art/manifest.js';
 import '../map/islandMap.css';
 
 /**
@@ -11,7 +13,7 @@ import '../map/islandMap.css';
  * docs/Eldrathor_Island_Path_Lock.md; pins 2–10 sit on it. Hotspots → RallyScreen → route map.
  */
 
-const MAP_SRC = '/maps/island-world.png';
+const LEGACY_MAP_SRC = '/maps/island-world.png'; // renders until the manifest's island-map.png (1560×2400) lands
 const MAP_NATURAL = { w: 1280, h: 720 };
 /** Zoom states relative to "island fits the viewport height" (1.0): Close = 1.4, Overview = 1.0. */
 const ZOOM = { close: 1.4, overview: 1 };
@@ -157,6 +159,8 @@ export default function IslandWorldMap({ areas, unlocked, onSelectArea, onHarbor
     g.active = false; g.moved = false; g.target = null;
   }
 
+  const islandArt = useArtStatus('island-map', LEGACY_MAP_SRC);
+  const mapSrc = islandArt === 'ready' ? artSrc('island-map') : LEGACY_MAP_SRC;
   const held = areas.filter((a) => a.id < unlocked).length;
   const total = areas.length;
 
@@ -164,7 +168,7 @@ export default function IslandWorldMap({ areas, unlocked, onSelectArea, onHarbor
     <div style={S.wrap}>
       <div style={S.hud}>
         <div style={S.kick}>The climb begins</div>
-        <div className="eld-brand-name" style={S.title}>The Island</div>
+        <div className="eld-display" style={S.title}>The Island</div>
         <div style={S.prog}>
           {held} of {total} areas held · tap a pin to rally the bond
         </div>
@@ -184,7 +188,7 @@ export default function IslandWorldMap({ areas, unlocked, onSelectArea, onHarbor
         >
           <img
             className={`eld-island-img${scale >= 1 ? ' is-crisp' : ''}`}
-            src={MAP_SRC}
+            src={mapSrc}
             width={img.w}
             height={img.h}
             alt="Island of Eldrathor — Veinharbor at the south shore, the Worldforge and castle climbing to the crystal summit"
@@ -254,6 +258,9 @@ export default function IslandWorldMap({ areas, unlocked, onSelectArea, onHarbor
           })}
         </div>
 
+        {islandArt !== 'ready' && (
+          <div className="eld-art-pending-list eld-island-art-pending" aria-label="Pending art"><span>island-map.png · showing legacy island-world.png</span></div>
+        )}
         <div className="eld-island-hint" aria-hidden="true">
           drag to pan
           <br />

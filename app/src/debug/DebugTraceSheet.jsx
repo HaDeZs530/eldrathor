@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { clearTrace, isTraceOn, onTraceChange, setTraceOn, traceEntries, traceText, isAutosave, lastUpload, traceSession, uploadNow } from './trace.js';
 import '../components/shell/shell.css';
+import { Sheet } from '../components/ui/index.jsx';
 
 /**
  * ☰ Menu → Debug trace. Toggle the trace, read the last events, copy them (clipboard API when the
@@ -29,10 +30,7 @@ export default function DebugTraceSheet({ onClose }) {
   }
 
   return (
-    <div className="eld-sheet-backdrop" onClick={onClose} role="presentation">
-      <div className="eld-sheet eld-panel" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Debug trace" style={{ maxHeight: '88%' }}>
-        <div className="eld-sheet-grip" />
-        <div className="eld-sheet-title">🐞 Debug trace</div>
+    <Sheet onClose={onClose} label="Debug trace" title={<>🐞 Debug trace</>} maxHeight="88%">
         <div className="eld-sheet-sub">{on ? `Recording · ${count} events kept` : 'Off — nothing is recorded'}</div>
         {isAutosave() && (
           <div className="eld-sheet-sub" style={{ color: lastUpload && !lastUpload.ok ? '#e05d6f' : undefined }}>
@@ -60,7 +58,6 @@ export default function DebugTraceSheet({ onClose }) {
           <button type="button" className="eld-btn eld-btn-ghost" onClick={() => { clearTrace(); setCopied(null); }} disabled={!count}>Clear</button>
           <button type="button" className="eld-btn eld-btn-ghost" onClick={onClose}>Close</button>
         </div>
-      </div>
-    </div>
+    </Sheet>
   );
 }
