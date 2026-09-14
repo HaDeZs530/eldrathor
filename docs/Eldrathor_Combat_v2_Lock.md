@@ -16,7 +16,7 @@ Seeds `s` come from `ARCHETYPE_SEEDS` (10 base / 15 specialty). Level `L` (1+). 
 | Hit damage | `w.dmg × (s.power / 10) × (1 + g.power) × (1 + 0.05(L−1))` | greatsword 22, daggers 7 |
 | Swing interval | `w.tempo / ((s.attackSpeed / 10) × (1 + g.attackSpeed))` | daggers 0.8 s, greatsword 1.6 s (Striker ×⅔) |
 | Crit chance | `s.critChance × 1% × (1 + g.critChance)` | 10% (Adept 15%) |
-| Crit multiplier | `1.5 + (s.critDamage − 10) × 0.05 × (1 + g.critDamage)` | 1.5× |
+| Crit multiplier | `1.5 + (s.critDamage − 10) × 0.05 + g.critDamage` *(corrected 2026-09-14; gem term additive)* | 1.5× |
 | Mitigation | `min(0.6, (s.mitigation × 0.02 + w.mit) × (1 + g.mitigation))` | 20–45% |
 | Heal amount | `base × (s.healingPower / 10) × (1 + g.healingPower)` | — |
 
