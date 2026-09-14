@@ -39,5 +39,8 @@ Claude Code does **not** invent LOCKED design — flag conflicts. Grok does **no
 - Keep `npm run dev` / `npm run build` runnable; no new deps without a reason.
 - Push a PR with summary + test plan.
 
+## Review cadence
+Every ~5 merged PRs the Design Chat runs a cold source audit (its own, or an external model's) against the locks and turns confirmed findings into a bug-fix brief. External reviewers (ChatGPT etc.) may read the repo; they never lock design.
+
 ## Usage note
 Design happens in the claude.ai Project (unlimited iteration, cheap). Claude Code has the coding headroom. Grok's weekly usage is reserved for art.

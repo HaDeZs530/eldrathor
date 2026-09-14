@@ -23,6 +23,7 @@ Eldrathor: a UI-based iOS RPG (Vite + React now; Capacitor iOS wrap later). The 
    - `docs/Eldrathor_BaseStats_Lock.md` — the nine stats every system uses (LOCKED July 2026).
    - `docs/Eldrathor_ClassGemTrees_Lock.md` — full 40-pt trees for Tank/DPS/Controller/Healer (LOCKED July 2026).
    - `docs/Eldrathor_Archetype_Seeds_DRAFT.md` — archetype base numbers (approved for build 2026-09-11).
+   - `docs/Eldrathor_Progression_Loop_Lock.md` — Milestone 1: ids + save/resume, rarity ladder, XP, equipment/empower/armor that apply, crit fix, true-idle AFK, balance gates (LOCKED 2026-09-14).
    - `docs/Eldrathor_Combat_v2_Lock.md` — resolver formulas, innates, enemy tiers, fight screen (LOCKED 2026-09-11).
 3. `docs/SESSION_LOG.md` — chronology + cross-cutting locks.
 4. `docs/CLAUDE_HOME_HANDOFF.md` — current queue.
@@ -48,6 +49,9 @@ Eldrathor: a UI-based iOS RPG (Vite + React now; Capacitor iOS wrap later). The 
 - App in `app/` (Vite + React, JS). Keep `npm run dev` and `npm run build` runnable.
 - Mobile-portrait-first (390×844). No new deps without a reason.
 - Theme: `app/src/theme/`. Map: `app/src/map/`.
+
+## Tests are the spec
+Every brief that sets a number or a rule ships with a unit test asserting it. A TODO test is not a test. Balance targets are enforced gates.
 
 ## Workflow
 - Design locks: Anthony + Claude Design Chat → lock doc / design-doc section + brief.

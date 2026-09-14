@@ -10,7 +10,8 @@
 4. Open PRs; don't invent LOCKED design — use `// DESIGN-OPEN:` for gaps.
 
 ## Active briefs (priority)
-0. **`docs/CLAUDE_BRIEFS/2026-09-14_party-ring-marker.md`** — gold ring marker so the node icon stays visible; seal text cleanup. Spec: v3 lock §18–19.
+0. **`docs/CLAUDE_BRIEFS/2026-09-14_party-ring-marker.md`**
+1. **Milestone 1 — one real area** (spec `docs/Eldrathor_Progression_Loop_Lock.md`), in order: `2026-09-14_m1a-save-and-ids.md` → `2026-09-14_m1b-progression-chain.md` → `2026-09-14_m1c-afk-true-idle.md` → `2026-09-14_m1d-engineering-hygiene.md`. Each its own PR; "next" takes the next one. — gold ring marker so the node icon stays visible; seal text cleanup. Spec: v3 lock §18–19.
 _(none queued — waiting on the Design Chat's next brief)_
 
 ## Recently DONE (don't redo)
