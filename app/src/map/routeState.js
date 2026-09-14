@@ -9,7 +9,7 @@
 /**
  * §15 — exactly three node states. A node the fog hasn't shown yet is not on the map at all.
  *  - 'unexplored': never been there (identical rune for every type — nothing is auto-marked)
- *  - 'revealed':   explored, not completed (fled, sanctuary left unused, or the boss is sealed)
+ *  - 'revealed':   explored, not completed (fled, or a sanctuary left unused)
  *  - 'completed':  cleared / used
  */
 export function nodeState(n) {
@@ -41,8 +41,18 @@ export function effectiveType(t, node) {
   return rareAt(t, node.id) ? 'rare' : node.type;
 }
 
-export function isSealed(t) {
-  return t.rares.some((r) => r.alive);
+/**
+ * Anthony 2026-09-14: the boss is NEVER sealed behind the rares. Rares are optional big-loot hunts;
+ * killing some (or none) before the boss is the player's call. Kept as a function so the seal can be
+ * reinstated by one line if the design ever swings back; every caller treats it as always false.
+ */
+export function isSealed() {
+  return false;
+}
+
+/** Living rares left on the map (optional hunts). */
+export function raresAlive(t) {
+  return t.rares.filter((r) => r.alive).length;
 }
 
 export function allCleared(t) {

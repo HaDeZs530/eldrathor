@@ -36,6 +36,7 @@ _(none queued — waiting on the Design Chat's next brief)_
 - Rally / Prepare-the-bond screen title
 - Gem tree screen; enemy rosters per area; weapon skill trees (Design Chat specs next)
 - Note: A1/A3 were re-ruled 2026-09-12 — scouting replaces cut-flee; all 9 pins are areas (`Eldrathor_Island_Areas_Lock.md`).
+- Note: 2026-09-14 Anthony ruled **no boss seal** (rares are optional hunts) and **boss = end of the road** (PR #42/#44) — v2 lock rares+seal and v3 §15 sealed-boss lines need updating by the Design Chat.
 
 ## Playtest
 Phone: `cd app && npm run dev -- --host` → LAN URL (or `npm run dev:phone` once PR #15 lands for a QR code). Island pans + zoom toggle; route map fills the screen.

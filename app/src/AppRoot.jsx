@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useReducer, useCallback } from 'react';
 import { useTheme } from './theme/ThemeProvider.jsx';
 import { frame, colors, nodeTypeMeta } from './theme/tokens.js';
 import { genTerritory } from './map/genTerritory.js';
-import { rareAt, effectiveType, isSealed, allCleared, scoutNode, clearNode, killRare, tickClock, threatBand, explorePath, isAdjacent, nodeState, fleeChance } from './map/routeState.js';
+import { rareAt, effectiveType, raresAlive, allCleared, scoutNode, clearNode, killRare, tickClock, threatBand, explorePath, isAdjacent, nodeState, fleeChance } from './map/routeState.js';
 import RouteMapScreen from './map/RouteMapScreen.jsx';
 import { DEFAULT_PARTY, AREAS } from './data.js';
 import { simulateFight, spawnEnemies, rollRewards, deriveStats, mulberry32 } from './combat.js';
@@ -182,7 +182,7 @@ export default function Eldrathor() {
     trace('run', { start: a.name, seed: runSeed.current, nodes: t.nodes.length, rares: t.rares.length, entrance: t.entranceId });
     setArea(a); setTerritory(t); setCurrentId(t.entranceId); setCard(null);
     dispatchCamera({ type: 'runStart', partyId: t.entranceId }); // the only centring of a run: its first frame
-    setLog([{ t: `You unroll the route map. ${a.name} lies unexplored beyond the entry — ${t.rares.length} rares roam it and the boss is sealed.`, k: 'sys' }]);
+    setLog([{ t: `You unroll the route map. ${a.name} lies unexplored beyond the entry — ${t.rares.length} rares roam it (optional hunts, big loot) and ${a.boss} waits at the far end.`, k: 'sys' }]);
     setRunHpFrac(null); setRunMods({ dmgMult: 1, mitAdd: 0 }); setLogSeen(0);
     setPartyHP(1); setRunVein(0); setRunStage('route');
   }
@@ -221,14 +221,13 @@ export default function Eldrathor() {
     if (eff === 'sanctuary') return [];
     return spawnEnemies(area.tier, eff, false, { rng, bossName: area.boss, depthMult: eff === 'rare' || eff === 'boss' ? 1 : depthMultFor(n), named: !!n.namedRare });
   }
-  /** §15 reveal card: type, enemy count, threat band, yield — Fight / Flee (Sanctuary: Use / Leave; sealed boss: seal card). */
+  /** §15 reveal card: type, enemy count, threat band, yield — Fight / Flee (Sanctuary: Use / Leave). The boss is never sealed. */
   function buildReveal(t, n, { onNode }) {
     const eff = effectiveType(t, n);
-    const sealedBoss = n.type === 'boss' && isSealed(t);
     const rng = mulberry32((runSeed.current ^ Math.imul(Number(n.id.slice(1)) + 1, 0x85ebca6b)) >>> 0);
     const enemies = enemiesFor(t, n, rng);
     let threat = null;
-    if (enemies.length && !sealedBoss) {
+    if (enemies.length) {
       let wins = 0;
       for (let i = 0; i < THREAT_DRY_RUNS; i++) {
         const r = simulateFight({ party, enemies: enemies.map((e) => ({ ...e })), seed: i * 7919 + 1, startHpFrac: runHpFrac || undefined, runMods });
@@ -243,16 +242,11 @@ export default function Eldrathor() {
     if (named) title = `Named ${title}`;
     let body;
     let yieldText = null;
-    if (sealedBoss) body = `The boss node is chained. ${t.rares.filter((r) => r.alive).length} rare${t.rares.filter((r) => r.alive).length === 1 ? '' : 's'} still roam — hunt them to break the seal.`;
-    else if (eff === 'sanctuary') { body = 'A wild healing crystal. No fight.'; yieldText = 'Full HP + mana, revives the fallen, and one bonus for this run.'; }
+    if (eff === 'sanctuary') { body = 'A wild healing crystal. No fight.'; yieldText = 'Full HP + mana, revives the fallen, and one bonus for this run.'; }
     else if (eff === 'crystal') { body = `${count} enem${count === 1 ? 'y guards' : 'ies guard'} a Vein deposit.`; yieldText = '×2 Worldvein on victory.'; }
     else if (eff === 'rare') { body = `A roaming rare${named ? ' — named, ×1.3 stats' : ''}. Big loot; may drop a class gem.`; }
-    else if (eff === 'boss') { body = `${area.boss} waits. The seal is broken.`; }
+    else if (eff === 'boss') { const left = raresAlive(t); body = `${area.boss} waits.${left ? ` ${left} rare${left === 1 ? '' : 's'} still roam — optional.` : ''}`; }
     else { body = `${count} enem${count === 1 ? 'y' : 'ies'}${named ? ' — named, ×1.3 stats, +1 loot roll' : ''}.`; }
-    const alive = t.rares.filter((r) => r.alive).length;
-    if (sealedBoss) {
-      return { kind: 'seal', nodeId: n.id, onNode, type: 'boss', glyph: '⛓', title: `${area.boss} — sealed`, body: `Rares remaining: ${alive}. Hunt them to break the seal. The party steps back.`, yieldText: null, threat: null, enemies, actions: [{ id: 'stepBack', label: 'Fall back' }] };
-    }
     if (eff === 'sanctuary') {
       return { kind: 'reveal', nodeId: n.id, onNode, type: eff, glyph: TYPE_GLYPH[eff], title, body, yieldText, threat: null, enemies, actions: [{ id: 'leave', label: 'Leave', ghost: true }, { id: 'use', label: 'Use' }] };
     }
@@ -361,11 +355,6 @@ export default function Eldrathor() {
           pushLog('↩ Flee — the party steps back. The node stays revealed.', 'good');
           beginTrip([currentId, prevId], null);
         } else pushLog('↩ Flee — the party holds its ground.', 'good');
-        return;
-      }
-      case 'stepBack': {
-        setCard(null);
-        if (c.onNode && prevId && prevId !== currentId) beginTrip([currentId, prevId], null);
         return;
       }
       case 'fight': {
@@ -543,7 +532,7 @@ export default function Eldrathor() {
     let t = territory;
     if (f.rare) { t = killRare(t, n.id); }
     t = clearNode(t, n.id, runRng.current);
-    const sealJustBroke = f.rare && !isSealed(t) && isSealed(territory);
+    const lastRareDown = f.rare && raresAlive(t) === 0;
     t = advanceClock(t, n.id);
     setTerritory(t);
     setPartyHP(res.hpPct); setRunHpFrac(res.partyHpFrac);
@@ -551,7 +540,7 @@ export default function Eldrathor() {
     pushLog(`✔ Cleared in ${res.durationSec}s. +${rewards?.worldvein || 0} Worldvein.${f.eff === 'crystal' ? ' The deposit splinters — ×2 harvest.' : ''}`, 'good');
     for (const g of rewards?.gears || []) { setStash((s) => [...s, g]); pushLog(`  ⬥ Loot: ${g.name} (${g.rating}/100)`, 'loot'); }
     if (f.rare) pushLog(`☠ Rare slain. ${t.rares.filter((r) => r.alive).length} remain.`, 'rare');
-    if (sealJustBroke) { pushLog('♛ The seal is broken.', 'boss'); doFlash('Seal broken', colors.mythros); } // §15: nothing on the map changes until the boss node is found
+    if (lastRareDown) { pushLog('☠ Every rare on this map is slain.', 'rare'); doFlash('All rares slain', colors.mythros); }
     if (f.eff === 'boss') {
       pushLog(`${area.boss} is defeated. ${area.name} is cleared.${f.mapClear ? ' Every node cleared — map-clear bonus!' : ''}`, 'boss');
       doFlash(`${area.name} cleared!`, area.accent);

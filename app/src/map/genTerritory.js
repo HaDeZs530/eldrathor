@@ -7,7 +7,7 @@
  * by construction), kept only between equal or adjacent bands, guarded by a segment-intersection
  * test, then pruned to 2–4 edges per node while keeping connectivity and ≥4 loops. Texture
  * (dead-end spurs, quiet side trails, long-edge curiosity nodes) also passes the crossing test.
- * Five node types incl. Sanctuary, 2–3 roaming rares, sealed boss, named variants at generation.
+ * Five node types incl. Sanctuary, 2–3 roaming rares (optional hunts), the boss at the end of the road, named variants at generation.
  * Deterministic when `opts.rng` is seeded.
  */
 
