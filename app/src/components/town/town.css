@@ -8,22 +8,25 @@
  */
 
 .eld-town {
-  --town-panel: #2c1f13;
-  --town-panel-2: #3a2917;
-  --town-line: #8b5a2b;
-  --town-gold: #c9a45c;
-  --town-gold-soft: rgba(201, 164, 92, 0.55);
-  --town-text: #f0e0c0;
-  --town-muted: #c4a070;
+  /* Style Bible §A — Veinharbor column */
+  --town-panel: #141210;
+  --town-panel-2: #191613;
+  --town-line: #5a4a22;
+  --town-gold: #e8c46a;
+  --town-gold-soft: rgba(232, 196, 106, 0.55);
+  --town-text: #c9bfae;
+  --town-display: #f0e2bd;
+  --town-muted: #a89c88;
   --town-ui: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --town-display: Cinzel, Marcellus, Georgia, serif;
+  --town-display-font: Cinzel, 'Palatino Linotype', Georgia, serif;
   font-family: var(--town-ui);
   color: var(--town-text);
 }
 
 /* ---- typography (Town only) ---- */
 .eld-town .eld-town-display {
-  font-family: var(--town-display);
+  font-family: var(--town-display-font);
+  color: var(--town-display);
   font-weight: 700;
   letter-spacing: 0.04em;
 }
@@ -42,6 +45,8 @@
   width: 100%;
   height: 100%;
 }
+
+.eld-town-hero .eld-art { width: 100%; height: 100%; }
 
 .eld-town-hero-scrim {
   position: absolute;
@@ -98,8 +103,8 @@
   justify-content: center;
   gap: 4px;
   background:
-    radial-gradient(ellipse at 50% 35%, rgba(201, 164, 92, 0.18), transparent 65%),
-    linear-gradient(180deg, #3a2917 0%, #241809 100%);
+    radial-gradient(ellipse at 50% 35%, rgba(232, 196, 106, 0.12), transparent 65%),
+    linear-gradient(180deg, #191613 0%, #141210 100%);
   color: var(--town-gold-soft);
 }
 
@@ -159,7 +164,7 @@
 
 /* interactive states */
 .eld-town-row:hover { border-color: var(--town-gold); background: var(--town-panel-2); }
-.eld-town-row:active { transform: translateY(1px); background: #241809; }
+.eld-town-row:active { transform: translateY(1px); background: #0e0d0b; }
 .eld-town-row:focus-visible { outline: 2px solid var(--town-gold); outline-offset: 2px; }
 .eld-town-row:disabled { opacity: 0.45; cursor: default; transform: none; }
 
@@ -184,7 +189,7 @@
   -webkit-tap-highlight-color: transparent;
 }
 .eld-town-back:hover { border-color: var(--town-gold); }
-.eld-town-back:active { background: #241809; }
+.eld-town-back:active { background: #0e0d0b; }
 .eld-town-back:focus-visible { outline: 2px solid var(--town-gold); outline-offset: 2px; }
 
 .eld-town-dest-title { color: var(--town-gold); }
@@ -210,8 +215,8 @@
   padding: 10px 12px;
   border-radius: 8px;
   border: 1px solid var(--town-gold);
-  background: linear-gradient(180deg, #5a3d20 0%, #3d2a18 100%);
-  color: var(--town-text);
+  background: var(--town-panel);
+  color: var(--town-gold);
   box-shadow: none;
   transition: border-color 150ms ease, background-color 150ms ease, transform 120ms ease, opacity 150ms ease;
 }
@@ -226,7 +231,7 @@
 .eld-root.hub-rpg:not(.mode-mind) .eld-town .eld-btn:hover,
 .eld-root.mode-world.hub-rpg .eld-town .eld-btn:hover { border-color: #e2c27a; }
 .eld-root.hub-rpg:not(.mode-mind) .eld-town .eld-btn:active,
-.eld-root.mode-world.hub-rpg .eld-town .eld-btn:active { transform: translateY(1px); background: #241809; }
+.eld-root.mode-world.hub-rpg .eld-town .eld-btn:active { transform: translateY(1px); background: #0e0d0b; }
 .eld-root.hub-rpg:not(.mode-mind) .eld-town .eld-btn:focus-visible,
 .eld-root.mode-world.hub-rpg .eld-town .eld-btn:focus-visible { outline: 2px solid var(--town-gold); outline-offset: 2px; }
 .eld-root.hub-rpg:not(.mode-mind) .eld-town .eld-btn:disabled,

@@ -26,7 +26,7 @@ export default function AfkScreen({
   return (
     <div style={S.wrap} className={sub === 'process' ? 'eld-afk-process' : ''}>
       <div style={S.kick}>Mind View · Seam (AFK)</div>
-      <div className="eld-brand-name" style={S.title}>The Seam</div>
+      <div className="eld-display eld-screen-title" style={S.title}>The Seam</div>
       <div style={S.sub}>Park Adventurers who aren't on the Mountain into a job. Jobs keep running while you're on other tabs. Each Adventurer can hold one job at a time.</div>
       <div className="eld-seg" role="tablist" aria-label="AFK jobs">
         {SUBS.map((s) => (
@@ -94,7 +94,7 @@ function GatherPanel({ slots, areas, bench, skillXp, inventory, onUpdate, onTogg
                 </button>
               ))}
             </div>
-            <Bar value={slot.progress} accent={area?.accent || '#5fc7e0'} />
+            <Bar value={slot.progress} accent={area?.accent || 'var(--eld-accent)'} />
             <div style={S.meta}>Cycle {Math.round((slot.progress || 0) * 100)}% · {area?.name || '—'} · {slot.family}</div>
             {char && <div style={S.ok}>{char.name} · {ARCHETYPES[char.archetype]?.role}</div>}
             <button type="button" className="eld-btn" style={S.wide} disabled={!slot.charKey} onClick={() => onToggle(i)}>
@@ -156,9 +156,9 @@ function ProcessPanel({ process, bench, inventory, worldvein, skillXp, onUpdate,
                 <div style={S.row}><span style={S.recipeName}>{r.glyph} {r.name}</span><span style={S.dim}>{active ? 'selected' : ''}</span></div>
                 <div style={S.recipeIo}>
                   {r.inputs.map((inp) => (
-                    <span key={inp.family} style={{ color: have >= inp.qty ? 'inherit' : '#e05d6f' }}>−{inp.qty} raw {inp.family} (have {have})</span>
+                    <span key={inp.family} style={{ color: have >= inp.qty ? 'inherit' : 'var(--eld-danger)' }}>−{inp.qty} raw {inp.family} (have {have})</span>
                   ))}
-                  <span style={{ color: worldvein >= r.vein ? 'inherit' : '#e05d6f' }}>−{r.vein} ❖ Worldvein</span>
+                  <span style={{ color: worldvein >= r.vein ? 'inherit' : 'var(--eld-danger)' }}>−{r.vein} ❖ Worldvein</span>
                   <span style={S.ok}>→ {r.output}</span>
                 </div>
               </button>
@@ -175,7 +175,7 @@ function ProcessPanel({ process, bench, inventory, worldvein, skillXp, onUpdate,
       <div className="eld-panel" style={S.list}>
         {inventory.infused.length === 0 && <div style={S.dim}>No infused mats yet.</div>}
         {inventory.infused.map((m, i) => (
-          <div key={i} style={{ ...S.mat, borderLeftColor: MAT_QUALITY[m.quality]?.color || '#9fb2bd' }}>
+          <div key={i} style={{ ...S.mat, borderLeftColor: MAT_QUALITY[m.quality]?.color || 'var(--eld-text)' }}>
             <span style={{ color: MAT_QUALITY[m.quality]?.color }}>{m.quality}</span>
             <span>{m.family} ×{m.qty}</span>
           </div>
@@ -246,7 +246,7 @@ const S = {
   row: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
   rowWrap: { display: 'flex', gap: 6, flexWrap: 'wrap' },
   h: { fontSize: 'var(--mv-text, 18px)', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: 'var(--eld-font-display, inherit)' },
-  live: { fontSize: 'var(--mv-label, 15px)', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#7fd6a0' },
+  live: { fontSize: 'var(--mv-label, 15px)', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--eld-good)' },
   dim: { fontSize: 'var(--mv-label, 15px)', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--eld-muted)' },
   lbl: { fontSize: 'var(--mv-label, 15px)', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--eld-muted)', display: 'block', margin: '8px 0 4px' },
   sel: { width: '100%', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--eld-border, #1c3a44)', color: 'inherit', borderRadius: 6, padding: '8px 10px', fontSize: 'var(--mv-text, 18px)', boxSizing: 'border-box' },

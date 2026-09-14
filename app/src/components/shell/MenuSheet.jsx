@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import './shell.css';
+import { Sheet } from '../ui/index.jsx';
 
 /**
  * ☰ — quick menu bottom sheet (docs/Eldrathor_UI_Shell_Lock.md).
@@ -17,10 +18,7 @@ const NAV = [
 export default function MenuSheet({ activeTab, inRun, canExtract, runVein, traceOn = false, onNavigate, onHelp, onDebug, onSettings, onExtract, onClose }) {
   const [confirming, setConfirming] = useState(false);
   return (
-    <div className="eld-sheet-backdrop" onClick={onClose} role="presentation">
-      <div className="eld-sheet eld-panel" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Menu">
-        <div className="eld-sheet-grip" />
-        <div className="eld-sheet-title">☰ Menu</div>
+    <Sheet onClose={onClose} label="Menu" title={<>☰ Menu</>}>
         <div className="eld-menu-list">
           {NAV.map((n) => (
             <button key={n.id} type="button" className={`eld-card eld-menu-item${activeTab === n.id ? ' is-current' : ''}`} onClick={() => onNavigate(n.id)}>
@@ -70,7 +68,6 @@ export default function MenuSheet({ activeTab, inRun, canExtract, runVein, trace
             <button type="button" className="eld-btn eld-btn-ghost" onClick={onClose}>Close</button>
           </div>
         )}
-      </div>
-    </div>
+    </Sheet>
   );
 }

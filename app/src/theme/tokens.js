@@ -1,4 +1,5 @@
-/** Shared design tokens + mode ids for Eldrathor dual UI kits + hub skins. See design doc §3b/§3c. */
+/** Shared design tokens + mode ids for Eldrathor dual UI kits + hub skins. See design doc §3b/§3c and theme/styleBible.js (the production spec). */
+import { FONTS } from './styleBible.js';
 
 export const MODE = {
   WORLD: 'WORLD',
@@ -60,12 +61,16 @@ export const colors = {
   forgeGlow: 'rgba(224, 120, 60, 0.35)',
 };
 
+/** Style Bible §A: Cinzel display (loaded once in index.html), system UI body — every mode. */
 export const fonts = {
-  worldDisplay: "'Press Start 2P', 'Courier New', monospace",
-  worldBody: "system-ui, 'Segoe UI', sans-serif",
-  mindDisplay: "Cinzel, Marcellus, 'Palatino Linotype', Georgia, serif",
-  mindBody: "Cormorant Garamond, Georgia, 'Times New Roman', serif",
-  mindUi: "system-ui, 'Segoe UI', sans-serif",
+  display: FONTS.display,
+  body: FONTS.body,
+  // legacy aliases (all modes share the two faces now)
+  worldDisplay: FONTS.display,
+  worldBody: FONTS.body,
+  mindDisplay: FONTS.display,
+  mindBody: FONTS.body,
+  mindUi: FONTS.body,
 };
 
 export const frame = {

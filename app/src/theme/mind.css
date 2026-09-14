@@ -1,84 +1,95 @@
-/* MIND VIEW mode — refined fantasy-sim, Mythros-blue Vein projection (§3c) */
-
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Cormorant+Garamond:ital,wght@0,500;1,500&display=swap');
+/*
+ * MIND VIEW mode — fight / results / cards (docs/Eldrathor_Style_Bible_Lock.md §A, column 3).
+ * "Sapphire crystal — farther sees": deep navy #0c1a2b → #152a41 vertical gradient with faint crystal
+ * noise, panel #1a2b3b (cards #23353f), 1 px #3d6fa8 border with a 6 px outer glow #2cabf8 at 25 %,
+ * 8 px radius, Cinzel 20 #dfe9f5, system UI 16 #b7c6d8, Mythros #2cabf8, HP #20a95e, MP #2cabf8,
+ * crit #f2c14e, damage #e5484d. Buttons: outline #3d6fa8 on #1a2b3b; active = gold outline.
+ * Mind View is the ONLY mode with glow.
+ */
 
 .eld-root.mode-mind {
-  --eld-bg: #060d11;
-  --eld-bg-mid: #0a151a;
-  --eld-panel: #0d1c22;
-  --eld-border: #1c3a44;
-  --eld-text: #cfe0e8;
-  --eld-muted: #5f8494;
-  --eld-accent: #5fc7e0;
-  --eld-accent-glow: rgba(95, 199, 224, 0.45);
-  --eld-good: #7fd6a0;
-  --eld-danger: #e05d6f;
-  --eld-font-display: Cinzel, Marcellus, Georgia, serif;
-  --eld-font-body: 'Cormorant Garamond', Georgia, serif;
-  --eld-radius: 10px;
-  --eld-shadow: 0 0 24px rgba(95, 199, 224, 0.18);
+  --eld-bg: #0c1a2b;
+  --eld-bg-mid: #152a41;
+  --eld-panel: #1a2b3b;
+  --eld-card: #23353f;
+  --eld-border: #3d6fa8;
+  --eld-border-inner: transparent;
+  --eld-panel-shadow: 0 0 6px rgba(44, 171, 248, 0.25);
+  --eld-text: #b7c6d8;
+  --eld-display: #dfe9f5;
+  --eld-muted: #7f97b0;
+  --eld-accent: #2cabf8;
+  --eld-accent-glow: rgba(44, 171, 248, 0.45);
+  --eld-gold: #e8c46a;
+  --eld-mythros: #2cabf8;
+  --eld-good: #20a95e;
+  --eld-danger: #e5484d;
+  --eld-crit: #f2c14e;
+  --eld-hp: #20a95e;
+  --eld-mp: #2cabf8;
+  --eld-btn-bg: #1a2b3b;
+  --eld-btn-text: #dfe9f5;
+  --eld-btn-border: #3d6fa8;
+  --eld-btn-shadow: 0 0 6px rgba(44, 171, 248, 0.25);
+  --eld-btn-primary-bg: #2cabf8;
+  --eld-btn-primary-text: #06121f;
+  --eld-btn-ghost-border: #3d6fa8;
+  --eld-btn-ghost-text: #b7c6d8;
+  --eld-tabbar-bg: #0f151d;
+  --eld-tab-active: #e8c46a;
+  --eld-tab-inactive: #7f97b0;
+  --eld-font-display: Cinzel, 'Palatino Linotype', Georgia, serif;
+  --eld-font-body: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --eld-radius: 8px;
+  --eld-shadow: 0 0 6px rgba(44, 171, 248, 0.25);
+  --eld-bar-track: #0a1522;
+  --eld-bar-border: #2b4a6e;
+  --eld-art-ph-bg: #1a2b3b;
+  --eld-art-ph-line: #3d6fa8;
+  --eld-art-ph-text: #7f97b0;
   image-rendering: auto;
 }
 
 .eld-root.mode-mind .eld-frame {
   background:
-    radial-gradient(800px 420px at 50% -8%, #123039 0%, #0a151a 45%, #060d11 100%);
-  border: 1px solid #1c3a44;
-  box-shadow:
-    0 0 0 1px rgba(95, 199, 224, 0.12),
-    0 0 40px rgba(95, 199, 224, 0.12),
-    inset 0 0 60px rgba(18, 48, 57, 0.35);
+    radial-gradient(1px 1px at 20% 30%, rgba(44, 171, 248, 0.18), transparent 60%),
+    radial-gradient(1px 1px at 70% 60%, rgba(44, 171, 248, 0.14), transparent 60%),
+    radial-gradient(1px 1px at 40% 80%, rgba(223, 233, 245, 0.1), transparent 60%),
+    radial-gradient(1px 1px at 85% 15%, rgba(223, 233, 245, 0.08), transparent 60%),
+    linear-gradient(180deg, #0c1a2b 0%, #152a41 100%);
+}
+
+/* the expedition overlay (fight / results / sanctuary) carries the same ground */
+.eld-root.mode-mind .eld-overlay {
+  background: linear-gradient(180deg, #0c1a2b 0%, #152a41 100%);
 }
 
 .eld-root.mode-mind .eld-header {
   background: transparent;
-  border-bottom: 1px solid #1a3038;
-  font-family: var(--eld-font-display);
-}
-
-.eld-root.mode-mind .eld-brand-name {
-  font-size: 18px;
-  letter-spacing: 0.28em;
-  color: #e6f2f7;
-  text-shadow: 0 0 16px rgba(95, 199, 224, 0.35);
+  border-bottom: 1px solid #3d6fa8;
 }
 
 .eld-root.mode-mind .eld-panel,
 .eld-root.mode-mind .eld-card {
-  background: #0d1c22;
-  border: 1px solid #16303a;
-  border-radius: 10px;
-  box-shadow: 0 0 18px rgba(95, 199, 224, 0.08);
+  border: 1px solid #3d6fa8;
+  border-radius: 8px;
+  box-shadow: 0 0 6px rgba(44, 171, 248, 0.25);
 }
 
 .eld-root.mode-mind .eld-btn {
-  background: #0e2830;
-  color: #5fc7e0;
-  border: 1px solid #1c4a54;
   border-radius: 8px;
-  box-shadow: 0 0 12px rgba(95, 199, 224, 0.2);
-  font-family: var(--eld-font-display);
-  font-size: 12px;
-  letter-spacing: 0.08em;
 }
 
+.eld-root.mode-mind .eld-btn.is-active,
 .eld-root.mode-mind .eld-btn:active:not(:disabled) {
-  box-shadow: 0 0 18px rgba(95, 199, 224, 0.4);
-}
-
-.eld-root.mode-mind .eld-btn-ghost {
-  background: transparent;
-  color: #7fbfd0;
-  border: 1px solid #1c3a44;
-  box-shadow: none;
+  border-color: #e8c46a;
+  box-shadow: 0 0 0 1px #e8c46a, 0 0 8px rgba(232, 196, 106, 0.35);
 }
 
 .eld-root.mode-mind .eld-aura-frame {
-  border: 1px solid rgba(95, 199, 224, 0.35);
-  border-radius: 12px;
-  box-shadow:
-    0 0 20px rgba(95, 199, 224, 0.2),
-    inset 0 0 24px rgba(95, 199, 224, 0.06);
+  border: 1px solid #3d6fa8;
+  border-radius: 8px;
+  box-shadow: 0 0 6px rgba(44, 171, 248, 0.25), inset 0 0 24px rgba(44, 171, 248, 0.06);
 }
 
 /* Intentional mode switch pulse */

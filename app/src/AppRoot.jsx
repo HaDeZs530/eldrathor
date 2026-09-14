@@ -8,7 +8,7 @@ import { DEFAULT_PARTY, AREAS, withIds } from './data.js';
 import { simulateFight, spawnEnemies, rollRewards, deriveStats, mulberry32 } from './combat.js';
 import { equip } from './combat/derive.js';
 import { withStarterWeapons, equippedIds, fightXp, splitXp, applyXp, xpToNext } from './progression/progression.js';
-import { Header } from './components/HarborViews.jsx';
+import { Frame, Header } from './components/ui/index.jsx';
 import PlayerScreen from './components/PlayerScreen.jsx';
 import PartyScreen from './components/PartyScreen.jsx';
 import TownScreen from './components/TownScreen.jsx';
@@ -71,7 +71,7 @@ const NODE_LABEL = { normal: 'Fight', crystal: 'Crystal', sanctuary: 'Sanctuary'
 const TYPE_GLYPH = { normal: '⚔', crystal: '❖', sanctuary: '✧', rare: '☠', boss: '♛' };
 
 export default function Eldrathor() {
-  const { enterMindView, exitMindView, currentMode, setHubSkinForTab } = useTheme();
+  const { enterMindView, exitMindView, setHubSkinForTab } = useTheme();
   const [tab, setTab] = useState(() => (R0 ? 'mountain' : S0.tab || 'mountain'));
   // a run saved mid-fight resumes at its Results (the fight is pre-rolled data); otherwise at its own stage
   const [runStage, setRunStage] = useState(() => (R0 ? (R0.runStage === 'fight' ? 'loot' : R0.runStage) : 'island')); // island | rally | route | fight | loot | sanctuary
@@ -673,8 +673,8 @@ export default function Eldrathor() {
   return (
     <div className="eld-page" style={S.root}>
       <style>{BASE_CSS}</style>
-      <div className="eld-frame" style={S.frame}>
-        <Header worldvein={worldvein} mode={currentMode} colors={colors} hubLabel={tab === 'mountain' ? mountainHubLabel : HUB_LABELS[tab]} actions={<ScreenHeaderActions onMenu={() => setSheet('menu')} onHelp={() => setSheet('help')} />} />
+      <Frame style={S.frame}>
+        <Header worldvein={worldvein} hubLabel={tab === 'mountain' ? mountainHubLabel : HUB_LABELS[tab]} actions={<ScreenHeaderActions onMenu={() => setSheet('menu')} onHelp={() => setSheet('help')} />} />
         {flash && <div style={{ ...S.flash, borderColor: flash.color, color: flash.color }}>{flash.msg}</div>}
         {tab === 'town' && <TownScreen party={party} stash={stash} setStash={setStash} inventory={inventory} setInventory={setInventory} worldvein={worldvein} setWorldvein={setWorldvein} setTab={selectTab} equipped={equipped} />}
         {tab === 'party' && <PartyScreen party={party} setParty={setParty} roster={roster} setRoster={setRoster} locked={!!territory} stash={stash} setStash={setStash} armor={inventory.armor || []} equipped={equipped} />}
@@ -720,7 +720,7 @@ export default function Eldrathor() {
             onClose={() => setSheet(null)}
           />
         )}
-      </div>
+      </Frame>
     </div>
   );
 }
@@ -729,6 +729,6 @@ const S = {
   // Viewport fit (Veinharbor pass §1): the decorative 12 px vertical padding lives in CSS (`.eld-page`) and is
   // removed on compact viewports; the frame budget is 100svh minus that padding, so the document never scrolls.
   root: { minHeight: '100svh', display: 'flex', justifyContent: 'center', alignItems: 'flex-start', background: '#05080a', boxSizing: 'border-box' },
-  frame: { width: frame.width, height: frame.height, maxWidth: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', borderRadius: 12, color: 'var(--eld-text, #cfe0e8)', fontFamily: 'var(--eld-font-body, system-ui, sans-serif)', position: 'relative' },
+  frame: { width: frame.width, height: frame.height, maxWidth: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', color: 'var(--eld-text, #c9bfae)', fontFamily: 'var(--eld-font-body, system-ui, sans-serif)', position: 'relative' },
   flash: { textAlign: 'center', padding: '8px', margin: '8px 12px 0', border: '1px solid', borderRadius: 8, fontSize: 12, letterSpacing: '0.06em', background: 'rgba(0,0,0,0.35)', animation: 'fadein 0.3s ease', flexShrink: 0 },
 };

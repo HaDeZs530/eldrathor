@@ -1,5 +1,6 @@
-/* Island world map — WARM RPG micro-pixel stage inside the Mountain hub (hybrid chrome).
-   Lock: docs/Eldrathor_NodeMap_Art_Lock.md — pan + zoom landscape art on portrait. */
+/* Island world map — EXPLORATION column of the Style Bible (parchment chrome, Cinzel labels).
+   Lock: docs/Eldrathor_NodeMap_Art_Lock.md — pan + zoom landscape art on portrait. The map art itself
+   is `island-map.png` from the manifest (legacy /maps/island-world.png until it lands). */
 
 .eld-island-viewport {
   position: relative;
@@ -9,9 +10,9 @@
   touch-action: none;
   cursor: grab;
   margin: 0 8px 8px;
-  border: 3px solid #8b5a2b;
-  box-shadow: 3px 3px 0 #1a120a, inset 0 0 0 1px rgba(196, 160, 112, 0.35);
-  background: #0b2340; /* sea, shows only while the image loads */
+  border: 1px solid #8a7350;
+  border-radius: 6px;
+  background: #d9c39d; /* parchment sea, shows only while the image loads */
   user-select: none;
   -webkit-user-select: none;
 }
@@ -33,11 +34,14 @@
   pointer-events: none;
   user-select: none;
   -webkit-user-drag: none;
+  image-rendering: auto;
 }
 
-.eld-island-img.is-crisp {
-  image-rendering: pixelated;
-  image-rendering: crisp-edges;
+.eld-island-art-pending {
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  z-index: 6;
 }
 
 /* Hotspot pins — counter-scaled so they stay a constant screen size */
@@ -51,7 +55,7 @@
   border: none;
   padding: 0;
   cursor: pointer;
-  font-family: 'Press Start 2P', 'Courier New', monospace;
+  font-family: Cinzel, 'Palatino Linotype', Georgia, serif;
   -webkit-tap-highlight-color: transparent;
   z-index: 3;
 }
@@ -61,46 +65,52 @@
 }
 
 .eld-hotspot-pin {
-  width: 24px;
-  height: 24px;
-  border: 3px solid #1a120a;
-  background: #e0a04d;
-  box-shadow: 2px 2px 0 #1a120a;
+  width: 26px;
+  height: 26px;
+  border: 2px solid #2b2118;
+  border-radius: 50%;
+  background: #c9962e;
+  box-shadow: 0 0 0 2px rgba(241, 230, 207, 0.85), 0 2px 4px rgba(43, 33, 24, 0.35);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1;
-  color: #1a120a;
+  color: #2b2118;
   font-family: system-ui, sans-serif;
 }
 
 .eld-hotspot-lbl {
-  font-size: 7px;
+  font-family: Cinzel, 'Palatino Linotype', Georgia, serif;
+  font-weight: 700;
+  font-size: 11px;
   letter-spacing: 0.04em;
-  color: #f5d080;
-  background: rgba(26, 18, 10, 0.72);
-  border: 2px solid #1a120a;
-  padding: 3px 5px;
+  color: #2b2118;
+  background: rgba(241, 230, 207, 0.92);
+  border: 1px solid #8a7350;
+  border-radius: 4px;
+  padding: 3px 6px;
   white-space: nowrap;
-  text-shadow: 1px 1px 0 #1a120a;
 }
 
 .eld-hotspot-sub {
-  font-size: 5px;
-  color: #c4a070;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-weight: 400;
+  font-size: 10px;
+  color: #6f5d48;
   display: block;
-  margin-top: 3px;
+  margin-top: 2px;
   letter-spacing: 0.02em;
 }
 
 .eld-hotspot.is-open .eld-hotspot-pin {
-  animation: eld-pin-bob 1.1s steps(2) infinite;
-  box-shadow: 2px 2px 0 #1a120a, 0 0 12px #f5d080;
+  animation: eld-pin-bob 1.1s ease-in-out infinite;
+  box-shadow: 0 0 0 2px rgba(241, 230, 207, 0.85), 0 0 12px rgba(201, 150, 46, 0.8);
 }
 
 .eld-hotspot.is-held .eld-hotspot-pin {
-  background: #7fbf6a;
+  background: #345d66;
+  color: #f1e6cf;
 }
 
 .eld-hotspot.is-locked {
@@ -109,20 +119,20 @@
 }
 
 .eld-hotspot.is-locked .eld-hotspot-pin {
-  background: #7c7468;
-  color: #2a2420;
+  background: #a89c88;
+  color: #3a2e22;
 }
 
 .eld-hotspot.is-locked .eld-hotspot-lbl {
-  color: #c4a070;
+  color: #6f5d48;
 }
 
 .eld-hotspot.is-harbor .eld-hotspot-pin {
-  background: #5fc7e0;
+  background: #2cabf8;
 }
 
 .eld-hotspot.is-summit .eld-hotspot-pin {
-  background: #e0687a;
+  background: #e5484d;
 }
 
 @keyframes eld-pin-bob {
@@ -147,33 +157,34 @@
 }
 
 .eld-island-ctl button {
-  width: 32px;
-  height: 32px;
-  border: 3px solid #1a120a;
-  background: #e0a04d;
-  color: #1a120a;
-  font-family: 'Press Start 2P', 'Courier New', monospace;
-  font-size: 11px;
-  box-shadow: 2px 2px 0 #1a120a;
+  width: 34px;
+  height: 34px;
+  border: 1px solid #8a7350;
+  border-radius: 6px;
+  background: #f1e6cf;
+  color: #2b2118;
+  font-family: Cinzel, 'Palatino Linotype', Georgia, serif;
+  font-weight: 700;
+  font-size: 14px;
   cursor: pointer;
   padding: 0;
 }
 
 .eld-island-ctl button:active {
-  transform: translate(2px, 2px);
-  box-shadow: 0 0 0 #1a120a;
+  background: #e8d5b7;
 }
 
 .eld-island-hint {
   position: absolute;
   left: 8px;
   bottom: 8px;
-  font-family: 'Press Start 2P', 'Courier New', monospace;
-  font-size: 6px;
-  line-height: 1.6;
-  color: #f0e0c0;
-  background: rgba(26, 18, 10, 0.7);
-  border: 2px solid #1a120a;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-size: 11px;
+  line-height: 1.4;
+  color: #3a2e22;
+  background: rgba(241, 230, 207, 0.9);
+  border: 1px solid #8a7350;
+  border-radius: 4px;
   padding: 3px 6px;
   pointer-events: none;
   z-index: 5;
@@ -194,7 +205,7 @@
   100% { filter: brightness(1); }
 }
 
-/* Dotted route 1→10 — drawn in code, scales with the map layer */
+/* Dotted route 1→10 — drawn in code (ink-dotted teal #345d66 over a parchment halo), scales with the map layer */
 .eld-island-route {
   position: absolute;
   left: 0;
@@ -213,12 +224,12 @@
 }
 
 .eld-island-route-under {
-  stroke: #1a120a;
+  stroke: #f1e6cf;
   stroke-width: 7;
   opacity: 0.85;
 }
 
 .eld-island-route-over {
-  stroke: #f5d080;
+  stroke: #345d66;
   stroke-width: 3.6;
 }

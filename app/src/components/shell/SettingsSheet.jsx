@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import './shell.css';
+import { Sheet } from '../ui/index.jsx';
 
 /**
  * ☰ Menu → Settings (Progression Loop Lock §1): Export save (JSON to clipboard, with a selectable box
@@ -31,10 +32,7 @@ export default function SettingsSheet({ store, onClose }) {
   }
 
   return (
-    <div className="eld-sheet-backdrop" onClick={onClose} role="presentation">
-      <div className="eld-sheet eld-panel" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Settings" style={{ maxHeight: '88%' }}>
-        <div className="eld-sheet-grip" />
-        <div className="eld-sheet-title">⚙ Settings</div>
+    <Sheet onClose={onClose} label="Settings" title={<>⚙ Settings</>} maxHeight="88%">
         {mode === 'menu' && (
           <div className="eld-menu-list">
             <button type="button" className="eld-card eld-menu-item" onClick={doExport}><span className="eld-menu-glyph">⇪</span><span>Export save</span><span className="eld-menu-note">JSON to clipboard</span></button>
@@ -61,7 +59,6 @@ export default function SettingsSheet({ store, onClose }) {
           {mode !== 'menu' && <button type="button" className="eld-btn eld-btn-ghost" onClick={() => { setMode('menu'); setNote(null); }}>Back</button>}
           <button type="button" className="eld-btn eld-btn-ghost" onClick={onClose}>Close</button>
         </div>
-      </div>
-    </div>
+    </Sheet>
   );
 }

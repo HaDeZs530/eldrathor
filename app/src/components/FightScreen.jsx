@@ -2,18 +2,23 @@ import { useEffect, useMemo, useRef } from 'react';
 import { ARCHETYPES } from '../data.js';
 import { nodeTypeMeta } from '../theme/tokens.js';
 import { INNATES, partyAuras } from '../combat/simulate.js';
+import { MODES } from '../theme/styleBible.js';
+import { enemySlug, slug } from '../art/manifest.js';
+import Art from '../art/Art.jsx';
+import { useArtStatuses } from '../art/useArt.js';
+import { Bar, PartyCard } from './ui/index.jsx';
 import '../combat/fight.css';
 
 /**
- * Combat v2 fight screen — playback of a pre-rolled event script (spec §5–§6).
- * v3 §5 order: enemies row (hit flashes, crit shake) → three party cards (HP + mana bars,
- * innate button that dims on cooldown and flashes on fire, aura icons) → 1× / 2× / Skip →
- * feed (newest at bottom). The party cards are the party's only representation.
- * Auto-resolves; the player never taps attacks. Tab bar stays visible (parent).
+ * Combat v2 fight screen — playback of a pre-rolled event script (spec §5–§6) on the Style Bible's
+ * Mind View: the stage is the `enemy-<slug>` backdrop with the enemy HP bar overlaid at its top
+ * (§A), then three party cards (portrait 64 px in a gold frame, name Cinzel 15, HP/MP 14 px bars, two
+ * innate/aura icons), then 1× / 2× / Skip, then the feed. Auto-resolves; the player never taps attacks.
  */
 const FLASH_MS = 320;
 const FEED_TYPES = new Set(['crit', 'kill', 'innate', 'enrage', 'death', 'stun', 'victory', 'wipe']);
 const ENEMY_GLYPH = { boss: '☠', rare: '◈', normal: '✦', crystal: '❖' };
+const M = MODES.mind;
 
 export default function FightScreen({ area, node, party, fight, elapsedMs, speed, onSpeed, onSkip }) {
   const { events, result } = fight;
@@ -47,40 +52,58 @@ export default function FightScreen({ area, node, party, fight, elapsedMs, speed
 
   const done = elapsedMs >= result.durationMs;
   const enemyLabel = node?.type === 'boss' ? area?.boss || 'Boss' : fight.named ? 'Named foe' : meta.label;
+  // stage backdrop: the boss's own scene, else the lead enemy's type scene
+  const lead = fight.enemies[0];
+  const stageArt = `enemy-${node?.type === 'boss' ? slug(area?.boss || lead?.name) : enemySlug(lead?.name)}`;
+  const stageHit = fight.enemies.some((e) => hitTargets.has(e.id));
+  // §C: every missing asset on this screen is listed as a chip
+  const artNames = useMemo(() => [stageArt, ...party.flatMap((m) => { const inn = INNATES[m.archetype]; return [`portrait-${slug(m.archetype)}-1`, ...(inn ? [`icon-innate-${slug(inn.name)}`, `icon-aura-${slug(inn.aura.id)}`] : [])]; })], [stageArt, party]);
+  const artStatus = useArtStatuses(artNames);
+  const pendingArt = artNames.filter((n) => artStatus[n] === 'pending');
 
   return (
     <div style={S.wrap}>
       <div style={S.head}>
-        <div style={S.kick}>Mind View · Combat</div>
-        <div className="eld-brand-name" style={S.title}>{enemyLabel}</div>
+        <div className="eld-kicker">Mind View · Combat</div>
         <div style={S.sub}>
           {area?.name} · {meta.label}{fight.ambush ? ' · ambush' : ''} · {done ? (result.win ? 'victory' : 'defeat') : `${(elapsedMs / 1000).toFixed(1)}s`}
           {!done && speed === 2 ? ' · 2×' : ''}
         </div>
       </div>
 
-      {/* --- stage --- */}
-      <div className="eld-aura-frame eld-panel" style={S.stage}>
-        <div style={S.rowLbl}>Foes</div>
-        <div style={S.enemyRow}>
+      {/* --- stage: enemy backdrop with the enemy HP bars overlaid at the top --- */}
+      <div className={`eld-fight-stage eld-panel${stageHit ? ' is-hit' : ''}`}>
+        <Art name={stageArt} className="eld-fight-stage-art" alt="" position="50% 40%" />
+        <div className="eld-fight-stage-scrim" />
+        <div className="eld-fight-stage-top">
+          <div className="eld-fight-stage-title" title={enemyLabel}>{enemyLabel}</div>
+          <div className="eld-fight-stage-enemies" style={{ '--foes': fight.enemies.length }}>
           {fight.enemies.map((e, i) => {
             const es = snap?.enemies?.[i] || { hp: e.hp, alive: true };
-            const cls = ['eld-fight-unit', hitTargets.has(e.id) && 'is-hit', critTargets.has(e.id) && 'is-crit', !es.alive && 'is-dead', es.stunnedUntil > elapsedMs && 'is-stunned'].filter(Boolean).join(' ');
-            const color = e.isBoss ? '#e05d6f' : e.isRare ? '#e0a04d' : '#8aa0b5';
+            const cls = ['eld-fight-unit', 'eld-fight-enemy', hitTargets.has(e.id) && 'is-hit', critTargets.has(e.id) && 'is-crit', !es.alive && 'is-dead', es.stunnedUntil > elapsedMs && 'is-stunned'].filter(Boolean).join(' ');
+            const color = e.isBoss ? M.damage : e.isRare ? M.crit : '#8aa0b5';
             return (
-              <div key={e.id} className={cls} style={{ ...S.unit, borderColor: color }}>
-                <div style={{ ...S.unitGlyph, color }}>{ENEMY_GLYPH[e.isBoss ? 'boss' : e.isRare ? 'rare' : node?.type === 'crystal' ? 'crystal' : 'normal']}</div>
-                <div style={S.unitName}>{e.name}</div>
-                <Bar value={es.hp / e.maxHp} color={color} />
-                {es.enraged && <div style={S.enrageTag}>ENRAGED</div>}
+              <div key={e.id} className={cls}>
+                <div className="eld-fight-enemy-row">
+                  <span className="eld-fight-enemy-glyph" style={{ color }} aria-hidden="true">{ENEMY_GLYPH[e.isBoss ? 'boss' : e.isRare ? 'rare' : node?.type === 'crystal' ? 'crystal' : 'normal']}</span>
+                  <span className="eld-fight-enemy-name">{e.name}</span>
+                  {es.enraged && <span className="eld-fight-enrage">ENRAGED</span>}
+                </div>
+                <Bar value={es.hp / e.maxHp} color={M.damage} label={`${Math.max(0, Math.round(es.hp))} / ${Math.round(e.maxHp)}`} />
               </div>
             );
           })}
+          </div>
+          {pendingArt.length > 0 && (
+            <div className="eld-art-pending-list eld-fight-stage-pending" aria-label="Pending art">
+              {pendingArt.map((n) => <span key={n}>{n}.png</span>)}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* --- party cards --- */}
-      <div style={S.cards}>
+      {/* --- party cards (§A): 3 across, ≥ 120 px, portrait, Cinzel 15 name, 14 px HP/MP, two 28 px icons --- */}
+      <div className="eld-party-cards">
         {party.map((m, i) => {
           const ps = snap?.party?.[i] || { hp: 1, mana: 1, cdReady: 0, stacks: 0, alive: true };
           const a = ARCHETYPES[m.archetype] || {};
@@ -88,30 +111,24 @@ export default function FightScreen({ area, node, party, fight, elapsedMs, speed
           const inn = INNATES[m.archetype];
           const id = `p${i}`;
           const onCd = inn && !inn.passive && ps.cdReady > elapsedMs;
-          const cdFrac = onCd ? Math.max(0, Math.min(1, 1 - (ps.cdReady - elapsedMs) / inn.cd)) : 1;
           const fired = firedBy.has(id);
+          const cls = ['eld-fight-unit', hitTargets.has(id) && 'is-hit', critTargets.has(id) && 'is-crit'].filter(Boolean).join(' ');
+          const icons = inn ? [
+            { key: 'innate', art: `icon-innate-${slug(inn.name)}`, glyph: inn.glyph, title: `${inn.name}${inn.passive && ps.stacks > 0 ? ` ×${ps.stacks}` : ''} ${onCd ? '(cooling down)' : '(ready)'}`, lit: fired, dim: onCd },
+            { key: 'aura', art: `icon-aura-${slug(inn.aura.id)}`, glyph: inn.aura.glyph, title: `${inn.aura.name}: ${inn.aura.text}`, lit: auras.some((au) => au.id === inn.aura.id) && fired },
+          ] : [];
           return (
-            <div key={id} className="eld-card" style={{ ...S.card, borderLeftColor: a.color || '#5fc7e0', opacity: ps.alive ? 1 : 0.45 }}>
-              <div style={S.cardTop}>
-                <span style={{ ...S.cardName, color: a.color }}>{m.name}</span>
-                <span style={S.cardMeta}>{m.archetype}</span>
-              </div>
-              <Bar value={ps.hp / d.maxHp} color={hpColor(ps.hp / d.maxHp)} label={`${Math.round(ps.hp)}/${Math.round(d.maxHp)}`} />
-              <Bar value={ps.mana / d.maxMana} color="#5fc7e0" label={`${Math.round(ps.mana)}/${Math.round(d.maxMana)} mana`} thin />
-              {inn && (
-                <div className={`eld-innate-btn${onCd ? ' is-cooldown' : ''}${fired ? ' is-fired' : ''}`} role="img" aria-label={`${inn.name} ${onCd ? 'cooling down' : 'ready'}`}>
-                  <span>{inn.glyph}</span>
-                  <span>{inn.name}</span>
-                  {inn.passive && ps.stacks > 0 && <span style={S.stacks}>×{ps.stacks}</span>}
-                  {onCd && <div className="eld-innate-cd" style={{ width: `${cdFrac * 100}%` }} />}
-                </div>
-              )}
-              <div style={S.auraRow}>
-                {auras.map((au) => (
-                  <span key={au.id} className={`eld-aura-icon${au.id === inn?.aura.id ? ' is-lit' : ''}`} title={`${au.name}: ${au.text}`}>{au.glyph}</span>
-                ))}
-              </div>
-            </div>
+            <PartyCard
+              key={id}
+              className={cls}
+              name={m.name}
+              accent={a.color}
+              portraitArt={`portrait-${slug(m.archetype)}-1`}
+              hp={ps.hp} hpMax={d.maxHp} hpColor={hpColor(ps.hp / d.maxHp)}
+              mp={ps.mana} mpMax={d.maxMana} mpColor={M.mp}
+              icons={icons}
+              dead={!ps.alive}
+            />
           );
         })}
       </div>
@@ -120,7 +137,7 @@ export default function FightScreen({ area, node, party, fight, elapsedMs, speed
       <div style={S.speedRow}>
         <button type="button" className={`eld-btn eld-btn-ghost eld-speed-btn${speed === 1 ? ' is-active' : ''}`} onClick={() => onSpeed(1)} disabled={done}>1×</button>
         <button type="button" className={`eld-btn eld-btn-ghost eld-speed-btn${speed === 2 ? ' is-active' : ''}`} onClick={() => onSpeed(2)} disabled={done}>2×</button>
-        <button type="button" className="eld-btn eld-speed-btn" onClick={onSkip}>Skip ▸</button>
+        <button type="button" className="eld-btn eld-btn-ghost eld-speed-btn" onClick={onSkip}>Skip ▸</button>
       </div>
 
       {/* --- feed --- */}
@@ -134,20 +151,8 @@ export default function FightScreen({ area, node, party, fight, elapsedMs, speed
   );
 }
 
-function Bar({ value, color, label, thin }) {
-  const pct = Math.max(0, Math.min(1, value || 0)) * 100;
-  return (
-    <div style={{ ...S.barWrap, marginTop: thin ? 3 : 5 }}>
-      <div style={{ ...S.barTrack, height: 'var(--mv-bar, 14px)' }}>
-        <div style={{ width: `${pct}%`, height: '100%', background: color, transition: 'width 120ms linear' }} />
-      </div>
-      {label && <div style={S.barLbl}>{label}</div>}
-    </div>
-  );
-}
-
 function hpColor(f) {
-  return f > 0.5 ? '#7fd6a0' : f > 0.25 ? '#e0a04d' : '#e05d6f';
+  return f > 0.5 ? M.hp : f > 0.25 ? M.crit : M.damage;
 }
 
 function feedClass(e) {
@@ -180,27 +185,7 @@ function feedText(e) {
 const S = {
   wrap: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 8, padding: '8px 12px 8px', textAlign: 'left', overflow: 'hidden' },
   head: { flexShrink: 0 },
-  kick: { fontSize: 'var(--mv-label, 15px)', letterSpacing: '0.18em', textTransform: 'uppercase', color: '#5f8494', fontFamily: 'var(--eld-font-display, Cinzel, Georgia, serif)' },
-  title: { fontSize: 'var(--mv-title, 26px)', fontWeight: 700, marginTop: 2, color: '#e6f2f7', lineHeight: 1.1 },
-  sub: { fontSize: 'var(--mv-label, 15px)', color: '#5f8494', marginTop: 2, fontStyle: 'italic' },
-  stage: { padding: '8px 10px', flexShrink: 0, background: 'radial-gradient(circle at 50% 40%, #0e2430 0%, #060d11 80%)' },
-  rowLbl: { fontSize: 'var(--mv-label, 15px)', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#5f8494', margin: '2px 0 4px' },
-  enemyRow: { display: 'flex', gap: 6, marginBottom: 6 },
-  partyRow: { display: 'flex', gap: 6 },
-  unit: { flex: 1, minWidth: 0, border: '1px solid', borderRadius: 8, padding: '8px 6px', background: 'rgba(0,0,0,0.3)' },
-  unitGlyph: { fontSize: 'var(--mv-num, 24px)', lineHeight: 1, textAlign: 'center' },
-  unitName: { fontSize: 'var(--mv-label, 15px)', color: '#cfe0e8', textAlign: 'center', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
-  enrageTag: { fontSize: 'var(--mv-label, 15px)', letterSpacing: '0.12em', color: '#ff7a6e', textAlign: 'center', marginTop: 2 },
+  sub: { fontSize: 'var(--mv-label, 15px)', color: 'var(--eld-muted)', marginTop: 2, fontStyle: 'italic' },
   speedRow: { display: 'flex', gap: 6, flexShrink: 0 },
-  cards: { display: 'flex', gap: 6, flexShrink: 0 },
-  card: { flex: 1, minWidth: 0, padding: '8px 7px', borderLeft: '3px solid', minHeight: 'var(--mv-card-min, 120px)' },
-  cardTop: { display: 'flex', flexDirection: 'column' },
-  cardName: { fontSize: 'var(--mv-text, 18px)', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
-  cardMeta: { fontSize: 'var(--mv-label, 15px)', color: '#5f8494' },
-  stacks: { fontSize: 'var(--mv-label, 15px)', color: '#e0a04d' },
-  auraRow: { display: 'flex', gap: 4, marginTop: 6 },
-  barWrap: {},
-  barTrack: { background: '#08141a', borderRadius: 4, overflow: 'hidden', border: '1px solid #16303a' },
-  barLbl: { fontSize: 'var(--mv-label, 15px)', color: '#5f8494', marginTop: 1, fontVariantNumeric: 'tabular-nums' },
   feedBox: { padding: '8px 10px', flex: '1 1 96px', minHeight: 84, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 3, fontSize: 'var(--mv-feed, 17px)', lineHeight: 'var(--mv-feed-lh, 1.45)' },
 };

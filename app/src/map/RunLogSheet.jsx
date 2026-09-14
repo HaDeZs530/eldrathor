@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import '../components/shell/shell.css';
+import { Sheet } from '../components/ui/index.jsx';
 
 /**
  * Run log — docs/Eldrathor_RouteMap_v3_Travel_Lock.md §9. Mind-view bottom sheet listing every
@@ -13,10 +14,7 @@ export default function RunLogSheet({ log, areaName, onClose }) {
     if (listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight;
   }, [log.length]);
   return (
-    <div className="eld-sheet-backdrop" onClick={onClose} role="presentation">
-      <div className="eld-sheet eld-panel eld-runlog" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Run log">
-        <div className="eld-sheet-grip" />
-        <div className="eld-sheet-title">📜 Run log{areaName ? ` · ${areaName}` : ''}</div>
+    <Sheet onClose={onClose} label="Run log" title={<>📜 Run log{areaName ? ` · ${areaName}` : ''}</>} className="eld-runlog">
         <div className="eld-runlog-list" ref={listRef}>
           {log.length === 0 && <div className="eld-runlog-line" style={{ color: KIND_COLOR.sys }}>Nothing yet — scout a node.</div>}
           {log.map((l, i) => (
@@ -29,7 +27,6 @@ export default function RunLogSheet({ log, areaName, onClose }) {
         <div className="eld-sheet-actions">
           <button type="button" className="eld-btn" onClick={onClose}>Close</button>
         </div>
-      </div>
-    </div>
+    </Sheet>
   );
 }

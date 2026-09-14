@@ -83,7 +83,7 @@ export default function PartyScreen({ party, setParty, roster, setRoster, locked
   return (
     <div style={S.wrap}>
       <div style={S.kick}>Mind View · Party</div>
-      <div className="eld-brand-name" style={S.title}>Bonded Three</div>
+      <div className="eld-display eld-screen-title" style={S.title}>Bonded Three</div>
       {locked && (
         <div className="eld-panel" style={{ padding: '10px 12px', fontSize: 'var(--mv-label, 15px)', color: 'var(--eld-muted)', lineHeight: 1.4 }} role="status">
           Your bond is on the mountain — change the party at Rally.
@@ -151,7 +151,7 @@ function CreateCharacter({ onCancel, onCreate }) {
         ← Party
       </button>
       <div style={S.kick}>Mind View · New Adventurer</div>
-      <div className="eld-brand-name" style={S.title}>Bind a new Adventurer</div>
+      <div className="eld-display eld-screen-title" style={S.title}>Bind a new Adventurer</div>
       <div style={S.sub}>Give them a name and choose a class. Both are required.</div>
 
       <div className="eld-panel" style={S.createPanel}>
@@ -218,7 +218,7 @@ function CreateCharacter({ onCancel, onCreate }) {
 }
 
 function MemberRow({ m, badge, onClick }) {
-  const a = ARCHETYPES[m.archetype] || { color: '#5fc7e0', role: '?' };
+  const a = ARCHETYPES[m.archetype] || { color: 'var(--eld-accent)', role: '?' };
   return (
     <button type="button" className="eld-card" onClick={onClick} style={{ ...S.row, borderLeftColor: a.color }}>
       <div style={S.rowTop}>
@@ -284,7 +284,7 @@ function MemberDetail({ member, stash, armor, taken, locked, onBack, onChange, o
         ← Party
       </button>
       <div style={S.kick}>Mind View · Adventurer</div>
-      <div className="eld-brand-name" style={{ ...S.title, color: a.color }}>{member.name}</div>
+      <div className="eld-display eld-screen-title" style={{ ...S.title, color: a.color }}>{member.name}</div>
       <div style={S.sub}>{member.archetype} · {a.blurb}</div>
 
       <div className="eld-panel" style={S.statGrid}>
@@ -321,7 +321,7 @@ function MemberDetail({ member, stash, armor, taken, locked, onBack, onChange, o
         <label style={S.editLbl} htmlFor="eld-member-name">Name</label>
         <input
           id="eld-member-name"
-          style={{ ...S.input, borderColor: nameOk ? undefined : '#e05d6f' }}
+          style={{ ...S.input, borderColor: nameOk ? undefined : 'var(--eld-danger)' }}
           value={nameDraft}
           maxLength={NAME_MAX}
           aria-invalid={!nameOk}
@@ -507,17 +507,17 @@ const S = {
     boxSizing: 'border-box',
   },
   promote: { width: '100%', padding: '10px 8px', marginBottom: 4, minHeight: 'var(--mv-tap, 52px)' },
-  err: { color: '#e05d6f', fontSize: 'var(--mv-label, 15px)', marginTop: 4 },
+  err: { color: 'var(--eld-danger)', fontSize: 'var(--mv-label, 15px)', marginTop: 4 },
   pick: { padding: 12, width: '100%', textAlign: 'left', color: 'inherit', fontFamily: 'inherit', cursor: 'pointer', borderLeftWidth: 3 },
   pickCta: { marginTop: 8, fontSize: 'var(--mv-label, 15px)', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--eld-accent, #5fc7e0)' },
-  comingTag: { fontSize: 'var(--mv-label, 15px)', letterSpacing: '0.08em', textTransform: 'uppercase', color: '#e0c090' },
+  comingTag: { fontSize: 'var(--mv-label, 15px)', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--eld-gold)' },
   note: { fontSize: 'var(--mv-label, 15px)', color: 'var(--eld-muted)', fontStyle: 'italic', margin: '4px 0 8px' },
   upRow: { padding: 12 },
   treeTag: {
     fontSize: 'var(--mv-label, 15px)',
     letterSpacing: '0.14em',
     textTransform: 'uppercase',
-    color: '#5fc7e0',
+    color: 'var(--eld-accent)',
     border: '1px solid #1c4a54',
     borderRadius: 4,
     padding: '2px 6px',

@@ -30,7 +30,7 @@ export default function PlayerScreen({ worldvein = 0 }) {
     <div style={S.wrap}>
       <div style={S.hero}>
         <div style={S.kick}>Mind View · Veinbinder</div>
-        <div className="eld-brand-name" style={S.title}>You</div>
+        <div className="eld-display eld-screen-title" style={S.title}>You</div>
         <div style={S.sub}>Base presence — growth purchased below</div>
         <div className="eld-panel" style={S.statGrid}>
           {stats.map((s) => (
@@ -118,7 +118,7 @@ const S = {
     padding: '8px 4px',
   },
   veinLbl: { fontSize: 'var(--mv-label, 15px)', color: 'var(--eld-muted, #5f8494)', letterSpacing: '0.08em', textTransform: 'uppercase' },
-  veinNum: { fontSize: 'var(--mv-text, 18px)', fontWeight: 700, color: '#5fc7e0' },
+  veinNum: { fontSize: 'var(--mv-text, 18px)', fontWeight: 700, color: 'var(--eld-accent)' },
   secHead: {
     fontSize: 'var(--mv-text, 18px)',
     fontWeight: 700,
@@ -135,7 +135,7 @@ const S = {
     fontSize: 'var(--mv-label, 15px)',
     letterSpacing: '0.14em',
     textTransform: 'uppercase',
-    color: '#5fc7e0',
+    color: 'var(--eld-accent)',
     border: '1px solid #1c4a54',
     borderRadius: 4,
     padding: '2px 6px',

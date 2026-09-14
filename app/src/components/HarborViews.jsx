@@ -8,7 +8,7 @@ export function Header({ worldvein, mode, colors, hubLabel, actions }) {
       <div style={S.brand}>
         <span style={{ color: mode === 'MIND' ? colors.mythros : colors.worldAmber, fontSize: 18 }}>❖</span>
         <div>
-          <div className="eld-brand-name">ELDRATHOR</div>
+          <div className="eld-display eld-screen-title">ELDRATHOR</div>
           <div style={S.brandSub}>{hubLabel || (mode === 'MIND' ? 'Mind View' : 'Veinharbor')}</div>
         </div>
       </div>
@@ -173,7 +173,7 @@ const S = {
   worldName: { fontSize: 15, fontWeight: 700, margin: '3px 0 6px' },
   worldMeta: { display: 'flex', gap: 10, alignItems: 'center', fontSize: 11, color: 'var(--eld-muted, #7f97a3)', flexWrap: 'wrap' },
   courtTag: { color: '#d67d4d', border: '1px solid #4a2f1e', borderRadius: 4, padding: '1px 6px', fontSize: 10 },
-  lockTag: { color: '#e05d6f', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase' },
+  lockTag: { color: 'var(--eld-danger)', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase' },
   editGrid: { display: 'flex', flexDirection: 'column', gap: 12 },
   editCard: { padding: 14, borderTop: '3px solid' },
   nameInput: { width: '100%', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--eld-border, #1c3a44)', color: 'inherit', borderRadius: 6, padding: '8px 10px', fontSize: 14, fontWeight: 700, marginBottom: 8, boxSizing: 'border-box' },

@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { createModeSwitcher } from './modeSwitch.js';
 import { MODE, HUB_SKIN, TAB_HUB_SKIN } from './tokens.js';
+import '../components/ui/ui.css';
 import './world.css';
 import './mind.css';
 import './hub.css';

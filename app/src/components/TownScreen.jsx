@@ -2,8 +2,9 @@ import React, { useLayoutEffect, useRef, useState } from 'react';
 import { TIER_COLOR, newId } from '../data.js';
 import { MAT_QUALITY } from '../theme/tokens.js';
 import { previewEmpower, EMPOWER_MAX, RARITY, weaponDamageMult, rarityIndex } from '../progression/progression.js';
-import { TOWN_LAYOUT, TOWN_DESTINATIONS } from '../town/townLayout.js';
+import { TOWN_LAYOUT, TOWN_DESTINATIONS, TOWN_ART } from '../town/townLayout.js';
 import TownArt from './town/TownArt.jsx';
+import { DestinationRow } from './ui/index.jsx';
 import './town/town.css';
 
 /**
@@ -90,14 +91,7 @@ function HarborLanding({ party, stash, onOpen }) {
 
       <div className="eld-town-list" style={{ padding: `${L.listPaddingY}px ${L.listPaddingX}px`, gap: L.rowGap }}>
         {TOWN_DESTINATIONS.map((d) => (
-          <button key={d.id} type="button" className="eld-town-row" style={{ minHeight: L.rowMinHeight }} onClick={() => onOpen(d)}>
-            <TownArt slot={d.art} style={{ width: L.artWidth }} alt="" />
-            <span className="eld-town-row-text">
-              <span className="eld-town-display eld-town-row-title" style={{ fontSize: L.titlePx }}>{d.title}</span>
-              <span className="eld-town-row-sub" style={{ fontSize: L.subtitlePx }}>{d.subtitle}</span>
-            </span>
-            <span className="eld-town-row-chev" aria-hidden="true">›</span>
-          </button>
+          <DestinationRow key={d.id} art={TOWN_ART[d.art].art} position={TOWN_ART[d.art].position} title={d.title} subtitle={d.subtitle} onClick={() => onOpen(d)} />
         ))}
       </div>
 

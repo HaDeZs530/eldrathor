@@ -1,79 +1,13 @@
-/* UI shell — header actions (☰ ?) and bottom sheets. docs/Eldrathor_UI_Shell_Lock.md
-   Sheets inherit the Dual-mode theme through .eld-panel / --eld-* vars: warm on reality
-   screens, Mind-view on projection screens. */
-
-.eld-hdr-actions {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  flex-shrink: 0;
-}
-
-.eld-hdr-btn {
-  width: 32px;
-  height: 32px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--eld-radius, 8px);
-  border: 1px solid var(--eld-border, #1c3a44);
-  background: rgba(0, 0, 0, 0.25);
-  color: var(--eld-text, #cfe0e8);
-  font-size: 16px;
-  line-height: 1;
-  cursor: pointer;
-  padding: 0;
-  transition: var(--hub-transition);
-  -webkit-tap-highlight-color: transparent;
-}
-
-.eld-hdr-btn:active {
-  filter: brightness(1.3);
-}
-
-.eld-sheet-backdrop {
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.55);
-  display: flex;
-  align-items: flex-end;
-  z-index: 40;
-  animation: fadein 0.2s ease;
-}
-
-.eld-sheet {
-  width: 100%;
-  max-height: 78%;
-  overflow-y: auto;
-  padding: 14px 16px calc(14px + env(safe-area-inset-bottom, 0px));
-  border-radius: 14px 14px 0 0;
-  box-sizing: border-box;
-  animation: eld-sheet-up 0.25s ease;
-  text-align: left;
-}
-
-.eld-sheet-grip {
-  width: 36px;
-  height: 4px;
-  border-radius: 2px;
-  background: var(--eld-border, #1c3a44);
-  margin: 0 auto 10px;
-}
-
-.eld-sheet-title {
-  font-family: var(--eld-font-display, Cinzel, Georgia, serif);
-  font-size: var(--mv-text, 18px);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  margin-bottom: 8px;
-}
+/* UI shell — bottom-sheet contents (menu list, help bullets). docs/Eldrathor_UI_Shell_Lock.md
+   The header actions (☰ ?) and the sheet frame itself come from components/ui (Style Bible §A);
+   sheets inherit the mode through .eld-panel / --eld-* vars. */
 
 .eld-sheet-bullets {
   margin: 0 0 12px;
   padding-left: 18px;
   font-size: var(--mv-text, 18px);
   line-height: 1.45;
-  color: var(--eld-text, #cfe0e8);
+  color: var(--eld-text, #c9bfae);
 }
 
 .eld-sheet-bullets li + li {
@@ -82,7 +16,7 @@
 
 .eld-sheet-sub {
   font-size: var(--mv-label, 15px);
-  color: var(--eld-muted, #5f8494);
+  color: var(--eld-muted, #a89c88);
   margin: 10px 0 6px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -109,7 +43,7 @@
 }
 
 .eld-menu-item.is-current {
-  box-shadow: inset 3px 0 0 var(--eld-accent, #5fc7e0);
+  box-shadow: inset 3px 0 0 var(--eld-accent, #e8c46a);
 }
 
 .eld-menu-item:disabled {
@@ -126,7 +60,7 @@
 .eld-menu-note {
   margin-left: auto;
   font-size: var(--mv-label, 15px);
-  color: var(--eld-muted, #5f8494);
+  color: var(--eld-muted, #a89c88);
 }
 
 .eld-sheet-actions {
@@ -138,9 +72,4 @@
 .eld-sheet-actions .eld-btn {
   flex: 1;
   min-height: var(--mv-tap, 52px);
-}
-
-@keyframes eld-sheet-up {
-  from { transform: translateY(24px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
 }

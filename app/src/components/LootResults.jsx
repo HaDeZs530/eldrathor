@@ -9,13 +9,13 @@ import { ARCHETYPES, TIER_COLOR } from '../data.js';
 export default function LootResults({ area, nodeLabel, fight, onContinue }) {
   const { result, stats, rewards } = fight;
   const win = result.win;
-  const accent = win ? '#5fc7e0' : '#e05d6f';
+  const accent = win ? 'var(--eld-accent)' : 'var(--eld-danger)';
 
   return (
     <div style={S.wrap}>
       <div style={S.head}>
         <div style={S.kick}>Mind View · Spoils</div>
-        <div className="eld-brand-name" style={{ ...S.title, color: win ? '#e6f2f7' : '#e05d6f' }}>{win ? 'Victory' : 'The bond breaks'}</div>
+        <div className="eld-display eld-screen-title" style={{ ...S.title, color: win ? 'var(--eld-display)' : 'var(--eld-danger)' }}>{win ? 'Victory' : 'The bond breaks'}</div>
         <div style={S.sub}>
           {area?.name}
           {nodeLabel ? ` · ${nodeLabel}` : ''}
@@ -53,22 +53,22 @@ export default function LootResults({ area, nodeLabel, fight, onContinue }) {
               <span style={{ ...S.val, color: accent }}>+{rewards.worldvein} ❖</span>
             </div>
             {result.attuneVein && (
-              <div style={{ ...S.line, color: '#e0c090' }}>
+              <div style={{ ...S.line, color: 'var(--eld-gold)' }}>
                 Attune Vein ▸ +{rewards.attuneBonus} Worldvein · loot tier biased +1
               </div>
             )}
             {rewards.mapClearBonus > 0 && (
-              <div style={{ ...S.line, color: '#e0a04d' }}>Map cleared ▸ +{rewards.mapClearBonus} Worldvein · a guaranteed Rare-tier weapon</div>
+              <div style={{ ...S.line, color: 'var(--eld-gold)' }}>Map cleared ▸ +{rewards.mapClearBonus} Worldvein · a guaranteed Rare-tier weapon</div>
             )}
-            {fight.named && <div style={{ ...S.line, color: '#e0c090' }}>Named variant ▸ one extra weapon roll at +1 tier</div>}
+            {fight.named && <div style={{ ...S.line, color: 'var(--eld-gold)' }}>Named variant ▸ one extra weapon roll at +1 tier</div>}
             {fight.xp && (
               <div style={S.xpBox}>
                 <div style={S.row}>
                   <span style={S.lbl}>Experience</span>
-                  <span style={{ ...S.val, color: '#7fd6a0' }}>+{fight.xp.total} XP</span>
+                  <span style={{ ...S.val, color: 'var(--eld-good)' }}>+{fight.xp.total} XP</span>
                 </div>
                 {fight.xp.per.map((p) => (
-                  <div key={p.id} style={{ ...S.line, color: p.levelsGained ? '#e0c090' : '#8fb2bf' }}>
+                  <div key={p.id} style={{ ...S.line, color: p.levelsGained ? 'var(--eld-gold)' : '#8fb2bf' }}>
                     {p.name} +{p.gain} XP{p.fallen ? ' (fallen · half)' : ''}
                     {p.levelsGained ? ` ▸ Level ${p.from} → ${p.to}!` : ` · ${p.xpAfter} / ${p.xpNeeded} to Lv ${p.to + 1}`}
                   </div>
@@ -78,18 +78,18 @@ export default function LootResults({ area, nodeLabel, fight, onContinue }) {
             {rewards.gears.length ? (
               rewards.gears.map((g, i) => (
                 <div key={i} style={{ ...S.gear, borderColor: TIER_COLOR[g.tier] || accent }}>
-                  <div style={{ color: TIER_COLOR[g.tier] || '#e0a04d', fontWeight: 700 }}>{g.name}</div>
+                  <div style={{ color: TIER_COLOR[g.tier] || 'var(--eld-gold)', fontWeight: 700 }}>{g.name}</div>
                   <div style={S.gearMeta}>
                     {g.tier} · rating {g.baseRating}/100 · weapon drop
                   </div>
                 </div>
               ))
             ) : (
-              <div style={{ ...S.line, color: '#5f8494', fontStyle: 'italic' }}>No weapon this time — the Vein still yields dust.</div>
+              <div style={{ ...S.line, color: 'var(--eld-muted)', fontStyle: 'italic' }}>No weapon this time — the Vein still yields dust.</div>
             )}
           </>
         ) : (
-          <div style={{ ...S.line, color: '#e05d6f' }}>
+          <div style={{ ...S.line, color: 'var(--eld-danger)' }}>
             The bond pulls them home. Banked Worldvein from this run returns with you; the territory resets.
           </div>
         )}
@@ -105,21 +105,21 @@ export default function LootResults({ area, nodeLabel, fight, onContinue }) {
 const S = {
   wrap: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 14, padding: '16px 16px 12px', textAlign: 'left', overflowY: 'auto' },
   head: { flexShrink: 0 },
-  kick: { fontSize: 'var(--mv-label, 15px)', letterSpacing: '0.18em', textTransform: 'uppercase', color: '#5f8494', fontFamily: 'var(--eld-font-display, Cinzel, Georgia, serif)' },
+  kick: { fontSize: 'var(--mv-label, 15px)', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--eld-muted)', fontFamily: 'var(--eld-font-display, Cinzel, Georgia, serif)' },
   title: { fontSize: 'var(--mv-title, 26px)', fontWeight: 700, marginTop: 4, lineHeight: 1.1 },
-  sub: { fontSize: 'var(--mv-label, 15px)', color: '#5f8494', marginTop: 4, fontStyle: 'italic' },
+  sub: { fontSize: 'var(--mv-label, 15px)', color: 'var(--eld-muted)', marginTop: 4, fontStyle: 'italic' },
   panel: { padding: 16, display: 'flex', flexDirection: 'column', gap: 12 },
-  secLbl: { fontSize: 'var(--mv-label, 15px)', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#5f8494' },
+  secLbl: { fontSize: 'var(--mv-label, 15px)', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--eld-muted)' },
   table: { display: 'flex', flexDirection: 'column', gap: 4 },
-  tHead: { display: 'grid', gridTemplateColumns: '1.6fr 1fr 1fr 1fr', fontSize: 'var(--mv-label, 15px)', letterSpacing: '0.08em', textTransform: 'uppercase', color: '#5f8494', textAlign: 'right' },
+  tHead: { display: 'grid', gridTemplateColumns: '1.6fr 1fr 1fr 1fr', fontSize: 'var(--mv-label, 15px)', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--eld-muted)', textAlign: 'right' },
   tRow: { display: 'grid', gridTemplateColumns: '1.6fr 1fr 1fr 1fr', fontSize: 'var(--mv-text, 18px)', textAlign: 'right', fontVariantNumeric: 'tabular-nums', padding: '4px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' },
-  fallen: { fontSize: 'var(--mv-label, 15px)', color: '#e05d6f', fontWeight: 400 },
+  fallen: { fontSize: 'var(--mv-label, 15px)', color: 'var(--eld-danger)', fontWeight: 400 },
   row: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-  lbl: { fontSize: 'var(--mv-label, 15px)', color: '#5f8494', letterSpacing: '0.1em', textTransform: 'uppercase' },
+  lbl: { fontSize: 'var(--mv-label, 15px)', color: 'var(--eld-muted)', letterSpacing: '0.1em', textTransform: 'uppercase' },
   val: { fontSize: 'var(--mv-num, 24px)', fontWeight: 700 },
   gear: { border: '1px solid', borderLeftWidth: 3, padding: '10px 12px', borderRadius: 8 },
   xpBox: { display: 'flex', flexDirection: 'column', gap: 4, paddingTop: 6, borderTop: '1px solid rgba(255,255,255,0.06)' },
-  gearMeta: { fontSize: 'var(--mv-label, 15px)', color: '#5f8494', marginTop: 4 },
+  gearMeta: { fontSize: 'var(--mv-label, 15px)', color: 'var(--eld-muted)', marginTop: 4 },
   line: { fontSize: 'var(--mv-text, 18px)', lineHeight: 1.45 },
   btn: { marginTop: 'auto', padding: '14px 12px', width: '100%', minHeight: 'var(--mv-tap, 52px)', fontSize: 'var(--mv-text, 18px)' },
 };

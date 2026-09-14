@@ -1,6 +1,6 @@
 # BRIEF — Build the UI chrome to the Style Bible; wire the asset manifest with placeholders
 
-**Status:** READY (run before M1a so the milestone lands on the right skin) · **Date:** 2026-09-14 · **Author:** Claude Design Chat  
+**Status:** DONE (Claude Code, 2026-09-14, PR #52 `feat(ui): style bible chrome + art manifest with placeholders`; ran after M1a/M1b) · **Date:** 2026-09-14 · **Author:** Claude Design Chat  
 **Spec:** `docs/Eldrathor_Style_Bible_Lock.md` (authoritative; hex/px values are exact). Reference: `docs/art/concept/style-target-2026-09-14.png`.
 
 ## Deliverables
