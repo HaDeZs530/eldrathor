@@ -419,3 +419,84 @@
   .eld-btn, .eld-dest-row, .eld-bar-fill, .eld-party-card { transition: none; }
   .eld-sheet, .eld-sheet-backdrop { animation: none; }
 }
+
+/* ==========================================================================================
+   Style Bible §D — mode scopes. A sheet / card / overlay carries `.eld-mode-<column>` for the column of
+   the screen it opened over (frozen at open time by the Sheet component). The repeated class gives the
+   scope more weight than the hub-skin rules in theme/*.css (which describe the screen underneath), so a
+   frozen sheet keeps its look even while the theme transitions beneath it.
+   ========================================================================================== */
+
+/* --- Veinharbor: #141210 panel, 1 px #5a4a22 + #292823 inner, Cinzel #f0e2bd, gold primary, no glow --- */
+.eld-root .eld-mode-veinharbor.eld-mode-veinharbor.eld-mode-veinharbor {
+  --eld-panel: #141210; --eld-card: #191613; --eld-border: #5a4a22; --eld-border-inner: #292823;
+  --eld-panel-shadow: inset 0 0 0 1px #292823; --eld-text: #c9bfae; --eld-display: #f0e2bd; --eld-muted: #a89c88;
+  --eld-accent: #e8c46a; --eld-gold: #e8c46a; --eld-radius: 10px;
+  --eld-btn-bg: #141210; --eld-btn-text: #e8c46a; --eld-btn-border: #5a4a22; --eld-btn-shadow: none;
+  --eld-btn-primary-bg: #e8c46a; --eld-btn-primary-text: #1a1206; --eld-btn-ghost-border: #5a4a22; --eld-btn-ghost-text: #c9bfae;
+  --eld-bar-track: rgba(0, 0, 0, 0.45); --eld-bar-border: rgba(255, 255, 255, 0.12);
+  color: #c9bfae;
+}
+.eld-root .eld-mode-veinharbor.eld-mode-veinharbor.eld-mode-veinharbor .eld-panel,
+.eld-root .eld-mode-veinharbor.eld-mode-veinharbor.eld-mode-veinharbor .eld-card,
+.eld-root .eld-mode-veinharbor.eld-mode-veinharbor.eld-mode-veinharbor.eld-panel {
+  background: #141210; border: 1px solid #5a4a22; border-radius: 10px; box-shadow: inset 0 0 0 1px #292823; color: #c9bfae;
+}
+.eld-root .eld-mode-veinharbor.eld-mode-veinharbor.eld-mode-veinharbor .eld-card { background: #191613; }
+.eld-root .eld-mode-veinharbor.eld-mode-veinharbor.eld-mode-veinharbor .eld-btn {
+  background: #141210; color: #e8c46a; border: 1px solid #5a4a22; border-radius: 10px; box-shadow: none;
+}
+.eld-root .eld-mode-veinharbor.eld-mode-veinharbor.eld-mode-veinharbor .eld-btn.eld-btn-primary { background: #e8c46a; color: #1a1206; border-color: #e8c46a; }
+.eld-root .eld-mode-veinharbor.eld-mode-veinharbor.eld-mode-veinharbor .eld-btn-ghost { background: transparent; color: #c9bfae; border-color: #5a4a22; }
+.eld-root .eld-mode-veinharbor.eld-mode-veinharbor.eld-mode-veinharbor .eld-sheet-title { color: #f0e2bd; }
+
+/* --- Exploration: parchment #f1e6cf card, 1 px #8a7350 (6 px), ink text, gold-filled primary / parchment-outline secondary, paper grain --- */
+.eld-root .eld-mode-explore.eld-mode-explore.eld-mode-explore {
+  --eld-panel: #f1e6cf; --eld-card: #f1e6cf; --eld-border: #8a7350; --eld-border-inner: transparent;
+  --eld-panel-shadow: none; --eld-text: #3a2e22; --eld-display: #2b2118; --eld-muted: #6f5d48;
+  --eld-accent: #345d66; --eld-gold: #c9962e; --eld-radius: 6px;
+  --eld-btn-bg: #c9962e; --eld-btn-text: #2b2118; --eld-btn-border: #a77a20; --eld-btn-shadow: none;
+  --eld-btn-primary-bg: #c9962e; --eld-btn-primary-text: #2b2118; --eld-btn-ghost-border: #8a7350; --eld-btn-ghost-text: #3a2e22;
+  --eld-bar-track: rgba(43, 33, 24, 0.25); --eld-bar-border: #8a7350;
+  color: #3a2e22;
+}
+.eld-root .eld-mode-explore.eld-mode-explore.eld-mode-explore .eld-panel,
+.eld-root .eld-mode-explore.eld-mode-explore.eld-mode-explore .eld-card,
+.eld-root .eld-mode-explore.eld-mode-explore.eld-mode-explore.eld-panel {
+  background:
+    repeating-linear-gradient(0deg, rgba(90, 60, 30, 0.06) 0 1px, transparent 1px 4px),
+    #f1e6cf;
+  border: 1px solid #8a7350; border-radius: 6px; box-shadow: none; color: #3a2e22;
+}
+.eld-root .eld-mode-explore.eld-mode-explore.eld-mode-explore .eld-btn {
+  background: #c9962e; color: #2b2118; border: 1px solid #a77a20; border-radius: 6px; box-shadow: none;
+}
+.eld-root .eld-mode-explore.eld-mode-explore.eld-mode-explore .eld-btn-ghost,
+.eld-root .eld-mode-explore.eld-mode-explore.eld-mode-explore .eld-btn.eld-btn-secondary { background: #f1e6cf; color: #3a2e22; border-color: #8a7350; }
+.eld-root .eld-mode-explore.eld-mode-explore.eld-mode-explore .eld-sheet-title { color: #2b2118; }
+.eld-root .eld-mode-explore.eld-mode-explore.eld-mode-explore .eld-sheet-grip { background: #8a7350; }
+
+/* --- Mind View: #1a2b3b panel (cards #23353f), 1 px #3d6fa8 + 6 px #2cabf8 glow @ 25 %, #dfe9f5 title, outline buttons --- */
+.eld-root .eld-mode-mind.eld-mode-mind.eld-mode-mind {
+  --eld-panel: #1a2b3b; --eld-card: #23353f; --eld-border: #3d6fa8; --eld-border-inner: transparent;
+  --eld-panel-shadow: 0 0 6px rgba(44, 171, 248, 0.25); --eld-text: #b7c6d8; --eld-display: #dfe9f5; --eld-muted: #7f97b0;
+  --eld-accent: #2cabf8; --eld-gold: #e8c46a; --eld-mythros: #2cabf8; --eld-good: #20a95e; --eld-danger: #e5484d; --eld-crit: #f2c14e; --eld-radius: 8px;
+  --eld-btn-bg: #1a2b3b; --eld-btn-text: #dfe9f5; --eld-btn-border: #3d6fa8; --eld-btn-shadow: 0 0 6px rgba(44, 171, 248, 0.25);
+  --eld-btn-primary-bg: #2cabf8; --eld-btn-primary-text: #06121f; --eld-btn-ghost-border: #3d6fa8; --eld-btn-ghost-text: #b7c6d8;
+  --eld-bar-track: #0a1522; --eld-bar-border: #2b4a6e;
+  --eld-art-ph-bg: #1a2b3b; --eld-art-ph-line: #3d6fa8; --eld-art-ph-text: #7f97b0;
+  color: #b7c6d8;
+}
+.eld-root .eld-mode-mind.eld-mode-mind.eld-mode-mind .eld-panel,
+.eld-root .eld-mode-mind.eld-mode-mind.eld-mode-mind .eld-card,
+.eld-root .eld-mode-mind.eld-mode-mind.eld-mode-mind.eld-panel {
+  background: #1a2b3b; border: 1px solid #3d6fa8; border-radius: 8px; box-shadow: 0 0 6px rgba(44, 171, 248, 0.25); color: #b7c6d8;
+}
+.eld-root .eld-mode-mind.eld-mode-mind.eld-mode-mind .eld-card { background: #23353f; }
+.eld-root .eld-mode-mind.eld-mode-mind.eld-mode-mind .eld-btn {
+  background: #1a2b3b; color: #dfe9f5; border: 1px solid #3d6fa8; border-radius: 8px; box-shadow: 0 0 6px rgba(44, 171, 248, 0.25);
+}
+.eld-root .eld-mode-mind.eld-mode-mind.eld-mode-mind .eld-btn-ghost { background: transparent; color: #b7c6d8; border-color: #3d6fa8; }
+.eld-root .eld-mode-mind.eld-mode-mind.eld-mode-mind .eld-btn.is-active,
+.eld-root .eld-mode-mind.eld-mode-mind.eld-mode-mind .eld-btn:active:not(:disabled) { border-color: #e8c46a; box-shadow: 0 0 0 1px #e8c46a, 0 0 8px rgba(232, 196, 106, 0.35); }
+.eld-root .eld-mode-mind.eld-mode-mind.eld-mode-mind .eld-sheet-title { color: #dfe9f5; }
