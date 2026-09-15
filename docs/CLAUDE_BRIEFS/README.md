@@ -9,6 +9,7 @@ Active coding tasks for **Claude Code**. The **Claude Design Chat** writes these
 - When a brief is done, mark **DONE** at the top, move it to `_archive/`, and note it in `docs/SESSION_LOG.md`.
 
 ## Queue (2026-09-14 eve)
+- `2026-09-14_sheets-inherit-mode.md` — **READY (first)**
 - `2026-09-14_tuning-pass-2.md` — **READY**
 - `2026-09-14_m1d-engineering-hygiene.md` — DONE (#54) — archived; queue empty until the Design Chat's next brief.
 

@@ -10,6 +10,7 @@
 4. Open PRs; don't invent LOCKED design — use `// DESIGN-OPEN:` for gaps.
 
 ## Active briefs (priority)
+0. **`docs/CLAUDE_BRIEFS/2026-09-14_sheets-inherit-mode.md`** — overlays lost their mode differences after #52; sheets/cards take the underlying screen's column. Spec: Style Bible §D.
 1. **`docs/CLAUDE_BRIEFS/2026-09-14_tuning-pass-2.md`** — sustain retune + boss dmg cap (reverses ×20), Hearth rename, DESIGN-OPEN numbers.
 2. Then wait: Anthony runs a full area-1 phone playtest with the debug trace on → Design Chat writes the bug/tuning pass. Meanwhile the Design Chat is writing the Milestone 2 locks (enemy rosters per area, class gem drops + tree UI, Veinbinder Bond/Craft trees, Player tab).
 

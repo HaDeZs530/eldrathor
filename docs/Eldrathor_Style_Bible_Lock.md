@@ -46,3 +46,10 @@ All at **@2x for a 390 pt phone** (widths below are px at 2×), **PNG**, sRGB. I
 ## C. What Claude Code builds vs what art provides
 - Code: all frames, panels, borders, glows, fonts, bars, buttons, tab bar, cards, the parchment/fog rendering, node placement, path lines (ink-dotted `#345d66`), camera. **Never** hand-draws illustrations or portraits in CSS/SVG.
 - Art files: everything in the manifest. Until a file exists, a styled placeholder renders (flat panel in the mode's colour with the asset name in 11 px), so missing art is obvious on the phone.
+
+## D. Sheets, cards and dialogs inherit the mode underneath them (RULED 2026-09-14)
+Every overlay — Help (?), Menu (☰), Settings, Run log, Offline summary, Explore/Reveal/Ambush cards, Sanctuary, Results, roster picker, confirms — takes the **§A column of the screen it opens over**, never a fixed style:
+- Over **Town / Party / Player / Hearth** → Veinharbor: `#141210` panel, 1 px `#5a4a22`+`#292823` borders, Cinzel `#f0e2bd` title, gold primary button, no glow.
+- Over the **Route map** → Exploration: parchment `#f1e6cf` card, 1 px `#8a7350` hand-drawn border, ink text, gold-filled primary / parchment-outline secondary, paper grain.
+- Over **Fight / Results / Sanctuary** (Mind View) → `#1a2b3b` panel, 1 px `#3d6fa8` border with the blue glow, `#dfe9f5` title, outline buttons.
+Implementation: the shared `Sheet` reads the active mode from `ThemeProvider` at open time and keeps it until closed (a sheet doesn't re-skin if the theme transitions underneath). Test: open Menu on Town, Route map and Fight → three different panel colours.
