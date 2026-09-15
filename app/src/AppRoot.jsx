@@ -30,6 +30,7 @@ import { trace, isTraceOn, BUILD } from './debug/trace.js';
 import { travelDuration, cameraReducer, CARD_PAUSE_MS, OVERLAY_FADE_MS } from './map/camera.js';
 import { createStore, createSaver, countedRng } from './save/save.js';
 import SettingsSheet from './components/shell/SettingsSheet.jsx';
+import { retapAction } from './nav/tabRetap.js';
 import OfflineSheet from './components/shell/OfflineSheet.jsx';
 
 // ---------- save & resume (Progression Loop Lock §1 / M1a) ----------
@@ -203,7 +204,20 @@ export default function Eldrathor() {
   }, [tab, runStage, setHubSkinForTab, enterMindView, exitMindView]);
   useEffect(() => () => { clearFightTimers(); if (travelTimer.current) window.clearTimeout(travelTimer.current); if (overlayTimer.current) window.clearTimeout(overlayTimer.current); }, []);
 
-  function selectTab(id) { trace('tab', { id }); setTab(id); setHubSkinForTab(id); }
+  // Tab re-tap pops to root (brief 2026-09-15): the tab's screen remounts (sub-state + scroll reset) via
+  // its `rootKey`; Rally goes back to the island; a live run stays on the route map.
+  const [rootKey, setRootKey] = useState({});
+  function selectTab(id) {
+    if (id === tab) {
+      const action = retapAction(id, { runStage, inRun: !!territory });
+      trace('tab', { id, retap: action });
+      if (action === 'stay') return;
+      if (action === 'island') { setSelectedArea(null); setRunStage('island'); }
+      setRootKey((k) => ({ ...k, [id]: (k[id] || 0) + 1 }));
+      return;
+    }
+    trace('tab', { id }); setTab(id); setHubSkinForTab(id);
+  }
   function pushLog(t, k = 'n') { logSeq.current += 1; const id = logSeq.current; setLog((l) => [...l, { id, t, k, clock: territoryRef.current?.clock ?? null }]); }
   const territoryRef = useRef(null);
   useEffect(() => { territoryRef.current = territory; }, [territory]);
@@ -692,11 +706,11 @@ export default function Eldrathor() {
       <Frame style={S.frame}>
         <Header worldvein={worldvein} hubLabel={tab === 'mountain' ? mountainHubLabel : HUB_LABELS[tab]} actions={<ScreenHeaderActions onMenu={() => setSheet('menu')} onHelp={() => setSheet('help')} />} />
         {flash && <div style={{ ...S.flash, borderColor: flash.color, color: flash.color }}>{flash.msg}</div>}
-        {tab === 'town' && <TownScreen party={party} stash={stash} setStash={setStash} inventory={inventory} setInventory={setInventory} worldvein={worldvein} setWorldvein={setWorldvein} setTab={selectTab} equipped={equipped} />}
-        {tab === 'party' && <PartyScreen party={party} setParty={setParty} roster={roster} setRoster={setRoster} locked={!!territory} stash={stash} setStash={setStash} armor={inventory.armor || []} equipped={equipped} />}
-        {tab === 'player' && <PlayerScreen worldvein={worldvein} />}
-        {tab === 'afk' && <AfkScreen unlocked={unlocked} party={party} roster={roster} inventory={inventory} afk={afk} worldvein={worldvein} deployedIds={runParty ? runParty.map((m) => m.id) : []} onUpdateGatherSlot={onUpdateGatherSlot} onToggleGather={onToggleGather} onUpdateProcess={onUpdateProcess} onToggleProcess={onToggleProcess} onUpdateIdle={onUpdateIdle} onToggleIdle={onToggleIdle} />}
-        {tab === 'mountain' && runStage === 'island' && <IslandWorldMap areas={AREAS} unlocked={unlocked} onSelectArea={onSelectArea} onHarbor={() => selectTab('town')} />}
+        {tab === 'town' && <TownScreen key={rootKey.town || 0} party={party} stash={stash} setStash={setStash} inventory={inventory} setInventory={setInventory} worldvein={worldvein} setWorldvein={setWorldvein} setTab={selectTab} equipped={equipped} />}
+        {tab === 'party' && <PartyScreen key={rootKey.party || 0} party={party} setParty={setParty} roster={roster} setRoster={setRoster} locked={!!territory} stash={stash} setStash={setStash} armor={inventory.armor || []} equipped={equipped} />}
+        {tab === 'player' && <PlayerScreen key={rootKey.player || 0} worldvein={worldvein} />}
+        {tab === 'afk' && <AfkScreen key={rootKey.afk || 0} unlocked={unlocked} party={party} roster={roster} inventory={inventory} afk={afk} worldvein={worldvein} deployedIds={runParty ? runParty.map((m) => m.id) : []} onUpdateGatherSlot={onUpdateGatherSlot} onToggleGather={onToggleGather} onUpdateProcess={onUpdateProcess} onToggleProcess={onToggleProcess} onUpdateIdle={onUpdateIdle} onToggleIdle={onToggleIdle} />}
+        {tab === 'mountain' && runStage === 'island' && <IslandWorldMap key={rootKey.mountain || 0} areas={AREAS} unlocked={unlocked} onSelectArea={onSelectArea} onHarbor={() => selectTab('town')} />}
         {tab === 'mountain' && runStage === 'rally' && selectedArea && <RallyScreen area={selectedArea} party={party} roster={roster} onSwap={onRallySwap} onExplore={onRallyExplore} onBack={onRallyBack} />}
         {tab === 'mountain' && RUN_STAGES.has(runStage) && area && territory && (
           <div className="eld-stage">
