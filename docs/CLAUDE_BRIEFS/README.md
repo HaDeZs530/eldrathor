@@ -14,6 +14,7 @@ Active coding tasks for **Claude Code**. The **Claude Design Chat** writes these
 - `2026-09-14_m1d-engineering-hygiene.md` — DONE (#54) — archived; queue empty until the Design Chat's next brief.
 
 ## Archive (`_archive/`, newest first — all DONE or superseded)
+- `2026-09-14_tuning-pass-2.md` — DONE (#56)
 - `2026-09-14_sheets-inherit-mode.md` — DONE (#55)
 - `2026-09-14_m1d-engineering-hygiene.md` — DONE (#54)
 - `2026-09-14_m1c-afk-true-idle.md` — DONE (#53)

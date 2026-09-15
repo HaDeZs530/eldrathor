@@ -11,10 +11,11 @@
 
 ## Active briefs (priority)
 0. ~~`2026-09-14_sheets-inherit-mode.md`~~ (DONE #55 — `Sheet` freezes the §D column at open; three scoped token blocks in `ui.css`; archived).
-1. **`docs/CLAUDE_BRIEFS/2026-09-14_tuning-pass-2.md`** — sustain retune + boss dmg cap (reverses ×20), Hearth rename, DESIGN-OPEN numbers.
+1. ~~`2026-09-14_tuning-pass-2.md`~~ (DONE #56 — final boss ×62 hp / ×7 dmg, sustain retuned, Hearth, Wardplate/Veinweave, floor, AFK_TUNING; archived).
 2. Then wait: Anthony runs a full area-1 phone playtest with the debug trace on → Design Chat writes the bug/tuning pass. Meanwhile the Design Chat is writing the Milestone 2 locks (enemy rosters per area, class gem drops + tree UI, Veinbinder Bond/Craft trees, Player tab).
 
 ## Recently DONE (don't redo)
+- PR #56 — Tuning pass 2: Renewal 1 %/3 s, Mend 30 / 7 s, Guardian 8 %; boss dmg ×7 with hp raised to ×62 (fresh 0/10, L5 10/10 in ~57 s; cap test: no boss hit > 40 % of a Bulwark's HP); Seam → Hearth everywhere; `town/recipes.js` Wardplate / Veinweave with rolled ratings + floor 1 ❖ × rarity; `AFK_TUNING` table.
 - PR #55 — §D: `modeColumn()` + `Sheet` reads the column from ThemeProvider at open and freezes it; `.eld-mode-veinharbor / -explore / -mind` scoped token blocks in `ui.css`; overlay scoped Mind View, route cards Exploration; verified three distinct sheet fills over Town / Route map / Fight.
 - PR #54 — M1d: GitHub Actions CI (lint, build, tests on PRs + main; check `build-and-test` — **Anthony: enable the main ruleset requiring it**), the `|| true` assertion fixed, Node 24 pinned, DEV_SETUP refreshed (+ `npm run dev:phone`), trace receiver hardened (body limit, retention, async, LAN-only), trace build hash + run-start snapshot + 1500-event ring, PR #15 closed, Handoff Doc rewritten, 20 briefs archived, app/README replaced.
 - PR #53 — M1c: AFK jobs are true idle — timestamped accrual (`reconcileAfk`: every complete cycle in the span, remainder carried, clean stop at exhaustion), reconciled on tick / resume / open, Offline summary sheet after > 60 s, deploy suspends jobs and return resumes them, deployed Adventurers can't be assigned.
@@ -48,7 +49,7 @@
 - PR #29 — route polish 2: run log sheet + badge + toast, node scale (40/34/26), planar outward generator (Gabriel + band-filtered, 200-map crossing test), 350 ms glide + eased camera follow
 
 ## Still OPEN (Anthony deciding / later)
-- AFK **root tab** final name (working label **Seam** — do not rename until locked)
+- ~~AFK root tab final name~~ — **Hearth** (Progression Loop Lock §9, shipped #56)
 - Rally / Prepare-the-bond screen title
 - Gem tree screen; enemy rosters per area; weapon skill trees (Design Chat specs next)
 - Note: A1/A3 were re-ruled 2026-09-12 — scouting replaces cut-flee; all 9 pins are areas (`Eldrathor_Island_Areas_Lock.md`).
