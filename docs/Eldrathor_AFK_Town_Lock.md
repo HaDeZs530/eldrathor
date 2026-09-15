@@ -17,7 +17,7 @@ Left → right:
 2. **Party** — Mind-view  
 3. **Mountain** — center; expeditions (hybrid)  
 4. **Town** — warm RPG (Harbor functions + Market sub-area + Crafter + Upgrade NPC)  
-5. **AFK tab** — *name still OPEN* (candidates: Seam, Echoes, Bound, …) — replaces **Market** as its own tab  
+5. **AFK tab** — **Hearth** (ruled 2026-09-14, Progression Loop Lock §9; working label was Seam) — replaces **Market** as its own tab  
 
 **Market** lives as a **sub-section under Town**, not a root tab.
 

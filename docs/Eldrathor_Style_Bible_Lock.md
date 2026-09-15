@@ -37,7 +37,7 @@ All at **@2x for a 390 pt phone** (widths below are px at 2×), **PNG**, sRGB. I
 | `enemy-<slug>.png` | 1560×720 | fight stage backdrop with the enemy, per enemy type (start with area 1's 4 types + Brinewarden) | "night scene through blue crystal light, <enemy>, ruins, mist, cold sapphire palette, cinematic, no text, 2.2:1" |
 | `portrait-<archetype>-<n>.png` | 256×256, transparent | Adventurer portraits, 3 per archetype to start | "bust portrait of a <archetype description>, painted fantasy, cold blue rim light, on transparent" |
 | `icon-innate-*.png` ×10, `icon-aura-*.png` ×5 | 96×96, transparent | innate/aura glyphs | "flat glowing sapphire glyph of <shield / leaf / plus / snowflake / spiral>, on transparent" |
-| `icon-tab-*.png` ×5 | 96×96, transparent | Player helm · Party trio · Mountain · Town house · Seam crystal | "flat pale-grey icon of <subject>, single colour, on transparent" |
+| `icon-tab-*.png` ×5 | 96×96, transparent | Player helm · Party trio · Mountain · Town house · Hearth crystal (`icon-tab-hearth.png`) | "flat pale-grey icon of <subject>, single colour, on transparent" |
 
 **Style base (prepend to every prompt):** "Concept art for a fantasy mobile game in the exact style of the reference: painterly with clean ink linework, rich but slightly muted colour, soft light, no photorealism, no text, no watermark, no UI elements."
 
