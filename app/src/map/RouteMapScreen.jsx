@@ -502,7 +502,7 @@ export default function RouteMapScreen({
 
         {/* §15 cards — every commitment happens here; the map itself never moves the party */}
         {card && !confirmExtract && (
-          <div className={`eld-scout-card eld-panel${card.kind === 'ambush' ? ' is-ambush' : ''}${card.kind === 'explore' ? ' is-explore' : ''}`} role="dialog" aria-label={card.ariaLabel || card.title}>
+          <div className={`eld-scout-card eld-panel eld-mode-explore${card.kind === 'ambush' ? ' is-ambush' : ''}${card.kind === 'explore' ? ' is-explore' : ''}`} data-mode-column="explore" role="dialog" aria-label={card.ariaLabel || card.title}>
             <div className="eld-scout-top">
               <span className="eld-scout-type" style={{ color: card.color || TYPE_COLOR[card.type] || undefined }}>
                 {card.glyph ? `${card.glyph} ` : ''}{card.title}
@@ -523,7 +523,7 @@ export default function RouteMapScreen({
         )}
 
         {confirmExtract && (
-          <div className="eld-scout-card eld-panel" role="dialog" aria-label="Extract">
+          <div className="eld-scout-card eld-panel eld-mode-explore" data-mode-column="explore" role="dialog" aria-label="Extract">
             <div className="eld-scout-top"><span className="eld-scout-type">Extract from {area.name}?</span></div>
             <div className="eld-scout-body">Bank {runVein} ❖ Worldvein and everything found. The map is gone when you leave — the next visit generates a fresh one.</div>
             <div className="eld-scout-actions">

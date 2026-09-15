@@ -702,14 +702,14 @@ export default function Eldrathor() {
           <div className="eld-stage">
             <RouteMapScreen area={area} territory={territory} currentId={currentId} busy={busy} partyHP={partyHP} runVein={runVein} party={fielded} log={log} logUnread={Math.max(0, log.length - logSeen)} onOpenLog={() => { setSheet('runlog'); setLogSeen(log.length); }} camera={camera} setCamera={dispatchCamera} travel={travel} onTravelEnd={onTravelEnd} card={ambushCard || card} onTapNode={onTapNode} onCardAction={onCardAction} onExtract={extract} />
             {MIND_STAGES.has(runStage) && (
-              <div className="eld-overlay" key={fightIndex.current}>
+              <div className="eld-overlay eld-mode-mind" data-mode-column="mind" key={fightIndex.current}>
                 {runStage === 'sanctuary' && fightNode && <SanctuaryScreen area={area} party={fielded} runHpFrac={hpArrFor(fielded)} pouch={10 * area.tier} onChoose={onSanctuaryChoose} />}
                 {runStage === 'fight' && fightNode && fight && <FightScreen area={area} node={fightNode} party={fielded} fight={fight} elapsedMs={fightElapsed} speed={fightSpeed} onSpeed={setFightSpeed} onSkip={skipFight} />}
                 {runStage === 'loot' && fight && <LootResults area={area} nodeLabel={fightNode ? (nodeTypeMeta[fightNode.type]?.label || 'Node') : null} fight={fight} onContinue={onResultsContinue} />}
               </div>
             )}
             {!MIND_STAGES.has(runStage) && overlayLeaving && (
-              <div className="eld-overlay is-leaving" aria-hidden="true">
+              <div className="eld-overlay is-leaving eld-mode-mind" data-mode-column="mind" aria-hidden="true">
                 {overlayLeaving.kind === 'loot' && overlayLeaving.fight && <LootResults area={overlayLeaving.area} nodeLabel={overlayLeaving.fightNode ? (nodeTypeMeta[overlayLeaving.fightNode.type]?.label || 'Node') : null} fight={overlayLeaving.fight} onContinue={() => {}} />}
                 {overlayLeaving.kind === 'sanctuary' && <SanctuaryScreen area={overlayLeaving.area} party={fielded} runHpFrac={hpArrFor(fielded)} pouch={10 * (overlayLeaving.area?.tier || 1)} onChoose={() => {}} />}
               </div>

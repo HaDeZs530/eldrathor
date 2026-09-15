@@ -98,3 +98,14 @@ export const MODES = {
 
 /** Which hub skin / expedition mode uses which Style Bible mode. */
 export const MODE_FOR_SKIN = { mind: 'veinharbor', rpg: 'veinharbor', mountain: 'explore' };
+
+/**
+ * §D: the Style Bible column a screen (and every sheet / card opened over it) uses — Mind View while
+ * the expedition is in MIND mode (fight / results / sanctuary), else the hub skin's column
+ * (mountain → Exploration; everything else → Veinharbor).
+ */
+export function modeColumn(expeditionMode, hubSkin) {
+  if (expeditionMode === 'MIND') return 'mind';
+  return MODE_FOR_SKIN[hubSkin] || 'veinharbor';
+}
+export const MODE_COLUMNS = ['veinharbor', 'explore', 'mind'];

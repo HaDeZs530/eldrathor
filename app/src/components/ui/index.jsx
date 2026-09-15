@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import Art from '../../art/Art.jsx';
-import { FRAME } from '../../theme/styleBible.js';
+import { FRAME, modeColumn } from '../../theme/styleBible.js';
+import { useTheme } from '../../theme/ThemeProvider.jsx';
 import './ui.css';
 
 /**
@@ -97,10 +99,17 @@ export function PartyCard({ name, portraitArt, hp, hpMax, mp, mpMax, hpColor = '
   );
 }
 
-/** Bottom sheet: backdrop + panel + grip + title. Click outside or the parent's Close action dismisses. */
-export function Sheet({ title, label, onClose, maxHeight, className = '', children }) {
+/**
+ * Bottom sheet: backdrop + panel + grip + title. Click outside or the parent's Close action dismisses.
+ * Style Bible §D: the sheet takes the column of the screen it opens over (Veinharbor / Exploration /
+ * Mind View), read from ThemeProvider at open time and FROZEN for its lifetime — it does not re-skin
+ * if the theme transitions underneath. `column` can be forced for a card that lives on one screen.
+ */
+export function Sheet({ title, label, onClose, maxHeight, className = '', column, children }) {
+  const theme = useTheme();
+  const [frozen] = useState(() => column || modeColumn(theme.currentMode, theme.hubSkin));
   return (
-    <div className="eld-sheet-backdrop" onClick={onClose} role="presentation">
+    <div className={`eld-sheet-backdrop eld-mode-${frozen}`} data-mode-column={frozen} onClick={onClose} role="presentation">
       <div className={`eld-sheet eld-panel ${className}`.trim()} onClick={(e) => e.stopPropagation()} role="dialog" aria-label={label || title} style={maxHeight ? { maxHeight } : undefined}>
         <div className="eld-sheet-grip" />
         {title && <div className="eld-sheet-title">{title}</div>}
