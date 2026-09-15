@@ -12,7 +12,7 @@ Eldrathor: a UI-based iOS RPG (Vite + React now; Capacitor iOS wrap later). The 
 ## Source of truth — read before building
 1. `docs/Eldrathor_Design_Doc.md` — DESIGN SoT. Never contradict LOCKED. Flag conflicts.
 2. Lock docs (newer wins over the design doc where they conflict):
-   - `docs/Eldrathor_AFK_Town_Lock.md` — AFK Gather/Process/Idle·Train + Town; Market under Town; 5th tab = Seam (name OPEN).
+   - `docs/Eldrathor_AFK_Town_Lock.md` — AFK Gather/Process/Idle·Train + Town; Market under Town; 5th tab = Hearth.
    - `docs/Eldrathor_Island_Areas_Lock.md` — **nine areas** (pins 2–10), names, tiers, bosses, lore. Supersedes design doc §5b. Terms: Island map / Route map / Rally.
    - `docs/Eldrathor_RouteMap_v2_Lock.md` — web gen, scout→engage/leave, 5 node types, rares+seal, respawns.
    - `docs/Eldrathor_RouteMap_v3_Travel_Lock.md` — one-tap travel with cost, node visual states, ambush-only flee, Mind-view scale numbers (supersedes UI Shell scale values).
@@ -44,7 +44,7 @@ Eldrathor: a UI-based iOS RPG (Vite + React now; Capacitor iOS wrap later). The 
 - Location/node map → hybrid + parchment fog-of-war.
 - Fight/loot → full Mind-view.
 - Crossfade theme switches (~300–450ms).
-- Nav: **Player · Party · Mountain · Town · Seam** (Seam name OPEN). Market under Town. Tab bar stays during runs.
+- Nav: **Player · Party · Mountain · Town · Hearth** (Hearth (LOCKED 2026-09-14)). Market under Town. Tab bar stays during runs.
 
 ## Code conventions
 - App in `app/` (Vite + React, JS). Keep `npm run dev` and `npm run build` runnable.

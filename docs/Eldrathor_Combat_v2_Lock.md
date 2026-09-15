@@ -30,8 +30,8 @@ Personal innate = a **cooldown ability** that costs mana and visibly fires. Grou
 
 | Archetype | Personal (cooldown · mana) | Group aura |
 |---|---|---|
-| Bulwark | **Aegis** — taunt all enemies onto self + own mitigation +25% for 4 s. CD 8 s · 20 mana | **Guardian's Bulwark** — party takes 10% less damage |
-| Warden | **Mend** — heal lowest ally for 40 × healing scale. CD 5 s · 25 mana | **Renewal** — party heals 2% max HP every 2 s |
+| Bulwark | **Aegis** — taunt all enemies onto self + own mitigation +25% for 4 s. CD 8 s · 20 mana | **Guardian's Bulwark** — party takes 8% less damage *(retuned 2026-09-14)* |
+| Warden | **Mend** — heal lowest ally for 30 × healing scale. CD 7 s · 25 mana *(retuned 2026-09-14)* | **Renewal** — party heals 1% max HP every 3 s *(retuned 2026-09-14)* |
 | Striker | **Onslaught** — self damage +8% per stack, stacks every 3 s in combat, max 6. Passive-ramp, no CD | **Cadence** — party attack speed +12% |
 | Adept | **Lock** — stun the highest-HP enemy 2 s (bosses: 1 s, then immune 10 s). CD 10 s · 30 mana | **Sunder** — enemies take +12% damage |
 | Resonator | **Resonance** — party +6% damage and +6% mitigation for 6 s. CD 12 s · 20 mana | **Attune Vein** — +20% Worldvein, +1 loot-tier roll bias (see §7) |
@@ -43,7 +43,7 @@ Enemy stat block by **world tier** `T` (1–6) and **node type**. Base trash uni
 - Normal node: 1–3 units (weights 30/50/20).
 - Crystal node: 2–3 units at ×1.2 hp.
 - Rare: 1 unit ×6 hp, ×1.6 dmg, interval 1.2 s. Named/rare variant flag → ×1.3 on top.
-- Boss: 1 unit ×18 hp, ×2.2 dmg, interval 1.6 s, mit +0.1. Boss adds one **enrage tick** every 15 s: next hit ×2 (the spike moment).
+- Boss: 1 unit **×22 hp, ×7 dmg** (Progression Loop lock §9; dmg cap ×8 — walls are HP and time, never one-shots), interval 1.6 s, mit +0.1. Boss adds one **enrage tick** every 15 s: next hit ×2 (the spike moment).
 Enemies have no abilities in v2. *(Enemy roster identities = design doc §9 item 2, separate lock.)*
 
 **Length targets:** trash 10–20 s, rare 30–50 s, boss 60–120 s at on-tier gear. Tuning knob = the `1.6^(T−1)` hp base. Party of three at level 1, no gems, must clear W1 trash reliably and lose to the W1 boss on a first run (the gear wall must exist).

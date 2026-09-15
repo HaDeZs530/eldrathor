@@ -38,3 +38,18 @@ Assignments store `startedAt` and `lastReconciledAt`. On every tick, app resume 
 With Combat v2 numbers as tuned by this milestone:
 - Fresh level-1 party, Common weapons, no armor: **loses the area-1 boss in ≥ 8/10 seeds**; wins area-1 normal nodes in ≥ 9/10.
 - Level 5 party, three Fine weapons rating ≥ 50 with empower ≥ 20, Fine armor: **beats the area-1 boss in ≥ 8/10 seeds**. That is "3–5 runs of growth." Tune enemy base hp/dmg and boss multipliers to hit both gates; the gates are the spec.
+
+## 9. Rulings after Milestone 1 (2026-09-14)
+**Accepted:** rarity ladder as shipped; new game starts at level 1; Style Bible header has no hub sub-label (a11y label only); five equal tabs (Tab Bar lock's centre-Mountain bump dropped); Party / Player / Seam use the Veinharbor column with v3 text scale; manifest = 5 innate + 5 aura icons; starter weapon Common rating 30, recruits get a Common starter, unarmed ×0.8.
+
+**Reversed — boss ×20 damage.** Cause was level-1 sustain out-healing any boss below ×16. Fix the cause:
+- Combat v2 §3 innates retuned: **Renewal** 1% max HP every 3 s (was 2%/2 s); **Mend** 30 × healing scale, CD 7 s (was 40 / 5 s); **Guardian's Bulwark** 8% (was 10%); Aegis unchanged.
+- Boss multipliers: **hp ×22, dmg ×7, interval 1.6 s, mit +0.1, enrage ×2 every 15 s** (dmg cap ×8 — a boss hit may never exceed 40% of a level-appropriate Bulwark's max HP outside enrage).
+- Re-run the §8 gates with these; if gate 1 (fresh party loses ≥8/10) fails, raise boss **hp**, never dmg, until it passes. Gate 2 must still pass ≥8/10 with a boss fight lasting 40–90 s.
+- Principle recorded: **walls are made of HP and time, not one-shots.**
+
+**DESIGN-OPEN answered:**
+- Armor recipes: Epic = "Wardplate" (8 Epic metal + 4 Epic fabric), Legendary = "Veinweave" (10 Legendary metal + 6 Legendary fabric); rating rolls 1–100 as always. Material market floor = 1 ❖ × rarity index (1–5). 
+- AFK rates: the prototype numbers become v1 as a named table `AFK_TUNING` (gather yield/XP per cycle, 15% Worldvein roll, Process cost 5 ❖, quality odds) — tune later via playtest, not now.
+- **AFK tab name: "Hearth."** The bench works at the hearth while the party is away. Replace "Seam" everywhere (help copy, tab, locks' working label).
+- Enemy rosters per area: Milestone 2 lock (Design Chat, next).

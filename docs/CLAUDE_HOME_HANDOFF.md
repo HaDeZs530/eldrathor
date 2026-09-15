@@ -10,9 +10,8 @@
 4. Open PRs; don't invent LOCKED design — use `// DESIGN-OPEN:` for gaps.
 
 ## Active briefs (priority)
-0. ~~`docs/CLAUDE_BRIEFS/2026-09-14_style-bible-chrome.md`~~ (DONE #52) — art files now drop into `app/public/art/` per the manifest (`app/src/art/manifest.js`); every missing one shows a labelled placeholder.
-0. **Milestone 1 — one real area** (spec `docs/Eldrathor_Progression_Loop_Lock.md`), in order: ~~`2026-09-14_m1a-save-and-ids.md`~~ (DONE #50) → ~~`2026-09-14_m1b-progression-chain.md`~~ (DONE #51) → ~~`2026-09-14_m1c-afk-true-idle.md`~~ (DONE #53) → ~~`2026-09-14_m1d-engineering-hygiene.md`~~ (DONE #54). **Milestone 1 complete.** Done briefs now live in `docs/CLAUDE_BRIEFS/_archive/`. Each its own PR; "next" takes the next one. — gold ring marker so the node icon stays visible; seal text cleanup. Spec: v3 lock §18–19.
-_(none queued — waiting on the Design Chat's next brief)_
+1. **`docs/CLAUDE_BRIEFS/2026-09-14_tuning-pass-2.md`** — sustain retune + boss dmg cap (reverses ×20), Hearth rename, DESIGN-OPEN numbers.
+2. Then wait: Anthony runs a full area-1 phone playtest with the debug trace on → Design Chat writes the bug/tuning pass. Meanwhile the Design Chat is writing the Milestone 2 locks (enemy rosters per area, class gem drops + tree UI, Veinbinder Bond/Craft trees, Player tab).
 
 ## Recently DONE (don't redo)
 - PR #54 — M1d: GitHub Actions CI (lint, build, tests on PRs + main; check `build-and-test` — **Anthony: enable the main ruleset requiring it**), the `|| true` assertion fixed, Node 24 pinned, DEV_SETUP refreshed (+ `npm run dev:phone`), trace receiver hardened (body limit, retention, async, LAN-only), trace build hash + run-start snapshot + 1500-event ring, PR #15 closed, Handoff Doc rewritten, 20 briefs archived, app/README replaced.
@@ -23,6 +22,7 @@ _(none queued — waiting on the Design Chat's next brief)_
 - PR #49 — Veinharbor artwork live in all five Town slots (originals in `app/art-src/town/`)
 - PR #48 — Veinharbor visual pass rev 1 (ChatGPT visual spec): viewport fit (no document overflow), harbor hero + four illustrated destination rows, Back to Veinharbor, Town-scoped Cinzel/gold treatment, art slots pending (`app/public/town/`). Lock note: Town typography/chrome now diverges from the micro-pixel kit in the Dual-Mode Art Lock — Design Chat to amend.
 - PR #47 — gold ring party marker (§18): 44 px ring + bobbing pennant around the occupied node, node icon stays visible; §19 seal remnants removed for good (`isSealed`, `sealBroken`, `is-unsealed`, comments, test names)
+- PRs #50–#54 — Milestone 1 (save/ids, progression chain, style bible chrome, true-idle AFK, CI/hygiene)
 - PR #46 — bug-fix pass 1: depth/named modifiers on normal enemies, single extraction credit, pointercancel + pointerId gestures, controls excluded from map gestures, owned theme timers, feed scroll by last event, run-party freeze (Party tab locked during a run, HP by character id), AFK one-job-per-id, one camera owner, pure updaters
 - PR #33 — route explore model (v3 lock §15–17): three node states, nothing auto-marked, tap never moves the party (Explore/Cancel → travel → Fight/Flee), 600 ms/hop + 250 ms skip, §17 camera framing, recentre on the party under the overlay before it fades
 - PR #31 / #32 — Rally: Explore under the lore; island map opens in Overview
@@ -37,6 +37,7 @@ _(none queued — waiting on the Design Chat's next brief)_
 - PR #21 — route map v2
 - PR #22 — UI shell
 - PRs #23–#45 — route map v3 series (travel, states, camera, no respawns, no seal, run log)
+- PRs #50–#54 — Milestone 1 (save/ids, progression chain, style bible chrome, true-idle AFK, CI/hygiene)
 - PR #46 — bug-fix pass 1 · #47 — ring marker + seal cleanup · #48 — Veinharbor visual pass rev 1
 - PR #23 — route map v3: one-tap travel, node visual states, ambush flee, Mind-view scale, fight order
 - PR #24 / #25 — Mind-view scale on Player / Party / Seam; Party stat sizes

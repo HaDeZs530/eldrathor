@@ -12,7 +12,7 @@ All Mind-view screens (route map HUD, scout card, fight, results) scale up: body
 ## Help (?) and Menu (☰) — on every screen
 - Top-right of every screen, in the header: **☰** then **?**. 32 px targets. Present on tab roots and every drilled-in screen (Rally, route map, fight, results, town functions, AFK).
 - **? = screen help sheet.** Bottom sheet with a title and 3–6 short bullets explaining *this* screen and its systems. Copy lives in `app/src/help/helpText.js` keyed by screen id; the Design Chat owns the copy (first pass in the brief).
-- **☰ = quick menu sheet.** Items: Island · Party · Town · Seam · Player · **Help** (opens the same help sheet for the current screen plus a "Game basics" entry) · Settings (placeholder). During a run, adds **Extract** with a confirm.
+- **☰ = quick menu sheet.** Items: Island · Party · Town · Hearth · Player · **Help** (opens the same help sheet for the current screen plus a "Game basics" entry) · Settings (placeholder). During a run, adds **Extract** with a confirm.
 - Both sheets are warm on reality screens and Mind-view on projection screens (Dual-mode lock).
 
 ## Help copy — first pass (Design Chat; edit in place later)
@@ -24,6 +24,6 @@ All Mind-view screens (route map HUD, scout card, fight, results) scale up: body
 - **Results:** "What each Adventurer did, what you earned, what dropped. Weapon ratings run 1–100; higher is better and never changes."
 - **Party:** "Your roster. Three fight; the rest can train or gather. Archetype is permanent; weapon and gem are swappable."
 - **Town:** "Veinharbor. Spend Worldvein: merge weapons at the Upgrade bench, craft armor from gathered materials, trade at the Market."
-- **Seam (AFK):** "Bench Adventurers work while you're away: Gather materials, Process them, or Train to level. One job per Adventurer."
+- **Hearth (AFK):** "Bench Adventurers work while you're away: Gather materials, Process them, or Train to level. One job per Adventurer."
 - **Player:** "You — the Veinbinder. Your trees strengthen the whole bond (Bond) or your economy (Craft)."
 - **Game basics:** "You are a Veinbinder. You don't fight — your bonded Adventurers do. Send three into an area, explore its route map, hunt the rares if you want their loot, beat the boss. Bring home Worldvein and weapons; spend them to come back stronger. Nothing you earn is ever lost."
