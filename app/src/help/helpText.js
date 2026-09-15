@@ -60,9 +60,9 @@ export const HELP = {
     title: 'Town',
     bullets: ['Veinharbor. Spend Worldvein: merge weapons at the Upgrade bench, craft armor from gathered materials, trade at the Market.'],
   },
-  seam: {
-    title: 'Seam (AFK)',
-    bullets: ['Bench Adventurers work while you’re away: Gather materials, Process them, or Train to level.', 'One job per Adventurer.'],
+  hearth: {
+    title: 'Hearth (AFK)',
+    bullets: ['The bench works at the hearth while the party is away: Gather materials, Process them, or Train to level.', 'One job per Adventurer.'],
   },
   player: {
     title: 'Player',

@@ -15,7 +15,7 @@ export const HUB_SKIN = {
 
 /**
  * Map hub tab id → hub skin family.
- * AFK/Seam uses mind (Gather/Idle). Process theme DESIGN-OPEN — slight forge glow via CSS class.
+ * AFK/Hearth uses mind (Gather/Idle). Process theme DESIGN-OPEN — slight forge glow via CSS class.
  * Market is no longer a root tab (under Town).
  */
 export const TAB_HUB_SKIN = {

@@ -33,7 +33,7 @@ export const FONTS = {
 
 /** The three modes. */
 export const MODES = {
-  /** Veinharbor — Town / Party / Player (and Seam). Sunlit wood — home lives here. Flat, no shadows. */
+  /** Veinharbor — Town / Party / Player (and Hearth). Sunlit wood — home lives here. Flat, no shadows. */
   veinharbor: {
     tagline: 'Sunlit wood — home lives here',
     bg: '#080807',

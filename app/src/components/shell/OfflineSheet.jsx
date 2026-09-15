@@ -4,7 +4,7 @@ import './shell.css';
 
 /**
  * Offline summary — Progression Loop Lock §6: after a reconciled span longer than 60 s (app open,
- * app resume, or a long background stretch) the Seam reports what accrued: "While you were away:
+ * app resume, or a long background stretch) the Hearth reports what accrued: "While you were away:
  * 14 wood, 3 infused, Sera +1 level". One tap to continue.
  */
 function fmt(ms) {
@@ -20,7 +20,7 @@ export default function OfflineSheet({ summary, onClose }) {
   const lines = summaryLines(summary);
   return (
     <Sheet onClose={onClose} label="While you were away" title={<>∞ While you were away</>}>
-      <div className="eld-sheet-sub">{fmt(summary.elapsedMs)} of Seam work reconciled</div>
+      <div className="eld-sheet-sub">{fmt(summary.elapsedMs)} of Hearth work reconciled</div>
       <ul className="eld-sheet-bullets">
         {lines.length === 0 && <li>Nothing changed.</li>}
         {lines.map((l, i) => <li key={i}>{l}</li>)}

@@ -264,7 +264,7 @@
   }
 }
 
-/* Mind-view scale on the Player / Party / Seam tabs (v3 §4): taps ≥ 52 px, inputs 18 px */
+/* Mind-view scale on the Player / Party / Hearth tabs (v3 §4): taps ≥ 52 px, inputs 18 px */
 .eld-root.hub-mind .eld-btn {
   min-height: var(--mv-tap, 52px);
 }

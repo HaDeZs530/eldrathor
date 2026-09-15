@@ -12,13 +12,30 @@ import { AREAS } from './data.js';
 import { MAT_QUALITY } from './theme/tokens.js';
 import { trainXpPerMinute, applyXp } from './progression/progression.js';
 
-export const AFK_TICK_MS = 100; // how often the app reconciles while open (the accrual itself is timestamp-based)
-export const GATHER_CYCLE_MS = 4000;
-export const PROCESS_CYCLE_MS = 5000;
-export const IDLE_CYCLE_MS = 6000;
-export const PROCESS_VEIN_COST = 5;
-export const OFFLINE_SUMMARY_MS = 60000; // §6: show "While you were away" when the reconciled span exceeds 60 s
-export const GATHER_VEIN_CHANCE = 0.15; // DESIGN-OPEN: prototype rate carried over
+/**
+ * AFK_TUNING — Progression Loop Lock §9: the prototype's rates are v1, as one named table (tune later via
+ * playtest, not now). Every number the Hearth uses lives here; afkRuntime.test.js asserts it.
+ */
+export const AFK_TUNING = Object.freeze({
+  tickMs: 100, // how often the app reconciles while open (the accrual itself is timestamp-based)
+  gatherCycleMs: 4000,
+  processCycleMs: 5000,
+  trainCycleMs: 6000,
+  processVeinCost: 5, // ❖ per Process cycle
+  gatherVeinChance: 0.15, // chance of +1 ❖ per Gather cycle
+  gatherYield: (tier) => 1 + Math.floor(tier / 2), // raw mats per Gather cycle at an area tier
+  gatherXp: (tier) => 3 + tier * 2, // gather skill XP per cycle
+  processXp: 4, // process skill XP per infused mat
+  qualityWeights: { Common: 55, Fine: 25, Rare: 12, Epic: 6, Legendary: 2 }, // = MAT_QUALITY weights (theme/tokens.js)
+  offlineSummaryMs: 60000, // §6: show "While you were away" when the reconciled span exceeds 60 s
+});
+export const AFK_TICK_MS = AFK_TUNING.tickMs;
+export const GATHER_CYCLE_MS = AFK_TUNING.gatherCycleMs;
+export const PROCESS_CYCLE_MS = AFK_TUNING.processCycleMs;
+export const IDLE_CYCLE_MS = AFK_TUNING.trainCycleMs;
+export const PROCESS_VEIN_COST = AFK_TUNING.processVeinCost;
+export const OFFLINE_SUMMARY_MS = AFK_TUNING.offlineSummaryMs;
+export const GATHER_VEIN_CHANCE = AFK_TUNING.gatherVeinChance;
 export const CYCLE_MS = { gather: GATHER_CYCLE_MS, process: PROCESS_CYCLE_MS, idle: IDLE_CYCLE_MS };
 
 /** Highest unlocked area tier (Tmax in the lock's Train formula). */
@@ -30,7 +47,7 @@ export function trainXpGain(unlocked, cycleMs = IDLE_CYCLE_MS) {
   return trainXpPerMinute(maxUnlockedTier(unlocked)) * (cycleMs / 60000);
 }
 /** Gather yield per cycle at an area tier (DESIGN-OPEN: prototype rates). */
-export const gatherYield = (tier) => ({ gain: 1 + Math.floor(tier / 2), xp: 3 + tier * 2 });
+export const gatherYield = (tier) => ({ gain: AFK_TUNING.gatherYield(tier), xp: AFK_TUNING.gatherXp(tier) });
 
 export function emptyGatherSlot() {
   return { charKey: null, areaId: 1, family: 'wood', running: false, progress: 0, startedAt: null, lastReconciledAt: null, suspended: false };
@@ -213,7 +230,7 @@ export function reconcileAfk({ state, inventory, worldvein, party, roster, unloc
       summary.infused[quality] = (summary.infused[quality] || 0) + 1;
       done += 1;
     }
-    if (done) { inv = { ...inv, raw, infused }; next.processSkillXp += 4 * done; summary.processXp += 4 * done; }
+    if (done) { inv = { ...inv, raw, infused }; next.processSkillXp += AFK_TUNING.processXp * done; summary.processXp += AFK_TUNING.processXp * done; }
     if (exhausted) { summary.stops.push(`process: ${exhausted}`); next.process = stopped(job); }
     else next.process = { ...job, progress, lastReconciledAt: now };
   }

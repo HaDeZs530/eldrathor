@@ -34,7 +34,7 @@ test('§B sizes: hero 1560×500, rows 240×184, island 1560×2400, tiles 1024²,
   assert.equal(portraits.length, 15); for (const p of portraits) assert.deepEqual([p.w, p.h, p.transparent], [256, 256, true]);
   assert.equal(MANIFEST.filter((e) => e.name.startsWith('icon-innate-')).length, 5);
   assert.equal(MANIFEST.filter((e) => e.name.startsWith('icon-aura-')).length, 5);
-  assert.deepEqual(TAB_IDS, ['player', 'party', 'mountain', 'town', 'seam']);
+  assert.deepEqual(TAB_IDS, ['player', 'party', 'mountain', 'town', 'hearth']);
   for (const t of TAB_IDS) assert.deepEqual(size(`icon-tab-${t}`), [96, 96, true]);
   // every entry is a PNG under /art/ and names are unique
   for (const e of MANIFEST) { assert.ok(e.src.startsWith(ART_BASE) && e.file.endsWith('.png'), e.name); }
