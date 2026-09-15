@@ -1,13 +1,14 @@
-# Milestone 2 — "The climb has identity" (plan, 2026-09-15)
-*Design Chat. M1 gave us one real area. M2 makes runs differ from each other and gives Worldvein its permanent sinks. Locks are written in this order; each lock becomes one or two briefs.*
+# Milestone 2 — "Manage and grow" (plan, revised 2026-09-15)
+*After the systems inventory (`docs/SYSTEMS_INVENTORY.md`). Item management comes first because every later system (gems, sockets, consumables, roster) needs a place to live. Each lock → one or two briefs.*
 
-| # | Lock (Design Chat writes) | Brief outcome (Claude Code builds) |
+| # | Lock | Brief outcome |
 |---|---|---|
-| 1 | **Enemy rosters, areas 1–3** — 4 enemy types per area with one behaviour each, rare identities, the three area bosses with one mechanic each (Brinewarden, Skarra, Harbormaster), named-variant adjectives | enemy data + behaviours in `simulate`, boss mechanics, roster-driven names in feed/log/results, enemy stage art slugs |
-| 2 | **Class gems live** — drops from rares (§6d RNG, no pity), gem inventory, equip one per Adventurer in Party, crossing/matching rule in `derive`, the **40-pt tree screen** (contents already locked), points bought with Worldvein (cost curve) | `GemTreeScreen`, gem drop + equip, procs/finishers wired into the resolver with tests per node |
-| 3 | **Veinbinder trees** — Bond (party stats) + Craft (economy) node contents and costs; **Player tab** layout | `PlayerScreen` with two trees, effects applied in derive/AFK/loot |
-| 4 | **Areas 2–3 open** — tier bands, balance gates per area (same shape as §8), material tiers Fine, area-2/3 boss unlock flow on the island | gates as tests, unlock persistence |
-| 5 | **First-run onboarding** — five contextual prompts (first explore, first fight, first extract, first Smith, first gem) | tooltip system + copy |
-| 6 | **Playtest tuning pass** from Anthony's area 1–3 runs | bug/tuning brief |
+| 1 | **Inventory & equipment** — inventory screen (all item kinds, filters, sort, detail sheet with compare, sell/scrap/lock), full paperdoll (weapon, body, head, hands, feet, gem slot), swap flow, roster management (recruit flow in Town, dismiss, rename, bench with job shown) | `InventoryScreen`, `ItemSheet`, paperdoll v2, `RecruitPanel` |
+| 2 | **Class gems live** — drop from rares, equip, crossing/matching in derive, procs/finishers in the resolver, **gem tree screen** with Worldvein costs | gem system end to end, tests per tree node |
+| 3 | **Weapon skill trees** — design the 8 trees (node-linked, per §6c) + weapon skill XP from use; the power engine | `WeaponTreeScreen`, skill XP, power scaling |
+| 4 | **Veinbinder trees + Player tab** — Bond/Craft nodes and costs | `PlayerScreen` real |
+| 5 | **Gathering depth** — skill levels per gathering skill, per-material mastery, armor sockets + armor gems, consumables (or cut) | AFK v2, Crafter v2 |
+| 6 | **Enemy rosters + boss mechanics, areas 1–3**; areas 2–3 gates | content + tests |
+| 7 | **Onboarding** + playtest tuning | |
 
-**Milestone 3 (later):** areas 4–9 with the court bosses and court-art gems, Vaelyx, market dynamics, weapon skill trees, Capacitor iOS build + TestFlight.
+**Milestone 3:** areas 4–9, court bosses + court-art gems, Vaelyx, market dynamics, sound, Capacitor/TestFlight. **Milestone 4:** backend, renown, monetization.

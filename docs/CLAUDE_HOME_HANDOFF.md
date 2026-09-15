@@ -13,7 +13,7 @@
 0. **`docs/CLAUDE_BRIEFS/2026-09-15_tab-retap-resets-root.md`** — tab re-tap pops to root.
 0. ~~`2026-09-14_sheets-inherit-mode.md`~~ (DONE #55 — `Sheet` freezes the §D column at open; three scoped token blocks in `ui.css`; archived).
 1. ~~`2026-09-14_tuning-pass-2.md`~~ (DONE #56 — final boss ×62 hp / ×7 dmg, sustain retuned, Hearth, Wardplate/Veinweave, floor, AFK_TUNING; archived).
-2. Then wait: Anthony runs a full area-1 phone playtest with the debug trace on → Design Chat writes the bug/tuning pass. Milestone 2 plan: `docs/MILESTONE_2_PLAN.md` — locks arrive in that order, starting with enemy rosters 1–3.
+2. Then wait: Anthony runs a full area-1 phone playtest with the debug trace on → Design Chat writes the bug/tuning pass. Milestone 2 plan (revised): `docs/MILESTONE_2_PLAN.md`, from `docs/SYSTEMS_INVENTORY.md`. Lock 1 = Inventory & equipment (Design Chat writing).
 
 ## Recently DONE (don't redo)
 - PR #57 — cleaning pass (Anthony, phone): one "N art pending" pill per screen with a tap-to-list sheet instead of chip lists; quiet fight-stage placeholder; island pin labels as cream Cinzel with a halo (no boxes); enemy slug fix (Hollow Warden).
