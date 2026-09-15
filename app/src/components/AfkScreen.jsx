@@ -11,7 +11,7 @@ const SUBS = [
   { id: 'idle', label: 'Train' }, // job key stays 'idle'; label locked to Train (playtest polish)
 ];
 
-/** AFK tab (Seam working label). Timers live in App. DESIGN-OPEN: final name; Process art; persistence/offline. */
+/** AFK tab — the Hearth (Progression Loop Lock §9). Accrual lives in afkRuntime; the app reconciles it. */
 export default function AfkScreen({
   unlocked, party, roster, inventory, afk, deployedIds = [],
   onUpdateGatherSlot, onToggleGather, onUpdateProcess, onToggleProcess, onUpdateIdle, onToggleIdle, worldvein,
@@ -26,9 +26,9 @@ export default function AfkScreen({
   ];
   return (
     <div style={S.wrap} className={sub === 'process' ? 'eld-afk-process' : ''}>
-      <div style={S.kick}>Mind View · Seam (AFK)</div>
-      <div className="eld-display eld-screen-title" style={S.title}>The Seam</div>
-      <div style={S.sub}>Park Adventurers who aren't on the Mountain into a job. Jobs run on real time — while you're on other tabs, and while the app is closed; you'll get a summary when you come back. Each Adventurer can hold one job at a time; a job pauses while its Adventurer is on the Mountain.</div>
+      <div style={S.kick}>Veinharbor · Hearth</div>
+      <div className="eld-display eld-screen-title" style={S.title}>The Hearth</div>
+      <div style={S.sub}>The bench works at the hearth while the party is away. Park Adventurers who aren't on the Mountain into a job. Jobs run on real time — while you're on other tabs, and while the app is closed; you'll get a summary when you come back. Each Adventurer can hold one job at a time; a job pauses while its Adventurer is on the Mountain.</div>
       <div className="eld-seg" role="tablist" aria-label="AFK jobs">
         {SUBS.map((s) => (
           <button key={s.id} type="button" role="tab" aria-selected={sub === s.id}

@@ -15,9 +15,13 @@ export const MAX_FIGHT_MS = 300000;
 export const AOE_SPLASH = 0.35; // every other living enemy takes 35% of a swing (§2, tune)
 
 /** Archetype innates — §3. Personal = cooldown ability (auto-fires); group = passive aura. */
+/** Sustain numbers — Progression Loop Lock §9 / Combat v2 §3 (retuned 2026-09-14). Asserted by balance.test.js. */
+export const SUSTAIN = { renewalPct: 0.01, renewalEveryMs: 3000, mendBase: 30, mendCdMs: 7000, guardianPct: 0.08 };
+
 export const INNATES = {
-  Bulwark: { name: 'Aegis', glyph: '🛡', cd: 8000, mana: 20, aura: { id: 'guardian', name: "Guardian's Bulwark", glyph: '⛨', text: 'Party takes 10% less damage' } },
-  Warden: { name: 'Mend', glyph: '✚', cd: 5000, mana: 25, aura: { id: 'renewal', name: 'Renewal', glyph: '❦', text: 'Party heals 2% max HP every 2 s' } },
+  // Progression Loop Lock §9 (2026-09-14): sustain retuned — Guardian 8 %, Mend 30 × heal scale / CD 7 s, Renewal 1 % every 3 s
+  Bulwark: { name: 'Aegis', glyph: '🛡', cd: 8000, mana: 20, aura: { id: 'guardian', name: "Guardian's Bulwark", glyph: '⛨', text: 'Party takes 8% less damage' } },
+  Warden: { name: 'Mend', glyph: '✚', cd: 7000, mana: 25, aura: { id: 'renewal', name: 'Renewal', glyph: '❦', text: 'Party heals 1% max HP every 3 s' } },
   Striker: { name: 'Onslaught', glyph: '⚔', cd: 0, mana: 0, passive: true, aura: { id: 'cadence', name: 'Cadence', glyph: '♪', text: 'Party attack speed +12%' } },
   Adept: { name: 'Lock', glyph: '✴', cd: 10000, mana: 30, aura: { id: 'sunder', name: 'Sunder', glyph: '⌁', text: 'Enemies take +12% damage' } },
   Resonator: { name: 'Resonance', glyph: '☯', cd: 12000, mana: 20, aura: { id: 'attune', name: 'Attune Vein', glyph: '❖', text: '+20% Worldvein, +1 loot-tier bias' } },
@@ -117,9 +121,9 @@ export function simulateFight({ party, enemies, seed = 1, startHpFrac, runMods, 
     for (const p of livingP()) {
       p.mana = Math.min(p.d.maxMana, p.mana + p.d.manaRegen * dt);
     }
-    if (auras.has('renewal') && t % 2000 === 0) {
+    if (auras.has('renewal') && t % SUSTAIN.renewalEveryMs === 0) {
       for (const p of livingP()) {
-        const amt = round(p.d.maxHp * 0.02);
+        const amt = round(p.d.maxHp * SUSTAIN.renewalPct);
         const before = p.hp;
         p.hp = Math.min(p.d.maxHp, p.hp + amt);
         p.healed += p.hp - before;
@@ -161,7 +165,7 @@ export function simulateFight({ party, enemies, seed = 1, startHpFrac, runMods, 
       } else if (inn.name === 'Mend') {
         const hurt = livingP().filter((x) => x.hp < x.d.maxHp).sort((a, b) => a.hp / a.d.maxHp - b.hp / b.d.maxHp)[0];
         if (hurt) {
-          const amt = round(40 * p.d.healScale);
+          const amt = round(SUSTAIN.mendBase * p.d.healScale);
           const before = hurt.hp;
           hurt.hp = Math.min(hurt.d.maxHp, hurt.hp + amt);
           p.healed += hurt.hp - before;
@@ -246,7 +250,7 @@ export function simulateFight({ party, enemies, seed = 1, startHpFrac, runMods, 
       let mit = target.d.mitigation + modMit + (t < target.aegisUntil ? 0.25 : 0) + (resonance ? 0.06 : 0);
       mit = Math.min(0.9, mit);
       let amt = dmg * (1 - mit);
-      if (auras.has('guardian')) amt *= 0.9;
+      if (auras.has('guardian')) amt *= 1 - SUSTAIN.guardianPct;
       amt = round(amt);
       target.hp -= amt;
       target.taken += amt;

@@ -4,14 +4,14 @@ import { Sheet } from '../ui/index.jsx';
 
 /**
  * ☰ — quick menu bottom sheet (docs/Eldrathor_UI_Shell_Lock.md).
- * Items: Island · Party · Town · Seam · Player · Help · Debug trace · Settings (save export / import / reset).
+ * Items: Island · Party · Town · Hearth · Player · Help · Debug trace · Settings (save export / import / reset).
  * During a run adds Extract with a confirm.
  */
 const NAV = [
   { id: 'mountain', label: 'Island', glyph: '⛰' },
   { id: 'party', label: 'Party', glyph: '♟' },
   { id: 'town', label: 'Town', glyph: '⌂' },
-  { id: 'afk', label: 'Seam', glyph: '∞' }, // DESIGN-OPEN: final AFK tab name
+  { id: 'afk', label: 'Hearth', glyph: '∞' },
   { id: 'player', label: 'Player', glyph: '◎' },
 ];
 

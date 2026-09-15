@@ -1,6 +1,6 @@
 /**
  * Enemy stat blocks — docs/Eldrathor_Combat_v2_Lock.md §4, boss multipliers retuned under
- * docs/Eldrathor_Progression_Loop_Lock.md §8 (M1b): boss ×22 hp / ×20 dmg (was ×18 / ×2.2) so a
+ * docs/Eldrathor_Progression_Loop_Lock.md §8 + §9: boss ×62 hp / ×7 dmg (was ×18 / ×2.2; the M1b ×22 / ×20 was reversed) so a
  * fresh party hits the gear wall and a level-5 Fine-geared party breaks through — see balance.test.js.
  * Base trash unit by world tier T (1–9): hp 60×1.6^(T−1), dmg 9×1.45^(T−1), interval 1.4 s,
  * mit 0.05+0.03T. Enemies have no abilities in v2 (boss enrage tick only).
@@ -20,7 +20,7 @@ export const NAMED_ADJECTIVES = ['Grim', 'Hollow', 'Ashen', 'Vein-Scarred', 'Bri
  */
 export const ENEMY_TUNING = {
   baseHp: 60, hpGrowth: 1.6, baseDmg: 9, dmgGrowth: 1.45, interval: 1.4, mitBase: 0.05, mitPerTier: 0.03,
-  boss: { hp: 22, dmg: 20, interval: 1.6, mitAdd: 0.1 },
+  boss: { hp: 62, dmg: 7, interval: 1.6, mitAdd: 0.1 }, // §9: dmg ×7 (cap ×8 — walls are HP and time, never one-shots); hp raised until gate 1 passes
   rare: { hp: 6, dmg: 1.6, interval: 1.2 },
   crystalHp: 1.2,
 };

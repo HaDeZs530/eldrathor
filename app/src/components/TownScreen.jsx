@@ -1,7 +1,8 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import { TIER_COLOR, newId } from '../data.js';
 import { MAT_QUALITY } from '../theme/tokens.js';
-import { previewEmpower, EMPOWER_MAX, RARITY, weaponDamageMult, rarityIndex } from '../progression/progression.js';
+import { previewEmpower, EMPOWER_MAX, RARITY, weaponDamageMult } from '../progression/progression.js';
+import { ARMOR_RECIPES, canCraft, consume, rollArmorRating, matPrice, describeInputs } from '../town/recipes.js';
 import { TOWN_LAYOUT, TOWN_DESTINATIONS, TOWN_ART } from '../town/townLayout.js';
 import TownArt from './town/TownArt.jsx';
 import { DestinationRow } from './ui/index.jsx';
@@ -16,18 +17,7 @@ import './town/town.css';
  * destination; a destination always opens at its top. All crafting / upgrade / market logic is
  * unchanged from before this pass.
  */
-// Progression Loop Lock §2: one body-armor recipe per rarity tier (Mythic retired → Legendary).
-// DESIGN-OPEN: recipe names, material counts and ratings for Epic/Legendary are placeholders.
-const ARMOR_RECIPES = [
-  { id: 'vest_common', name: 'Veinwoven Vest', quality: 'Common', need: 3, rating: 28 },
-  { id: 'vest_fine', name: 'Boundweave Mail', quality: 'Fine', need: 3, rating: 42 },
-  { id: 'vest_rare', name: 'Mythros Plate', quality: 'Rare', need: 2, rating: 58 },
-  { id: 'vest_epic', name: 'Court-Bound Carapace', quality: 'Epic', need: 2, rating: 70 },
-  { id: 'vest_legendary', name: 'Legendary Body Armor', quality: 'Legendary', need: 2, rating: 82 }, // DESIGN-OPEN: name
-];
-// DESIGN-OPEN: market floor price per infused material (every tier sells; 1 ❖ × rarity index for now).
-const MAT_FLOOR_PRICE = 1;
-const matPrice = (quality) => MAT_FLOOR_PRICE * rarityIndex(quality);
+// Recipes, rolled ratings and the material floor live in town/recipes.js (Progression Loop Lock §9, tested).
 
 const SECTION_TITLE = { crafter: 'Crafter', upgrade: 'Smith', market: 'Market' };
 
@@ -116,38 +106,31 @@ function CrafterPanel({ inventory, setInventory }) {
     return (inventory.infused || []).filter((m) => m.quality === q).reduce((n, m) => n + m.qty, 0);
   }
   function craft(recipe) {
-    if (countQuality(recipe.quality) < recipe.need) return;
-    setInventory((inv) => {
-      let remaining = recipe.need;
-      const infused = inv.infused.map((m) => ({ ...m })).filter((m) => {
-        if (m.quality !== recipe.quality || remaining <= 0) return true;
-        if (m.qty <= remaining) { remaining -= m.qty; return false; }
-        m.qty -= remaining; remaining = 0; return true;
-      });
-      const armor = [...(inv.armor || []), {
-        id: newId('a'), recipeId: recipe.id, name: recipe.name, quality: recipe.quality, rating: recipe.rating, slot: 'chest',
-      }];
-      return { ...inv, infused, armor };
-    });
+    // decided from current props (bug-fix pass 1 §10): the rating rolls once, here
+    const infused = consume(inventory.infused || [], recipe);
+    if (!infused) return;
+    const armor = [...(inventory.armor || []), {
+      id: newId('a'), recipeId: recipe.id, name: recipe.name, quality: recipe.quality, rating: rollArmorRating(), slot: 'chest',
+    }];
+    setInventory({ ...inventory, infused, armor });
   }
   return (
     <div style={S.col}>
-      <div style={S.note}>Craft armor from infused mats. Recipes need X of a given quality. No +1-tier gate.</div>
+      <div style={S.note}>Craft body armor from infused mats. The rating rolls 1–100 at the bench. No +1-tier gate.</div>
       <div className="eld-panel" style={S.strip}>
         {RARITY.map((q) => (
           <span key={q} style={{ color: MAT_QUALITY[q]?.color }}>{q} {countQuality(q)}</span>
         ))}
       </div>
       {ARMOR_RECIPES.map((r) => {
-        const have = countQuality(r.quality);
-        const ok = have >= r.need;
+        const ok = canCraft(inventory.infused || [], r);
         return (
           <div key={r.id} className="eld-card" style={S.card}>
             <div style={S.row}>
               <span style={{ ...S.fnN, color: MAT_QUALITY[r.quality]?.color }}>{r.name}</span>
-              <span style={S.rating}>{r.rating}/100</span>
+              <span style={S.rating}>rolls 1–100</span>
             </div>
-            <div style={S.fnS}>Needs {r.need}× {r.quality} infused · have {have}</div>
+            <div style={S.fnS}>Needs {describeInputs(r)} · have {r.inputs.map((i) => (inventory.infused || []).filter((m) => m.quality === i.quality && (!i.family || m.family === i.family)).reduce((n, m) => n + m.qty, 0)).join(' / ')}</div>
             <button type="button" className="eld-btn" disabled={!ok} style={S.wide} onClick={() => craft(r)}>Craft</button>
           </div>
         );

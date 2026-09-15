@@ -37,7 +37,7 @@ export function enemySlug(name) {
 const entry = (name, w, h, { transparent = false, kind, label, note } = {}) => ({ name, file: `${name}.png`, src: `${ART_BASE}${name}.png`, w, h, transparent, kind, label: label || name, note });
 
 export const NODE_KINDS = ['unknown', 'fight', 'crystal', 'sanctuary', 'rare', 'boss', 'cleared', 'named'];
-export const TAB_IDS = ['player', 'party', 'mountain', 'town', 'seam'];
+export const TAB_IDS = ['player', 'party', 'mountain', 'town', 'hearth'];
 export const PORTRAITS_PER_ARCHETYPE = 3;
 
 function build() {

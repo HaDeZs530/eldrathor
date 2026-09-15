@@ -59,7 +59,7 @@ const HUB_LABELS = {
   party: 'Party',
   mountain: 'The Island',
   town: 'Veinharbor',
-  afk: 'The Seam', // DESIGN-OPEN: final AFK tab name
+  afk: 'The Hearth', // Progression Loop Lock §9: the bench works at the hearth while the party is away
 };
 
 // Theme ladder: island = warm RPG, route map = hybrid parchment, fight/loot/sanctuary = Mind-view.
@@ -682,7 +682,7 @@ export default function Eldrathor() {
   // Screen id for the ? help sheet — every tab root and every drilled-in screen.
   const screenId = tab === 'mountain'
     ? (runStage === 'route' && (card || ambush) ? 'scout' : { island: 'island', rally: 'rally', route: 'route', fight: 'fight', loot: 'results', sanctuary: 'sanctuary' }[runStage] || 'island')
-    : { player: 'player', party: 'party', town: 'town', afk: 'seam' }[tab] || 'basics';
+    : { player: 'player', party: 'party', town: 'town', afk: 'hearth' }[tab] || 'basics';
   const inRun = tab === 'mountain' && !!territory && runStage !== 'island' && runStage !== 'rally';
   const canExtract = inRun && runStage === 'route'; // DESIGN-OPEN: menu Extract mid-fight/results is held until the fight resolves
   const mountainHubLabel = { island: 'The Island', rally: 'Rally', route: 'Route Map', fight: 'Combat', loot: 'Spoils', sanctuary: 'Sanctuary' }[runStage] || HUB_LABELS.mountain;

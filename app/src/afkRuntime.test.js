@@ -7,8 +7,9 @@ import assert from 'node:assert/strict';
 import {
   assignJob, resolveCharKey, emptyGatherSlot, emptyAfkState, reconcileAfk, trainXpGain, maxUnlockedTier, IDLE_CYCLE_MS,
   PROCESS_CYCLE_MS, PROCESS_VEIN_COST, startJob, stopJob, toggleJob, suspendJobs, resumeJobs, cyclesElapsed,
-  wantsOfflineSummary, summaryLines, normalizeAfk, OFFLINE_SUMMARY_MS, gatherYield,
+  wantsOfflineSummary, summaryLines, normalizeAfk, OFFLINE_SUMMARY_MS, gatherYield, AFK_TUNING,
 } from './afkRuntime.js';
+import { MAT_QUALITY } from './theme/tokens.js';
 import { trainXpPerMinute, xpToNext } from './progression/progression.js';
 
 const party = [{ id: 'c1', name: 'Kessa', level: 3 }, { id: 'c2', name: 'Orin', level: 3 }];
@@ -146,4 +147,13 @@ test('Train (§3): a cycle grants trainXpPerMinute(Tmax) × cycle/60 s — flat 
   assert.equal(n.gatherSlots[0].lastReconciledAt, T0); assert.equal(n.gatherSlots[0].startedAt, T0); assert.equal(n.gatherSlots[0].progress, 0.5);
   assert.equal(n.idle.lastReconciledAt, null);
   assert.equal(n.gatherSlots.length, 1);
+});
+
+test('§9 AFK_TUNING: the prototype rates are v1 — 4 / 5 / 6 s cycles, 5 ❖ per Process, 15 % ❖ per Gather cycle, yield 1+⌊T/2⌋, XP 3+2T, process XP 4, quality weights = MAT_QUALITY, offline summary at 60 s', () => {
+  assert.equal(AFK_TUNING.gatherCycleMs, 4000); assert.equal(AFK_TUNING.processCycleMs, 5000); assert.equal(AFK_TUNING.trainCycleMs, 6000);
+  assert.equal(AFK_TUNING.processVeinCost, 5); assert.equal(AFK_TUNING.gatherVeinChance, 0.15); assert.equal(AFK_TUNING.processXp, 4);
+  assert.deepEqual([1, 2, 3, 9].map(AFK_TUNING.gatherYield), [1, 2, 2, 5]); assert.deepEqual([1, 2, 9].map(AFK_TUNING.gatherXp), [5, 7, 21]);
+  assert.deepEqual(AFK_TUNING.qualityWeights, Object.fromEntries(Object.entries(MAT_QUALITY).map(([k, v]) => [k, v.weight])));
+  assert.equal(AFK_TUNING.offlineSummaryMs, OFFLINE_SUMMARY_MS); assert.equal(PROCESS_CYCLE_MS, 5000); assert.equal(IDLE_CYCLE_MS, 6000);
+  assert.ok(Object.isFrozen(AFK_TUNING));
 });
