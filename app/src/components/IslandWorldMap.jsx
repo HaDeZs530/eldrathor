@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ISLAND_PINS, islandRoutePaths } from '../map/islandPath.js';
 import { useArtStatus } from '../art/useArt.js';
 import { artSrc } from '../art/manifest.js';
+import PendingArt from '../art/PendingArt.jsx';
 import '../map/islandMap.css';
 
 /**
@@ -258,9 +259,7 @@ export default function IslandWorldMap({ areas, unlocked, onSelectArea, onHarbor
           })}
         </div>
 
-        {islandArt !== 'ready' && (
-          <div className="eld-art-pending-list eld-island-art-pending" aria-label="Pending art"><span>island-map.png · showing legacy island-world.png</span></div>
-        )}
+        {islandArt !== 'ready' && <PendingArt names={['island-map']} className="eld-island-art-pending" />}
         <div className="eld-island-hint" aria-hidden="true">
           drag to pan
           <br />

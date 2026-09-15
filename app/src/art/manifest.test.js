@@ -12,6 +12,9 @@ test('slugs: "The Brinewarden" → brinewarden, "Grim Vein Husk" → vein-husk, 
   assert.equal(slug('The Brinewarden'), 'brinewarden');
   assert.equal(enemySlug('Grim Vein Husk'), 'vein-husk');
   assert.equal(enemySlug('Named Rare Manifestation'), 'manifestation');
+  assert.equal(enemySlug('Hollow Warden'), 'hollow-warden', 'a base enemy whose name starts with an adjective keeps its name');
+  assert.equal(enemySlug('Grim Hollow Warden'), 'hollow-warden');
+  assert.equal(enemySlug('Old Shore Drake'), 'shore-drake');
   assert.equal(areaSlug(AREAS[3]), 'serpents-stair');
   assert.equal(areaSlug(AREAS[0]), 'gullwatch-trail');
 });

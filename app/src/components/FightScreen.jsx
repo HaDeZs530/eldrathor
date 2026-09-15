@@ -6,6 +6,7 @@ import { MODES } from '../theme/styleBible.js';
 import { enemySlug, slug } from '../art/manifest.js';
 import Art from '../art/Art.jsx';
 import { useArtStatuses } from '../art/useArt.js';
+import PendingArt from '../art/PendingArt.jsx';
 import { Bar, PartyCard } from './ui/index.jsx';
 import '../combat/fight.css';
 
@@ -73,7 +74,7 @@ export default function FightScreen({ area, node, party, fight, elapsedMs, speed
 
       {/* --- stage: enemy backdrop with the enemy HP bars overlaid at the top --- */}
       <div className={`eld-fight-stage eld-panel${stageHit ? ' is-hit' : ''}`}>
-        <Art name={stageArt} className="eld-fight-stage-art" alt="" position="50% 40%" />
+        <Art name={stageArt} className="eld-fight-stage-art" alt="" position="50% 40%" quiet />
         <div className="eld-fight-stage-scrim" />
         <div className="eld-fight-stage-top">
           <div className="eld-fight-stage-title" title={enemyLabel}>{enemyLabel}</div>
@@ -94,12 +95,8 @@ export default function FightScreen({ area, node, party, fight, elapsedMs, speed
             );
           })}
           </div>
-          {pendingArt.length > 0 && (
-            <div className="eld-art-pending-list eld-fight-stage-pending" aria-label="Pending art">
-              {pendingArt.map((n) => <span key={n}>{n}.png</span>)}
-            </div>
-          )}
         </div>
+        <PendingArt names={pendingArt} style={{ position: 'absolute', right: 8, bottom: 8 }} />
       </div>
 
       {/* --- party cards (§A): 3 across, ≥ 120 px, portrait, Cinzel 15 name, 14 px HP/MP, two 28 px icons --- */}

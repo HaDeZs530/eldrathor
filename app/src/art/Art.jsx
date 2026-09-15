@@ -10,13 +10,13 @@ import './art.css';
  * `fallback` (optional) replaces the placeholder with something small — e.g. a glyph inside a node
  * icon — for slots where a labelled box would not fit; the slot still carries `data-art-pending`.
  */
-export default function Art({ name, alt = '', className = '', style, position, fit = 'cover', fallback = null, legacySrc = null, onStatus }) {
+export default function Art({ name, alt = '', className = '', style, position, fit = 'cover', fallback = null, legacySrc = null, onStatus, quiet = false }) {
   const status = useArtStatus(name, legacySrc);
   const entry = artEntry(name);
   const pending = status === 'pending';
   useEffect(() => { if (onStatus) onStatus(status); }, [status, onStatus]);
   return (
-    <span className={`eld-art${pending ? ' is-pending' : ''} ${className}`.trim()} style={style} data-art={name} data-art-pending={pending ? 'true' : undefined} data-art-target={entry ? `${entry.w}x${entry.h}` : undefined}>
+    <span className={`eld-art${pending ? ' is-pending' : ''}${quiet ? ' is-quiet' : ''} ${className}`.trim()} style={style} data-art={name} data-art-pending={pending ? 'true' : undefined} data-art-target={entry ? `${entry.w}x${entry.h}` : undefined}>
       {status === 'ready' && <img src={artSrc(name)} alt={alt} draggable={false} style={{ objectFit: fit, objectPosition: position }} />}
       {status === 'legacy' && <img src={legacySrc} alt={alt} draggable={false} style={{ objectFit: fit, objectPosition: position }} />}
       {pending && (fallback != null ? <span className="eld-art-fallback" aria-hidden="true">{fallback}</span> : (

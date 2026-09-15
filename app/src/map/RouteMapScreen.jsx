@@ -6,6 +6,7 @@ import { createCameraController } from './cameraController.js';
 import { trace, isTraceOn } from '../debug/trace.js';
 import Art from '../art/Art.jsx';
 import { useArtStatuses } from '../art/useArt.js';
+import PendingArt from '../art/PendingArt.jsx';
 import { artSrc, areaSlug, NODE_KINDS } from '../art/manifest.js';
 import './parchment.css';
 
@@ -488,12 +489,8 @@ export default function RouteMapScreen({
           </div>
         </div>
 
-        {/* Style Bible §C: missing map art is obvious on the phone — one chip per pending file */}
-        {pendingArt.length > 0 && !card && !confirmExtract && (
-          <div className="eld-art-pending-list eld-route-pending" aria-label="Pending art">
-            {pendingArt.map((n) => <span key={n}>{n}.png</span>)}
-          </div>
-        )}
+        {/* Style Bible §C: missing map art stays obvious — one pill, tap for the list */}
+        {!card && !confirmExtract && <PendingArt names={pendingArt} className="eld-route-pending" />}
         {toast && !card && !confirmExtract && (
           <div className="eld-run-toast" key={toast.id} aria-live="polite">
             <span>{travel ? 'Travelling… tap to skip' : toast.t}</span>
