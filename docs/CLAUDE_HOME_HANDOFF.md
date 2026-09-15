@@ -10,11 +10,12 @@
 4. Open PRs; don't invent LOCKED design — use `// DESIGN-OPEN:` for gaps.
 
 ## Active briefs (priority)
-0. **`docs/CLAUDE_BRIEFS/2026-09-14_sheets-inherit-mode.md`** — overlays lost their mode differences after #52; sheets/cards take the underlying screen's column. Spec: Style Bible §D.
+0. ~~`2026-09-14_sheets-inherit-mode.md`~~ (DONE #55 — `Sheet` freezes the §D column at open; three scoped token blocks in `ui.css`; archived).
 1. **`docs/CLAUDE_BRIEFS/2026-09-14_tuning-pass-2.md`** — sustain retune + boss dmg cap (reverses ×20), Hearth rename, DESIGN-OPEN numbers.
 2. Then wait: Anthony runs a full area-1 phone playtest with the debug trace on → Design Chat writes the bug/tuning pass. Meanwhile the Design Chat is writing the Milestone 2 locks (enemy rosters per area, class gem drops + tree UI, Veinbinder Bond/Craft trees, Player tab).
 
 ## Recently DONE (don't redo)
+- PR #55 — §D: `modeColumn()` + `Sheet` reads the column from ThemeProvider at open and freezes it; `.eld-mode-veinharbor / -explore / -mind` scoped token blocks in `ui.css`; overlay scoped Mind View, route cards Exploration; verified three distinct sheet fills over Town / Route map / Fight.
 - PR #54 — M1d: GitHub Actions CI (lint, build, tests on PRs + main; check `build-and-test` — **Anthony: enable the main ruleset requiring it**), the `|| true` assertion fixed, Node 24 pinned, DEV_SETUP refreshed (+ `npm run dev:phone`), trace receiver hardened (body limit, retention, async, LAN-only), trace build hash + run-start snapshot + 1500-event ring, PR #15 closed, Handoff Doc rewritten, 20 briefs archived, app/README replaced.
 - PR #53 — M1c: AFK jobs are true idle — timestamped accrual (`reconcileAfk`: every complete cycle in the span, remainder carried, clean stop at exhaustion), reconciled on tick / resume / open, Offline summary sheet after > 60 s, deploy suspends jobs and return resumes them, deployed Adventurers can't be assigned.
 - PR #52 — Style Bible chrome: tokens + three mode stylesheets to §A (Cinzel once, Press Start 2P gone), shared ui components (Frame/Header/Panel/Buttons/Bar/DestinationRow/PartyCard/Sheet), art manifest (63 files, `app/public/art/`) with labelled placeholders wired into every slot; route map on the parchment/biome/fog stack with ink-dotted paths; fight stage = enemy backdrop + overlaid HP bars. Five Town PNGs present at legacy sizes; everything else pending.
