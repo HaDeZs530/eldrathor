@@ -22,14 +22,20 @@ export const slug = (s) => String(s || '')
 /** Area → biome file slug (one per Island Areas Lock area). */
 export const areaSlug = (area) => slug(area?.shortName || area?.name);
 
-/** Enemy display name → base enemy slug (named-variant adjectives and the Rare/Named prefixes stripped). */
+/**
+ * Enemy display name → base enemy slug. Named-variant adjectives and the Rare/Named prefixes are stripped
+ * one at a time, but only while the remainder is not itself a known enemy: "Hollow Warden" is a base
+ * enemy, "Grim Hollow Warden" is its named variant, "Named Rare Manifestation" is a Manifestation.
+ */
 export const ENEMY_PREFIXES = ['Named ', 'Rare ', 'Grim ', 'Hollow ', 'Ashen ', 'Vein-Scarred ', 'Bright-Eyed ', 'Old '];
+const BASE_ENEMY_SLUGS = new Set(TRASH_NAMES.map((n) => slug(n)));
 export function enemySlug(name) {
   let n = String(name || '');
-  let stripped = true;
-  while (stripped) {
-    stripped = false;
-    for (const p of ENEMY_PREFIXES) if (n.startsWith(p) && n.length > p.length) { n = n.slice(p.length); stripped = true; }
+  for (let guard = 0; guard < 4; guard++) {
+    if (BASE_ENEMY_SLUGS.has(slug(n))) return slug(n);
+    const p = ENEMY_PREFIXES.find((x) => n.startsWith(x) && n.length > x.length);
+    if (!p) break;
+    n = n.slice(p.length);
   }
   return slug(n);
 }

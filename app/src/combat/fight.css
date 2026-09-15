@@ -68,7 +68,7 @@
 
 .eld-fight-stage-top {
   position: relative;
-  padding: 8px 10px 40px; /* the bars sit at the top; the backdrop shows beneath */
+  padding: 8px 10px 44px; /* the bars sit at the top; the backdrop shows beneath */
   display: flex;
   flex-direction: column;
   gap: 4px;

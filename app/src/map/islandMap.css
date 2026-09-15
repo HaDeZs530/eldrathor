@@ -80,27 +80,29 @@
   font-family: system-ui, sans-serif;
 }
 
+/* labels sit straight on the painting: cream Cinzel with a dark halo, no box */
 .eld-hotspot-lbl {
   font-family: Cinzel, 'Palatino Linotype', Georgia, serif;
   font-weight: 700;
-  font-size: 11px;
-  letter-spacing: 0.04em;
-  color: #2b2118;
-  background: rgba(241, 230, 207, 0.92);
-  border: 1px solid #8a7350;
-  border-radius: 4px;
-  padding: 3px 6px;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  color: #f1e6cf;
+  text-align: center;
+  padding: 1px 2px;
   white-space: nowrap;
+  text-shadow: 0 0 2px #1a120a, 0 0 4px #1a120a, 0 1px 0 #1a120a, 0 -1px 0 #1a120a, 1px 0 0 #1a120a, -1px 0 0 #1a120a;
+  paint-order: stroke fill;
 }
 
 .eld-hotspot-sub {
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  font-weight: 400;
+  font-weight: 600;
   font-size: 10px;
-  color: #6f5d48;
+  color: #e8d5b7;
   display: block;
-  margin-top: 2px;
+  margin-top: 1px;
   letter-spacing: 0.02em;
+  text-shadow: 0 0 2px #1a120a, 0 0 4px #1a120a, 0 1px 0 #1a120a;
 }
 
 .eld-hotspot.is-open .eld-hotspot-pin {
@@ -124,7 +126,7 @@
 }
 
 .eld-hotspot.is-locked .eld-hotspot-lbl {
-  color: #6f5d48;
+  color: #c9bfae;
 }
 
 .eld-hotspot.is-harbor .eld-hotspot-pin {
@@ -181,9 +183,9 @@
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   font-size: 11px;
   line-height: 1.4;
-  color: #3a2e22;
-  background: rgba(241, 230, 207, 0.9);
-  border: 1px solid #8a7350;
+  color: #e8d5b7;
+  background: rgba(26, 18, 10, 0.55);
+  border: 1px solid rgba(232, 213, 183, 0.35);
   border-radius: 4px;
   padding: 3px 6px;
   pointer-events: none;
