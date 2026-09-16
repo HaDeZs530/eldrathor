@@ -2,27 +2,48 @@
 
 *Author: Claude Design Chat from Anthony's rulings 2026-09-16. **Replaces** the retracted Inventory & Equipment lock and **supersedes** Progression Loop lock §2 (five-rung ladder) and §3's Train rule. Keeps the design doc's item principles (§7a–c: weapons drop, armor crafted, ratings final, empowerment separate).*
 
-## 1. The seven-rung ladder (one ladder, everything)
-**Common · Uncommon · Rare · Epic · Legendary · Artifact · Mythic.** ("Fine" → Uncommon.) Colours: Common `#9aa3ad` · Uncommon `#5fbf8a` · Rare `#4fa3ff` · Epic `#a678f0` · Legendary `#e8c46a` · Artifact `#ff8a3d` · Mythic `#ff5c8a` with a faint shimmer.
-- **Drops and crafts reach Legendary.** No weapon ever drops as Artifact/Mythic; no recipe makes them.
-- **Artifact and Mythic are upgrade grades.** Two special items — the **Artifact Core** and the **Mythic Core** — are consumed at the Smith to raise a **Legendary** item to Artifact, and an **Artifact** item to Mythic. Rating and empower carry over unchanged; the grade multiplier rises (§4). One core per upgrade; cores are never craftable.
-- **Where cores come from (the top of the island):** Artifact Cores — hunted (rares + bosses) **and gathered** in **The Bastion (area 8)** and **The Worldforge (area 9)**; Mythic Cores — **only from Vaelyx** (the summit, recurring). Drop rates: DESIGN-OPEN (tune at M3).
-- **Drop rarity band by area:** 1–2 Common · 3–4 Uncommon · 5–6 Rare · 7 Epic · 8–9 Legendary; roll 70% band / 20% up / 10% down within Common–Legendary; rares +1 band, bosses +1 band with rating floor 40; Attune Vein raises the up-chance to 40%.
-- **Materials** use the same five names Common–Legendary (quality of processed mats = the area's band with a small step-up chance). Recipe = piece + rarity: a Rare Cuirass needs Rare metal + Rare fabric. Materials never go above Legendary; Artifact/Mythic is cores only.
+## 1. The seven-rung ladder, tiers and gating (RULED by Anthony 2026-09-16, all rungs kept)
+**Rarity:** Common · Uncommon · Rare · Epic · Legendary · Artifact · Mythic. Colours: Common `#9aa3ad` · Uncommon `#5fbf8a` · Rare `#4fa3ff` · Epic `#a678f0` · Legendary `#e8c46a` · Artifact `#ff8a3d` · Mythic `#ff5c8a` (shimmer).
+
+**Two axes on every item.** *Tier* = power, set by the area the item came from. *Rarity* = quality, the multiplier. Seven tiers to match the seven rarities; zones map to tiers:
+
+| Tier | Areas (10 = Vaelyx) |
+|---|---|
+| T1 | 1–2 |
+| T2 | 3 |
+| T3 | 4 |
+| T4 | 5 |
+| T5 | 6–7 |
+| T6 | 8–9 |
+| T7 | 10 |
+*(lower bands are first-pass; Anthony's fixed points are 6–7, 8–9, 10)*
+
+**Craftables (armor, and the materials that make them) — rarity gated by area:**
+- **Common → Epic: farmable in any area** (processing quality rolls; higher areas bias higher).
+- **Legendary: areas 6–7 only.** **Artifact: areas 8–9 only.** **Mythic: area 10 (Vaelyx) only.**
+- Crafting Artifact/Mythic pieces = upgrading an existing Legendary/Artifact piece at the Smith with the zone's materials **plus an Artifact Core / Mythic Core** (hunted or gathered in 8–9 / dropped by Vaelyx). Rating and empower carry over.
+
+**Weapon drops from rares and area bosses — rarity up to Artifact from ANY area**, tier from the area. An area-1 rare can drop an Artifact Greatsword at T1: exciting, but T1 power. Mythic weapons exist only by upgrading an Artifact with a Mythic Core. Normal-node drops stay Common → Epic weighted by area.
+
+**Drop weights (rares/bosses, tune):** Common 30 · Uncommon 28 · Rare 20 · Epic 12 · Legendary 7 · Artifact 3; bosses shift one step up with rating floor 40; Attune Vein doubles the top-two chances.
+
+**Power formula (both axes):** item stat = base(type) × tierMult(T) × rarityMult(R) × (0.8 + 0.4 × rating/100) × (1 + empower/100 for weapons). tierMult T1..T7 = 1.0 · 1.45 · 2.1 · 3.0 · 4.4 · 6.4 · 9.2 (tracks enemy scaling 1.45^(T−1), tune). rarityMult = Common 1.00 · Uncommon 1.08 · Rare 1.18 · Epic 1.30 · Legendary 1.45 · Artifact 1.62 · Mythic 1.82 (tune). Tier dominates, rarity refines — a T5 Common beats a T1 Artifact.
+
+**Materials** carry tier and rarity too; a recipe consumes the piece's tier band materials at the target rarity.
 
 ## 2. What an item is
-`{ id, kind (weapon|armor|core), type, rarity, rating 1–100, empower 0–100, name }`
+`{ id, kind (weapon|armor|core|material), type, tier 1–7, rarity, rating 1–100, empower 0–100, name }`
 - **Types are fixed and span every rarity.** Weapons: the 8 types. Armor: **Cuirass** (body) · **Helm** · **Gauntlets** · **Greaves**. Head/Hands/Feet give ½ the body values.
 - **Names:** armor and cores use the type name ("Rare Helm"). **Weapons carry a special name** generated at drop from a per-type name table (e.g. Greatsword: "Tidebreaker", "Gullwatch Cleaver", "Kingsfall"…; ~12 per type, DESIGN-OPEN list, Design Chat writes it). The special name shows **only in the bag list and the item sheet header**; everywhere else (results feed, equip slots, compare) the item is "Rare Greatsword".
 - **Rating is the item's gear score, 1–100.** No composite number. Empower shows as **+N**.
 
 ## 3. Presentation — the row and the sheet
-**Bag row:** `Tidebreaker  [Rare] [72] +12   Equipped` — name coloured by rarity, tier chip, rating chip, +N if empowered, "Equipped" tag (with who) when worn. No icons in lists.
+**Bag row:** `Tidebreaker  [T3] [Rare] [72] +12   Equipped` — name coloured by rarity, tier chip, rating chip, +N if empowered, "Equipped" tag (with who) when worn. No icons in lists.
 **Item sheet (tap a row or a slot):** header (special name + "Rare Greatsword"), then **real stats**: Attack Power (the item's hit-damage contribution at current rating/empower), Attack Speed (tempo), Mitigation (if any), Bonus stats (empty until gems/sockets), then actions **Equip · Compare · Empower · Sell**. Sell gives Worldvein (floor by rarity, DESIGN-OPEN numbers). **No scrap.** Empower opens the Smith flow for this item. Compare shows the stat delta vs the target Adventurer's current item.
 Sheets inherit the underlying mode (Style Bible §D).
 
 ## 4. Numbers
-- Rarity multiplier on an item's stats (applies to weapon hit damage and armor HP/mit): Common 1.00 · Uncommon 1.10 · Rare 1.22 · Epic 1.36 · Legendary 1.52 · Artifact 1.70 · Mythic 1.90 (tune). Rating scales `0.8 + 0.4 × rating/100`; empower `1 + empower/100` (weapons only, per §7c).
+- Multipliers and the two-axis formula live in §1.
 - Sell value: `base(rarity) × (1 + rating/200)`, base DESIGN-OPEN.
 
 ## 5. Bag (inventory screen)
