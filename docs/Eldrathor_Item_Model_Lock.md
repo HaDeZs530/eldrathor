@@ -34,7 +34,7 @@
 ## 2. What an item is
 `{ id, kind (weapon|armor|core|material), type, tier 1–7, rarity, rating 1–100, empower 0–100, name }`
 - **Types are fixed and span every rarity.** Weapons: the 8 types. Armor: **Cuirass** (body) · **Helm** · **Gauntlets** · **Greaves**. Head/Hands/Feet give ½ the body values.
-- **Names:** armor and cores use the type name ("Rare Helm"). **Weapons carry a special name** generated at drop from a per-type name table (e.g. Greatsword: "Tidebreaker", "Gullwatch Cleaver", "Kingsfall"…; ~12 per type, DESIGN-OPEN list, Design Chat writes it). The special name shows **only in the bag list and the item sheet header**; everywhere else (results feed, equip slots, compare) the item is "Rare Greatsword".
+- **Names:** armor and cores use the type name ("Rare Helm"). **Weapons carry a special name** generated at drop from a name table **per type per tier** (RULED 2026-09-16): a T1 Greatsword draws from the T1 Greatsword pool ("Gullwatch Cleaver"), a T7 from the T7 pool ("Kingsfall"), so the name signals the tier. Four names per type per tier = 224 names; Design Chat writes `data/weaponNames.js`. The special name shows **only in the bag list and the item sheet header**; everywhere else (results feed, equip slots, compare) the item is "Rare Greatsword".
 - **Rating is the item's gear score, 1–100.** No composite number. Empower shows as **+N**.
 
 ## 3. Presentation — the row and the sheet
