@@ -23,6 +23,7 @@ Eldrathor: a UI-based iOS RPG (Vite + React now; Capacitor iOS wrap later). The 
    - `docs/Eldrathor_BaseStats_Lock.md` — the nine stats every system uses (LOCKED July 2026).
    - `docs/Eldrathor_ClassGemTrees_Lock.md` — full 40-pt trees for Tank/DPS/Controller/Healer (LOCKED July 2026).
    - `docs/Eldrathor_Archetype_Seeds_DRAFT.md` — archetype base numbers (approved for build 2026-09-11).
+   - `docs/Eldrathor_Inventory_Equipment_Lock.md` — ItemRow language (rarity chip, Gear Score, +N badge), inventory screen, paperdoll v2, roster management (LOCKED 2026-09-16).
    - `docs/Eldrathor_Progression_Loop_Lock.md` — Milestone 1: ids + save/resume, rarity ladder, XP, equipment/empower/armor that apply, crit fix, true-idle AFK, balance gates (LOCKED 2026-09-14).
    - `docs/Eldrathor_Combat_v2_Lock.md` — resolver formulas, innates, enemy tiers, fight screen (LOCKED 2026-09-11).
 3. `docs/SESSION_LOG.md` — chronology + cross-cutting locks.

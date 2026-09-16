@@ -10,10 +10,8 @@
 4. Open PRs; don't invent LOCKED design — use `// DESIGN-OPEN:` for gaps.
 
 ## Active briefs (priority)
-0. ~~`2026-09-15_tab-retap-resets-root.md`~~ (DONE #58 — `nav/tabRetap.js`; per-tab rootKey remount; Mountain stays on the route map mid-run; archived).
-0. ~~`2026-09-14_sheets-inherit-mode.md`~~ (DONE #55 — `Sheet` freezes the §D column at open; three scoped token blocks in `ui.css`; archived).
-1. ~~`2026-09-14_tuning-pass-2.md`~~ (DONE #56 — final boss ×62 hp / ×7 dmg, sustain retuned, Hearth, Wardplate/Veinweave, floor, AFK_TUNING; archived).
-2. Then wait: Anthony runs a full area-1 phone playtest with the debug trace on → Design Chat writes the bug/tuning pass. Milestone 2 plan (revised): `docs/MILESTONE_2_PLAN.md`, from `docs/SYSTEMS_INVENTORY.md`. Lock 1 = Inventory & equipment (Design Chat writing).
+0. **`docs/CLAUDE_BRIEFS/2026-09-16_mode-tokens-fix.md`** — Exploration screens fall back to Town brown; per-mode token sets. FIRST.
+1. **`docs/CLAUDE_BRIEFS/2026-09-16_m2-1-inventory-equipment.md`** — M2 lock 1. Spec: `Eldrathor_Inventory_Equipment_Lock.md`.
 
 ## Recently DONE (don't redo)
 - PR #58 — tab re-tap pops to root: Town → Harbor, Party → roster, Player / Hearth → root, Mountain → island from Rally, stays on the route map during a run.
@@ -28,6 +26,7 @@
 - PR #49 — Veinharbor artwork live in all five Town slots (originals in `app/art-src/town/`)
 - PR #48 — Veinharbor visual pass rev 1 (ChatGPT visual spec): viewport fit (no document overflow), harbor hero + four illustrated destination rows, Back to Veinharbor, Town-scoped Cinzel/gold treatment, art slots pending (`app/public/town/`). Lock note: Town typography/chrome now diverges from the micro-pixel kit in the Dual-Mode Art Lock — Design Chat to amend.
 - PR #47 — gold ring party marker (§18): 44 px ring + bobbing pennant around the occupied node, node icon stays visible; §19 seal remnants removed for good (`isSealed`, `sealBroken`, `is-unsealed`, comments, test names)
+- PR #58 — tab re-tap pops to root
 - PRs #50–#54 — Milestone 1 (save/ids, progression chain, style bible chrome, true-idle AFK, CI/hygiene)
 - PR #46 — bug-fix pass 1: depth/named modifiers on normal enemies, single extraction credit, pointercancel + pointerId gestures, controls excluded from map gestures, owned theme timers, feed scroll by last event, run-party freeze (Party tab locked during a run, HP by character id), AFK one-job-per-id, one camera owner, pure updaters
 - PR #33 — route explore model (v3 lock §15–17): three node states, nothing auto-marked, tap never moves the party (Explore/Cancel → travel → Fight/Flee), 600 ms/hop + 250 ms skip, §17 camera framing, recentre on the party under the overlay before it fades
@@ -43,6 +42,7 @@
 - PR #21 — route map v2
 - PR #22 — UI shell
 - PRs #23–#45 — route map v3 series (travel, states, camera, no respawns, no seal, run log)
+- PR #58 — tab re-tap pops to root
 - PRs #50–#54 — Milestone 1 (save/ids, progression chain, style bible chrome, true-idle AFK, CI/hygiene)
 - PR #46 — bug-fix pass 1 · #47 — ring marker + seal cleanup · #48 — Veinharbor visual pass rev 1
 - PR #23 — route map v3: one-tap travel, node visual states, ambush flee, Mind-view scale, fight order
