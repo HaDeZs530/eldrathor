@@ -10,7 +10,6 @@ Active coding tasks for **Claude Code**. The **Claude Design Chat** writes these
 
 ## Queue (2026-09-16)
 - `2026-09-16_mode-tokens-fix.md` — **READY (first)**
-- `2026-09-16_m2-1-inventory-equipment.md` — **READY**
 - _(empty — `sheets-inherit-mode` #55 and `tuning-pass-2` #56 are done and archived; waiting on the Design Chat's next brief)_
 
 ## Archive (`_archive/`, newest first — all DONE or superseded)

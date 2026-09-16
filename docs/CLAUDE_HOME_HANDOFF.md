@@ -11,7 +11,7 @@
 
 ## Active briefs (priority)
 0. **`docs/CLAUDE_BRIEFS/2026-09-16_mode-tokens-fix.md`** — Exploration screens fall back to Town brown; per-mode token sets. FIRST.
-1. **`docs/CLAUDE_BRIEFS/2026-09-16_m2-1-inventory-equipment.md`** — M2 lock 1. Spec: `Eldrathor_Inventory_Equipment_Lock.md`.
+1. (M2 lock 1 brief withdrawn — being rewritten to `Eldrathor_Item_Model_Lock.md`; wait for it.)
 
 ## Recently DONE (don't redo)
 - PR #58 — tab re-tap pops to root: Town → Harbor, Party → roster, Player / Hearth → root, Mountain → island from Rally, stays on the route map during a run.
