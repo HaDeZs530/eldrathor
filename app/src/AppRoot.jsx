@@ -760,6 +760,6 @@ const S = {
   // Viewport fit (Veinharbor pass §1): the decorative 12 px vertical padding lives in CSS (`.eld-page`) and is
   // removed on compact viewports; the frame budget is 100svh minus that padding, so the document never scrolls.
   root: { minHeight: '100svh', display: 'flex', justifyContent: 'center', alignItems: 'flex-start', background: '#05080a', boxSizing: 'border-box' },
-  frame: { width: frame.width, height: frame.height, maxWidth: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', color: 'var(--eld-text, #c9bfae)', fontFamily: 'var(--eld-font-body, system-ui, sans-serif)', position: 'relative' },
+  frame: { width: frame.width, height: frame.height, maxWidth: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', color: 'var(--eld-text)', fontFamily: 'var(--eld-font-body)', position: 'relative' },
   flash: { textAlign: 'center', padding: '8px', margin: '8px 12px 0', border: '1px solid', borderRadius: 8, fontSize: 12, letterSpacing: '0.06em', background: 'rgba(0,0,0,0.35)', animation: 'fadein 0.3s ease', flexShrink: 0 },
 };

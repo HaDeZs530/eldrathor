@@ -1,8 +1,12 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { createModeSwitcher } from './modeSwitch.js';
+import { modeColumn } from './styleBible.js';
 import { MODE, HUB_SKIN, TAB_HUB_SKIN } from './tokens.js';
+// Link order — shared chrome first, then the three mutually exclusive mode columns, then hub chrome.
+// modeTokens.test.js reads the sheets in this order; keep the two in step.
 import '../components/ui/ui.css';
 import './world.css';
+import './explore.css';
 import './mind.css';
 import './hub.css';
 
@@ -51,6 +55,7 @@ export function ThemeProvider({ children }) {
       setHubSkinForTab,
       HUB_SKIN,
       TAB_HUB_SKIN,
+      column: modeColumn(currentMode, hubSkin), // Style Bible §D — the column this screen renders in
     }),
     [currentMode, enterMindView, exitMindView, transitioning, hubSkin, setHubSkin, setHubSkinForTab],
   );

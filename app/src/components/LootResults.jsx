@@ -105,7 +105,7 @@ export default function LootResults({ area, nodeLabel, fight, onContinue }) {
 const S = {
   wrap: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 14, padding: '16px 16px 12px', textAlign: 'left', overflowY: 'auto' },
   head: { flexShrink: 0 },
-  kick: { fontSize: 'var(--mv-label, 15px)', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--eld-muted)', fontFamily: 'var(--eld-font-display, Cinzel, Georgia, serif)' },
+  kick: { fontSize: 'var(--mv-label, 15px)', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--eld-muted)', fontFamily: 'var(--eld-font-display)' },
   title: { fontSize: 'var(--mv-title, 26px)', fontWeight: 700, marginTop: 4, lineHeight: 1.1 },
   sub: { fontSize: 'var(--mv-label, 15px)', color: 'var(--eld-muted)', marginTop: 4, fontStyle: 'italic' },
   panel: { padding: 16, display: 'flex', flexDirection: 'column', gap: 12 },

@@ -84,7 +84,7 @@
 .eld-fight-stage-pending { margin-top: 6px; }
 
 .eld-fight-stage-title {
-  font-family: var(--eld-font-display, Cinzel, Georgia, serif);
+  font-family: var(--eld-font-display);
   font-weight: 700;
   font-size: 20px;
   color: #dfe9f5;
@@ -120,7 +120,7 @@
   border-radius: 8px;
   background: #1a2b3b;
   color: #2cabf8;
-  font-family: var(--eld-font-display, Cinzel, Georgia, serif);
+  font-family: var(--eld-font-display);
   font-size: var(--mv-label, 15px);
   letter-spacing: 0.06em;
   padding: 8px 8px;

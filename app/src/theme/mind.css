@@ -5,6 +5,9 @@
  * 8 px radius, Cinzel 20 #dfe9f5, system UI 16 #b7c6d8, Mythros #2cabf8, HP #20a95e, MP #2cabf8,
  * crit #f2c14e, damage #e5484d. Buttons: outline #3d6fa8 on #1a2b3b; active = gold outline.
  * Mind View is the ONLY mode with glow.
+ *
+ * The token block below is the FULL set (theme/styleBible.js MODE_TOKENS.mind) plus the Mind-only
+ * crit / HP / MP hues — ui.css reads every token with no fallback, so nothing is left to another column.
  */
 
 .eld-root.mode-mind {
@@ -24,9 +27,7 @@
   --eld-mythros: #2cabf8;
   --eld-good: #20a95e;
   --eld-danger: #e5484d;
-  --eld-crit: #f2c14e;
-  --eld-hp: #20a95e;
-  --eld-mp: #2cabf8;
+  --eld-header-bg: transparent;
   --eld-btn-bg: #1a2b3b;
   --eld-btn-text: #dfe9f5;
   --eld-btn-border: #3d6fa8;
@@ -35,6 +36,8 @@
   --eld-btn-primary-text: #06121f;
   --eld-btn-ghost-border: #3d6fa8;
   --eld-btn-ghost-text: #b7c6d8;
+  --eld-bar-track: #0a1522;
+  --eld-bar-border: #2b4a6e;
   --eld-tabbar-bg: #0f151d;
   --eld-tab-active: #e8c46a;
   --eld-tab-inactive: #7f97b0;
@@ -42,11 +45,12 @@
   --eld-font-body: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --eld-radius: 8px;
   --eld-shadow: 0 0 6px rgba(44, 171, 248, 0.25);
-  --eld-bar-track: #0a1522;
-  --eld-bar-border: #2b4a6e;
   --eld-art-ph-bg: #1a2b3b;
   --eld-art-ph-line: #3d6fa8;
   --eld-art-ph-text: #7f97b0;
+  --eld-crit: #f2c14e;
+  --eld-hp: #20a95e;
+  --eld-mp: #2cabf8;
   image-rendering: auto;
 }
 
@@ -64,10 +68,6 @@
   background: linear-gradient(180deg, #0c1a2b 0%, #152a41 100%);
 }
 
-.eld-root.mode-mind .eld-header {
-  background: transparent;
-  border-bottom: 1px solid #3d6fa8;
-}
 
 .eld-root.mode-mind .eld-panel,
 .eld-root.mode-mind .eld-card {

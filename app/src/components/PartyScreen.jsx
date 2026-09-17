@@ -304,7 +304,7 @@ function MemberDetail({ member, stash, armor, taken, locked, onBack, onChange, o
           return (
             <div key={k} style={S.seedRow}>
               <span style={S.seedK}>{STAT_LABELS[k]}</span>
-              <span style={{ ...S.seedV, color: v > 10 ? 'var(--eld-accent, #5fc7e0)' : 'inherit' }}>{v}</span>
+              <span style={{ ...S.seedV, color: v > 10 ? 'var(--eld-accent)' : 'inherit' }}>{v}</span>
             </div>
           );
         })}
@@ -425,18 +425,18 @@ const S = {
     fontSize: 'var(--mv-label, 15px)',
     letterSpacing: '0.24em',
     textTransform: 'uppercase',
-    color: 'var(--eld-muted, #5f8494)',
-    fontFamily: 'var(--eld-font-display, Cinzel, Georgia, serif)',
+    color: 'var(--eld-muted)',
+    fontFamily: 'var(--eld-font-display)',
   },
   title: { fontSize: 'var(--mv-title, 26px)', fontWeight: 700, marginTop: 4 },
-  sub: { fontSize: 'var(--mv-text, 18px)', color: 'var(--eld-muted, #5f8494)', fontStyle: 'italic', margin: '4px 0 10px' },
+  sub: { fontSize: 'var(--mv-text, 18px)', color: 'var(--eld-muted)', fontStyle: 'italic', margin: '4px 0 10px' },
   partyBox: { padding: 10, display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 },
   secHead: {
     fontSize: 'var(--mv-text, 18px)',
     fontWeight: 700,
     letterSpacing: '0.12em',
     textTransform: 'uppercase',
-    fontFamily: 'var(--eld-font-display, Cinzel, Georgia, serif)',
+    fontFamily: 'var(--eld-font-display)',
   },
   rosterList: { display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 },
   empty: { padding: 12, fontSize: 'var(--mv-text, 18px)', color: 'var(--eld-muted)', fontStyle: 'italic' },
@@ -479,10 +479,10 @@ const S = {
     background: 'rgba(0,0,0,0.22)',
     borderRadius: 8,
     padding: '8px 10px',
-    border: '1px solid var(--eld-border, #1c3a44)',
+    border: '1px solid var(--eld-border)',
   },
   statK: { fontSize: 'var(--mv-label, 15px)', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--eld-muted)' },
-  statV: { fontSize: 'var(--mv-num, 24px)', fontWeight: 700, marginTop: 4, color: 'var(--eld-accent, #5fc7e0)', lineHeight: 1.15 },
+  statV: { fontSize: 'var(--mv-num, 24px)', fontWeight: 700, marginTop: 4, color: 'var(--eld-accent)', lineHeight: 1.15 },
   seedList: { padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 12 },
   seedRow: { display: 'flex', justifyContent: 'space-between', fontSize: 'var(--mv-text, 18px)', padding: '3px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' },
   seedK: { color: 'var(--eld-muted)' },
@@ -499,7 +499,7 @@ const S = {
   input: {
     width: '100%',
     background: 'rgba(0,0,0,0.3)',
-    border: '1px solid var(--eld-border, #1c3a44)',
+    border: '1px solid var(--eld-border)',
     color: 'inherit',
     borderRadius: 6,
     padding: '8px 10px',
@@ -509,7 +509,7 @@ const S = {
   promote: { width: '100%', padding: '10px 8px', marginBottom: 4, minHeight: 'var(--mv-tap, 52px)' },
   err: { color: 'var(--eld-danger)', fontSize: 'var(--mv-label, 15px)', marginTop: 4 },
   pick: { padding: 12, width: '100%', textAlign: 'left', color: 'inherit', fontFamily: 'inherit', cursor: 'pointer', borderLeftWidth: 3 },
-  pickCta: { marginTop: 8, fontSize: 'var(--mv-label, 15px)', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--eld-accent, #5fc7e0)' },
+  pickCta: { marginTop: 8, fontSize: 'var(--mv-label, 15px)', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--eld-accent)' },
   comingTag: { fontSize: 'var(--mv-label, 15px)', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--eld-gold)' },
   note: { fontSize: 'var(--mv-label, 15px)', color: 'var(--eld-muted)', fontStyle: 'italic', margin: '4px 0 8px' },
   upRow: { padding: 12 },

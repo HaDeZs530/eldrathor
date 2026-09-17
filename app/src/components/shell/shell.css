@@ -7,7 +7,7 @@
   padding-left: 18px;
   font-size: var(--mv-text, 18px);
   line-height: 1.45;
-  color: var(--eld-text, #c9bfae);
+  color: var(--eld-text);
 }
 
 .eld-sheet-bullets li + li {
@@ -16,7 +16,7 @@
 
 .eld-sheet-sub {
   font-size: var(--mv-label, 15px);
-  color: var(--eld-muted, #a89c88);
+  color: var(--eld-muted);
   margin: 10px 0 6px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -43,7 +43,7 @@
 }
 
 .eld-menu-item.is-current {
-  box-shadow: inset 3px 0 0 var(--eld-accent, #e8c46a);
+  box-shadow: inset 3px 0 0 var(--eld-accent);
 }
 
 .eld-menu-item:disabled {
@@ -60,7 +60,7 @@
 .eld-menu-note {
   margin-left: auto;
   font-size: var(--mv-label, 15px);
-  color: var(--eld-muted, #a89c88);
+  color: var(--eld-muted);
 }
 
 .eld-sheet-actions {
