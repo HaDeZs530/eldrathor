@@ -1,4 +1,4 @@
-# Eldrathor host keep-alive - runs every 2 min from the "Eldrathor dev keep-alive" scheduled task
+# Eldrathor host keep-alive - runs AT LOGON from the "Eldrathor dev keep-alive" scheduled task (and by hand)
 # (app/scripts/register-keep-alive.ps1). Keeps the phone-playtest server serving CURRENT main:
 #   1. if the checkout is on `main` and clean -> fetch; fast-forward pull when origin/main moved
 #      (a feature branch or local edits are left alone - the session working there owns the tree)
