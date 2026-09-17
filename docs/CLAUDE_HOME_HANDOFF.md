@@ -1,6 +1,6 @@
 # Claude Code — start here (home handoff)
 
-**Updated:** 2026-09-17 by Claude Code  
+**Updated:** 2026-09-17 by Claude Design Chat  
 **Repo:** `HaDeZs530/eldrathor` · Agent split: Design Chat locks + briefs; **you code**; Grok = art.
 
 ## First 60 seconds
@@ -10,9 +10,7 @@
 4. Open PRs; don't invent LOCKED design — use `// DESIGN-OPEN:` for gaps.
 
 ## Active briefs (priority)
-- _(**empty** — every queued brief is done. Waiting on the Design Chat for: **M2 lock 2** (gem trees), the
-  **224 weapon special names** for `app/src/data/weaponNames.js`, and rulings on the DESIGN-OPEN numbers
-  listed in PR #61.)_
+0. **`docs/CLAUDE_BRIEFS/2026-09-17_item-numbers-and-names.md`** — three-avenue formula (tier ×1.8, rarity ×1.158, rating 0–15%, empower ≤ +25%), tier-named armor, boss-named drops, enemy→Adventurer hits in the feed, Settings "Show test numbers" mode, save wipe policy (no migrations). Spec: `Eldrathor_Item_Model_Lock.md` §1, §2, §9.
 
 ## Recently DONE (don't redo)
 - PR #63 / #64 — Host mode: this PC hosts the phone dev server; the scheduled task "Eldrathor dev keep-alive" (every 2 min) fast-forwards a clean `main` and restarts the server if down, so any merged PR is live on the phone in ~2 min. `npm run dev:phone:bg` / `host:register`. Rule: this Claude Code session pushes the PRs; the remote session is the backup. Return the checkout to `main` after every PR or the host stops pulling.
