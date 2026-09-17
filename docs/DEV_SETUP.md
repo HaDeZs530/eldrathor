@@ -48,7 +48,9 @@ GitHub is the sync hub — every machine pulls from and pushes to it. Never work
 ```
 npm run dev:phone
 ```
-That is Vite with `--host` on port 5173: it prints the LAN URL(s) (`http://192.168.x.x:5173`); on Tailscale use the PC's Tailscale IP (`http://100.x.y.z:5173`). Open it in Safari on the phone. The debug trace (☰ → Debug trace) auto-saves to `app/playtest-traces/` on the PC while served this way (`docs/DEBUG_TRACE.md`).
+That is Vite with `--host` on port 5173: it prints the LAN URL(s) (`http://192.168.x.x:5173`); on Tailscale use the PC's Tailscale IP (`http://100.x.y.z:5173`). Open it in Safari on the phone.
+
+**Keep it running when the terminal / Claude session closes:** `npm run dev:phone:bg` (`app/scripts/dev-detached.ps1`) starts the same server as a detached hidden process and leaves it running until the PC reboots or you kill it; it is idempotent (does nothing if 5173 already answers). Log: `%TEMP%\eldrathor-dev-5173.log`. This is the launcher to use before a phone playtest — a server started from a Claude Code session dies with that session. The debug trace (☰ → Debug trace) auto-saves to `app/playtest-traces/` on the PC while served this way (`docs/DEBUG_TRACE.md`).
 
 **Every work session on that machine:**
 ```
