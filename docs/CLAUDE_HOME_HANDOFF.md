@@ -10,6 +10,7 @@
 4. Open PRs; don't invent LOCKED design — use `// DESIGN-OPEN:` for gaps.
 
 ## Active briefs (priority)
+0. **`docs/CLAUDE_BRIEFS/2026-09-17_ui-brackets.md`** — Party/Player/Hearth become their own brackets (Bond / Veinbinder / Hearth). Spec: `Eldrathor_UI_Brackets_Lock.md`. PR must ship phone captures.
 0. ~~`2026-09-17_item-numbers-and-names.md`~~ (DONE #65 — three-avenue formula, tier-named armor, boss-named drops, enemy damage in feed, test-numbers mode, save v4; archived)
 
 ## Recently DONE (don't redo)

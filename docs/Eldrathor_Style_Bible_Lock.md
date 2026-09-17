@@ -3,6 +3,7 @@
 *Author: Claude Design Chat. Target image: `docs/art/concept/style-target-2026-09-14.png` (ChatGPT concept, Anthony-approved). This doc turns that one composite into (A) UI tokens Claude Code builds chrome from and (B) an asset manifest of individually generated art files. The concept's **text and mechanics are NOT canon** (it shows a seal and party bars in the stage; ignore) — only its look is.*
 
 ## A. Three modes, one frame
+> **Superseded in part 2026-09-17:** screen → bracket mapping now lives ONLY in `Eldrathor_UI_Brackets_Lock.md` (six brackets). The Veinharbor / Exploration / Mind View token values below still hold; Bond, Veinbinder and Hearth are defined there.
 
 **Shared frame (all modes):** 2 px outer border in antique gold `#b8973f` with a 1 px inner line `#5a4a22`, 10 px radius; app header 57 px with the wordmark **ELDRATHOR** in Cinzel 22 px, letter-spacing 0.08 em, colour `#e6d6a8`; Worldvein counter (crystal glyph + number, Cinzel numerals); `?` and `☰` as 32 px round-outlined icons. Tab bar 76 px, dark slate `#0f151d`, icons 28 px, labels 12 px Cinzel; active tab gold `#e8c46a` with a top hairline.
 
