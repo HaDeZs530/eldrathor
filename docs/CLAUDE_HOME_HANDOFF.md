@@ -1,6 +1,6 @@
 # Claude Code — start here (home handoff)
 
-**Updated:** 2026-09-11 by Claude Design Chat  
+**Updated:** 2026-09-17 by Claude Code  
 **Repo:** `HaDeZs530/eldrathor` · Agent split: Design Chat locks + briefs; **you code**; Grok = art.
 
 ## First 60 seconds
@@ -10,10 +10,11 @@
 4. Open PRs; don't invent LOCKED design — use `// DESIGN-OPEN:` for gaps.
 
 ## Active briefs (priority)
-0. **`docs/CLAUDE_BRIEFS/2026-09-16_mode-tokens-fix.md`** — Exploration screens fall back to Town brown; per-mode token sets. FIRST.
-1. **`docs/CLAUDE_BRIEFS/2026-09-16_m2-1-item-model.md`** — M2 lock 1, confirmed by Anthony. Spec: `Eldrathor_Item_Model_Lock.md`.
+0. **`docs/CLAUDE_BRIEFS/2026-09-16_m2-1-item-model.md`** — M2 lock 1, confirmed by Anthony. Spec: `Eldrathor_Item_Model_Lock.md`. FIRST.
+- _(nothing behind it — waiting on the Design Chat's next brief)_
 
 ## Recently DONE (don't redo)
+- PR #59 — per-mode token sets, no Town fallback: `MODE_TOKENS` in `theme/styleBible.js` is the full 38-token set per column and the one source for the mode stylesheets and the §D scopes; new `theme/explore.css` (Exploration out of `hub.css`, which now defines no mode token); every `--eld-*` read with NO fallback, so a missing token fails loudly instead of going Town brown; `.eld-dest-sub`, `.eld-btn.is-active` and the island's locked pins de-browned; Island / Rally / route map pinned to `.eld-mode-explore` (the map stays Exploration under a Mind View fight overlay); `modeTokens.test.js` resolves the real cascade and asserts three distinct panel fills + three distinct Menu panels.
 - PR #58 — tab re-tap pops to root: Town → Harbor, Party → roster, Player / Hearth → root, Mountain → island from Rally, stays on the route map during a run.
 - PR #57 — cleaning pass (Anthony, phone): one "N art pending" pill per screen with a tap-to-list sheet instead of chip lists; quiet fight-stage placeholder; island pin labels as cream Cinzel with a halo (no boxes); enemy slug fix (Hollow Warden).
 - PR #56 — Tuning pass 2: Renewal 1 %/3 s, Mend 30 / 7 s, Guardian 8 %; boss dmg ×7 with hp raised to ×62 (fresh 0/10, L5 10/10 in ~57 s; cap test: no boss hit > 40 % of a Bulwark's HP); Seam → Hearth everywhere; `town/recipes.js` Wardplate / Veinweave with rolled ratings + floor 1 ❖ × rarity; `AFK_TUNING` table.
