@@ -8,6 +8,8 @@
     "dev": "vite",
     "dev:phone": "vite --host --port 5173 --strictPort",
     "dev:phone:bg": "powershell -ExecutionPolicy Bypass -File scripts/dev-detached.ps1",
+    "host:register": "powershell -ExecutionPolicy Bypass -File scripts/register-keep-alive.ps1",
+    "host:unregister": "powershell -ExecutionPolicy Bypass -File scripts/register-keep-alive.ps1 -Unregister",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
