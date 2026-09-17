@@ -10,10 +10,12 @@
 4. Open PRs; don't invent LOCKED design — use `// DESIGN-OPEN:` for gaps.
 
 ## Active briefs (priority)
-0. **`docs/CLAUDE_BRIEFS/2026-09-16_m2-1-item-model.md`** — M2 lock 1, confirmed by Anthony. Spec: `Eldrathor_Item_Model_Lock.md`. FIRST.
-- _(nothing behind it — waiting on the Design Chat's next brief)_
+- _(**empty** — every queued brief is done. Waiting on the Design Chat for: **M2 lock 2** (gem trees), the
+  **224 weapon special names** for `app/src/data/weaponNames.js`, and rulings on the DESIGN-OPEN numbers
+  listed in PR #61.)_
 
 ## Recently DONE (don't redo)
+- PR #61 — M2 lock 1, the item model: seven rungs + the two-axis power formula in `progression/items.js`, six equip slots, Artifact-from-any-area drops, area-gated crafting with the Smith's Core upgrade bench, the §7 Train cap, save v3 (one bag), and the Bag / item sheet / character-slot / Roster UI. 101 tests; the §8 balance gates pass with no enemy retune.
 - PR #59 — per-mode token sets, no Town fallback: `MODE_TOKENS` in `theme/styleBible.js` is the full 38-token set per column and the one source for the mode stylesheets and the §D scopes; new `theme/explore.css` (Exploration out of `hub.css`, which now defines no mode token); every `--eld-*` read with NO fallback, so a missing token fails loudly instead of going Town brown; `.eld-dest-sub`, `.eld-btn.is-active` and the island's locked pins de-browned; Island / Rally / route map pinned to `.eld-mode-explore` (the map stays Exploration under a Mind View fight overlay); `modeTokens.test.js` resolves the real cascade and asserts three distinct panel fills + three distinct Menu panels.
 - PR #58 — tab re-tap pops to root: Town → Harbor, Party → roster, Player / Hearth → root, Mountain → island from Rally, stays on the route map during a run.
 - PR #57 — cleaning pass (Anthony, phone): one "N art pending" pill per screen with a tap-to-list sheet instead of chip lists; quiet fight-stage placeholder; island pin labels as cream Cinzel with a halo (no boxes); enemy slug fix (Hollow Warden).
