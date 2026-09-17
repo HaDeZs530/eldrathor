@@ -1,4 +1,3 @@
-import GearPaperdoll from './GearPaperdoll.jsx';
 
 /**
  * Player tab — Mind-view Veinbinder screen (LOCKED Anthony 2026-09-10).
@@ -44,14 +43,6 @@ export default function PlayerScreen({ worldvein = 0 }) {
           <span style={S.veinNum}>{worldvein.toLocaleString()} ❖</span>
         </div>
       </div>
-
-      <GearPaperdoll
-        accent="#5fc7e0"
-        classGlyph="◎"
-        classLabel="Veinbinder"
-        weaponLabel="Bond"
-        compact
-      />
 
       <div style={S.secHead}>Growth</div>
       <div style={S.note}>

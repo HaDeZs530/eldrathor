@@ -1,12 +1,17 @@
-import { ARCHETYPES, TIER_COLOR } from '../data.js';
+import { ARCHETYPES } from '../data.js';
+import { upgradeFor } from '../progression/upgrade.js';
+import ItemRow from './items/ItemRow.jsx';
 
 /**
  * Results screen — docs/Eldrathor_Combat_v2_Lock.md §7.
  * Victory: per-Adventurer damage dealt / taken / healing, fight time, Worldvein gained
- * (with the Attune Vein bonus line), loot (weapon + tier + rating 1–100), kill count.
+ * (with the Attune Vein bonus line), loot, kill count.
  * Wipe: same card in red, "The bond pulls them home" → Veinharbor.
+ *
+ * Item Model §3 / §12: loot lines are `ItemRow`s, with an "↑ upgrade for <name>" note when the drop
+ * beats what that Adventurer has equipped in the same slot.
  */
-export default function LootResults({ area, nodeLabel, fight, onContinue }) {
+export default function LootResults({ area, nodeLabel, fight, party = [], onContinue }) {
   const { result, stats, rewards } = fight;
   const win = result.win;
   const accent = win ? 'var(--eld-accent)' : 'var(--eld-danger)';
@@ -54,13 +59,13 @@ export default function LootResults({ area, nodeLabel, fight, onContinue }) {
             </div>
             {result.attuneVein && (
               <div style={{ ...S.line, color: 'var(--eld-gold)' }}>
-                Attune Vein ▸ +{rewards.attuneBonus} Worldvein · loot tier biased +1
+                Attune Vein ▸ +{rewards.attuneBonus} Worldvein · the top-two drop chances doubled
               </div>
             )}
             {rewards.mapClearBonus > 0 && (
-              <div style={{ ...S.line, color: 'var(--eld-gold)' }}>Map cleared ▸ +{rewards.mapClearBonus} Worldvein · a guaranteed Rare-tier weapon</div>
+              <div style={{ ...S.line, color: 'var(--eld-gold)' }}>Map cleared ▸ +{rewards.mapClearBonus} Worldvein · a guaranteed Rare-or-better weapon</div>
             )}
-            {fight.named && <div style={{ ...S.line, color: 'var(--eld-gold)' }}>Named variant ▸ one extra weapon roll at +1 tier</div>}
+            {fight.named && <div style={{ ...S.line, color: 'var(--eld-gold)' }}>Named variant ▸ one extra weapon roll one rung up</div>}
             {fight.xp && (
               <div style={S.xpBox}>
                 <div style={S.row}>
@@ -76,14 +81,12 @@ export default function LootResults({ area, nodeLabel, fight, onContinue }) {
               </div>
             )}
             {rewards.gears.length ? (
-              rewards.gears.map((g, i) => (
-                <div key={i} style={{ ...S.gear, borderColor: TIER_COLOR[g.tier] || accent }}>
-                  <div style={{ color: TIER_COLOR[g.tier] || 'var(--eld-gold)', fontWeight: 700 }}>{g.name}</div>
-                  <div style={S.gearMeta}>
-                    {g.tier} · rating {g.baseRating}/100 · weapon drop
-                  </div>
-                </div>
-              ))
+              <div style={S.lootList}>
+                {rewards.gears.map((g, i) => {
+                  const up = upgradeFor(g, party);
+                  return <ItemRow key={g.id || i} item={g} note={up ? `↑ upgrade for ${up}` : undefined} />;
+                })}
+              </div>
             ) : (
               <div style={{ ...S.line, color: 'var(--eld-muted)', fontStyle: 'italic' }}>No weapon this time — the Vein still yields dust.</div>
             )}
@@ -103,6 +106,7 @@ export default function LootResults({ area, nodeLabel, fight, onContinue }) {
 }
 
 const S = {
+  lootList: { display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8 },
   wrap: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 14, padding: '16px 16px 12px', textAlign: 'left', overflowY: 'auto' },
   head: { flexShrink: 0 },
   kick: { fontSize: 'var(--mv-label, 15px)', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--eld-muted)', fontFamily: 'var(--eld-font-display)' },

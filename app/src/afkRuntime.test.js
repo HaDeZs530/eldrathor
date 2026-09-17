@@ -8,14 +8,15 @@ import {
   assignJob, resolveCharKey, emptyGatherSlot, emptyAfkState, reconcileAfk, trainXpGain, maxUnlockedTier, IDLE_CYCLE_MS,
   PROCESS_CYCLE_MS, PROCESS_VEIN_COST, startJob, stopJob, toggleJob, suspendJobs, resumeJobs, cyclesElapsed,
   wantsOfflineSummary, summaryLines, normalizeAfk, OFFLINE_SUMMARY_MS, gatherYield, AFK_TUNING,
+  rollInfusedQuality, processTier, processRarityCap, TRAIN_CAP_STOP,
 } from './afkRuntime.js';
-import { MAT_QUALITY } from './theme/tokens.js';
-import { trainXpPerMinute, xpToNext } from './progression/progression.js';
+import { RARITIES } from './data.js';
+import { trainXpPerMinute, xpToNext, TRAIN_CAP_MESSAGE } from './progression/progression.js';
 
 const party = [{ id: 'c1', name: 'Kessa', level: 3 }, { id: 'c2', name: 'Orin', level: 3 }];
 const roster = [{ id: 'c3', name: 'Vayle', level: 1 }];
 const state = () => ({ gatherSlots: [emptyGatherSlot(), emptyGatherSlot()], process: { ...emptyAfkState().process }, idle: { ...emptyAfkState().idle }, gatherSkillXp: {}, processSkillXp: 0 });
-const inv = (raw = {}) => ({ raw: { wood: 0, metal: 0, hunt: 0, ...raw }, infused: [], scrap: 0, armor: [] });
+const inv = (raw = {}) => ({ raw: { wood: 0, metal: 0, hunt: 0, ...raw } }); // Item Model §5: materials live in the bag now
 const never = () => 0.99; // rng: no bonus Worldvein (quality roll lands on the top rung)
 const T0 = 1_000_000;
 
@@ -77,7 +78,8 @@ test('§6 exhaustion: Process consumes raw + Worldvein per cycle, stops cleanly 
   // 2 raw, plenty of Worldvein, 60 s elapsed (12 possible cycles) → exactly 2 infused, then stopped
   const r = reconcileAfk({ state: s, inventory: inv({ wood: 2 }), worldvein: 100, party, roster, unlocked: 1, now: T0 + 60000, rng: never });
   assert.equal(r.inv.raw.wood, 0);
-  assert.equal(r.inv.infused.reduce((n, m) => n + m.qty, 0), 2);
+  assert.equal(r.bag.filter((i) => i.kind === 'material').reduce((n, m) => n + m.qty, 0), 2, 'Item Model §5: processed materials go into the bag');
+  assert.ok(r.bag.every((i) => i.kind === 'material' && i.type === 'wood' && i.tier === processTier(1)), 'tagged with the family and the area band');
   assert.equal(r.vein, 100 - 2 * PROCESS_VEIN_COST);
   assert.equal(r.next.process.running, false); assert.equal(r.next.process.progress, 0);
   assert.deepEqual(r.summary.stops, ['process: out of raw wood']);
@@ -133,13 +135,15 @@ test('§6 offline summary: shown only when the reconciled span exceeds 60 s and 
   assert.equal(reconcileAfk({ state: sus, inventory: inv(), worldvein: 0, party, roster, unlocked: 1, now: T0 + 999999 }), null);
 });
 
-test('Train (§3): a cycle grants trainXpPerMinute(Tmax) × cycle/60 s — flat rate, no catch-up cap; legacy saves normalise with the save time so time away counts', () => {
+test('Train: a cycle grants trainXpPerMinute(Tmax) × cycle/60 s — a flat rate; legacy saves normalise with the save time so time away counts', () => {
   assert.equal(maxUnlockedTier(1), 1);
   assert.ok(Math.abs(trainXpGain(1, 60000) - trainXpPerMinute(1)) < 1e-9);
   assert.ok(Math.abs(trainXpGain(1, IDLE_CYCLE_MS) - 6 * (IDLE_CYCLE_MS / 60000)) < 1e-9);
+  // Item Model §7: Train stops at the highest roster level, so the ceiling has to be above the trainee
   const top = [{ id: 'c3', name: 'Vayle', level: 9, xp: xpToNext(9) - 0.1 }];
+  const ceiling = [{ id: 'c9', name: 'Ceiling', level: 20 }];
   let t = assignJob(state(), { kind: 'idle' }, 'c3'); t = { ...t, idle: startJob(t.idle, T0) };
-  const r = reconcileAfk({ state: t, inventory: inv(), worldvein: 0, party, roster: top, unlocked: 1, now: T0 + IDLE_CYCLE_MS, rng: never });
+  const r = reconcileAfk({ state: t, inventory: inv(), worldvein: 0, party: ceiling, roster: top, unlocked: 1, now: T0 + IDLE_CYCLE_MS, rng: never });
   assert.equal(r.rosterNext[0].level, 10);
   // legacy (pre-M1c) running job: no stamps → stamped with the save's afkSavedAt
   const legacy = { gatherSlots: [{ charKey: 'c1', areaId: 1, family: 'wood', running: true, progress: 0.5 }], process: { charKey: null, running: false, progress: 0, family: 'wood' }, idle: { charKey: null, running: false, progress: 0 }, gatherSkillXp: {}, processSkillXp: 0 };
@@ -149,11 +153,42 @@ test('Train (§3): a cycle grants trainXpPerMinute(Tmax) × cycle/60 s — flat 
   assert.equal(n.gatherSlots.length, 1);
 });
 
-test('§9 AFK_TUNING: the prototype rates are v1 — 4 / 5 / 6 s cycles, 5 ❖ per Process, 15 % ❖ per Gather cycle, yield 1+⌊T/2⌋, XP 3+2T, process XP 4, quality weights = MAT_QUALITY, offline summary at 60 s', () => {
+test('§9 AFK_TUNING: the prototype rates are v1 — 4 / 5 / 6 s cycles, 5 ❖ per Process, 15 % ❖ per Gather cycle, yield 1+⌊T/2⌋, XP 3+2T, process XP 4, a weight per rarity rung, offline summary at 60 s', () => {
   assert.equal(AFK_TUNING.gatherCycleMs, 4000); assert.equal(AFK_TUNING.processCycleMs, 5000); assert.equal(AFK_TUNING.trainCycleMs, 6000);
   assert.equal(AFK_TUNING.processVeinCost, 5); assert.equal(AFK_TUNING.gatherVeinChance, 0.15); assert.equal(AFK_TUNING.processXp, 4);
   assert.deepEqual([1, 2, 3, 9].map(AFK_TUNING.gatherYield), [1, 2, 2, 5]); assert.deepEqual([1, 2, 9].map(AFK_TUNING.gatherXp), [5, 7, 21]);
-  assert.deepEqual(AFK_TUNING.qualityWeights, Object.fromEntries(Object.entries(MAT_QUALITY).map(([k, v]) => [k, v.weight])));
+  assert.deepEqual(Object.keys(AFK_TUNING.qualityWeights), RARITIES, 'a weight per rung of the seven-rung ladder');
   assert.equal(AFK_TUNING.offlineSummaryMs, OFFLINE_SUMMARY_MS); assert.equal(PROCESS_CYCLE_MS, 5000); assert.equal(IDLE_CYCLE_MS, 6000);
   assert.ok(Object.isFrozen(AFK_TUNING));
+});
+
+test('§7 Train cap (Item Model): Train raises an Adventurer only to the HIGHEST level in the roster, then stops cleanly', () => {
+  // Vayle is level 1, Kessa and Orin are level 3 → the ceiling is 3
+  let t = assignJob(state(), { kind: 'idle' }, 'c3');
+  t = { ...t, idle: startJob(t.idle, T0) };
+  const hours = 60;
+  const r = reconcileAfk({ state: t, inventory: inv(), worldvein: 0, party, roster, unlocked: 1, now: T0 + hours * 3600000, rng: never });
+  assert.equal(r.rosterNext[0].level, 3, 'Train stops at the roster ceiling, never above it');
+
+  // already at the ceiling: no XP at all, the job stops and says why
+  const capped = [{ id: 'c3', name: 'Vayle', level: 3, xp: 0 }];
+  let t2 = assignJob(state(), { kind: 'idle' }, 'c3');
+  t2 = { ...t2, idle: startJob(t2.idle, T0) };
+  const r2 = reconcileAfk({ state: t2, inventory: inv(), worldvein: 0, party, roster: capped, unlocked: 1, now: T0 + 10 * IDLE_CYCLE_MS, rng: never });
+  assert.equal(r2.rosterNext, null, 'no XP applied at the cap');
+  assert.equal(r2.next.idle.running, false, 'the slot stops cleanly');
+  assert.deepEqual(r2.summary.stops, [`train: ${TRAIN_CAP_STOP}`]);
+  assert.equal(TRAIN_CAP_MESSAGE, 'At roster cap — climb the mountain');
+});
+
+test('§1 processing rolls a rarity capped by the highest unlocked area: Epic anywhere, Legendary 6–7, Artifact 8–9, Mythic 10', () => {
+  assert.deepEqual([1, 5, 6, 7, 8, 9, 10].map(processRarityCap), ['Epic', 'Epic', 'Legendary', 'Legendary', 'Artifact', 'Artifact', 'Mythic']);
+  assert.deepEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(processTier), [1, 1, 2, 3, 4, 5, 5, 6, 6, 7]);
+  // rng pinned to the top of the table can never exceed the area's cap
+  const top = () => 0.999999;
+  assert.equal(rollInfusedQuality(top, 1), 'Epic');
+  assert.equal(rollInfusedQuality(top, 6), 'Legendary');
+  assert.equal(rollInfusedQuality(top, 9), 'Artifact');
+  assert.equal(rollInfusedQuality(top, 10), 'Mythic');
+  assert.equal(rollInfusedQuality(() => 0, 10), 'Common');
 });

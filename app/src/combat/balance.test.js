@@ -5,8 +5,8 @@
  *
  *  Gate A — a fresh party (level 1, Common starter weapons, no armor) LOSES the area-1 boss in
  *           ≥ 8/10 seeds and WINS an area-1 normal fight in ≥ 9/10 seeds.
- *  Gate B — a level-5 party with three Fine weapons (rating ≥ 50, empower ≥ 20) and Fine armor
- *           BEATS the area-1 boss in ≥ 8/10 seeds, with boss fights lasting 40–90 s (§9).
+ *  Gate B — a level-5 party with three T1 Uncommon weapons (rating ≥ 50, empower ≥ 20) and a full
+ *           T1 Uncommon armor set BEATS the area-1 boss in ≥ 8/10 seeds, fights lasting 40–90 s (§9).
  *  §9 (2026-09-14) — sustain retuned (Renewal 1 %/3 s, Mend 30 / CD 7 s, Guardian 8 %), boss dmg ×7
  *           (cap ×8: no boss hit outside enrage exceeds 40 % of a level-appropriate Bulwark's max HP);
  *           boss HP raised (never dmg) until gate A passes: ×62.
@@ -17,17 +17,29 @@ import { simulateFight, mulberry32, SUSTAIN, INNATES } from './simulate.js';
 import { spawnEnemies, ENEMY_TUNING } from './enemies.js';
 import { equip, deriveStats } from './derive.js';
 import { STARTER_WEAPON_RATING } from '../progression/progression.js';
+import { makeItem } from '../progression/items.js';
 
 const BASE = [
   { id: 'c1', name: 'Kessa', archetype: 'Bulwark', weapon: 'Sword + Shield' },
   { id: 'c2', name: 'Orin', archetype: 'Warden', weapon: 'Staff' },
   { id: 'c3', name: 'Vayle', archetype: 'Striker', weapon: 'Dual Daggers' },
 ];
-const weapons = (tier, baseRating, empower) => BASE.map((m, i) => ({ id: `w${i}`, tier, weaponType: m.weapon, baseRating, empower }));
-const armorFor = (tier, rating) => BASE.map((_, i) => ({ id: `a${i}`, tier, quality: tier, rating }));
+/**
+ * M2 lock 1: the gates move to the seven-rung, two-axis model. `Fine` is `Uncommon` now, and both
+ * gates are AREA-1 gear, so every item is **T1** — tierMult 1.0, the same power band the gates were
+ * written against. Gate B's party wears the full four-piece armor set (§2: head / hands / feet give
+ * half the body values), which is what an area-1 Crafter can actually make.
+ */
+const weapons = (rarity, rating, empower) => BASE.map((m, i) => makeItem({ id: `w${i}`, kind: 'weapon', type: m.weapon, tier: 1, rarity, rating, empower }));
+const ARMOR_SET = ['Cuirass', 'Helm', 'Gauntlets', 'Greaves'];
+const armorFor = (rarity, rating) => BASE.flatMap((_, i) => ARMOR_SET.map((type) => makeItem({ id: `a${i}-${type}`, kind: 'armor', type, tier: 1, rarity, rating })));
+const armorSlots = (i) => ({ body: `a${i}-Cuirass`, head: `a${i}-Helm`, hands: `a${i}-Gauntlets`, feet: `a${i}-Greaves` });
 
-export const FRESH_PARTY = BASE.map((m, i) => equip({ ...m, level: 1, xp: 0, weaponId: `w${i}` }, weapons('Common', STARTER_WEAPON_RATING, 0), []));
-export const L5_FINE_PARTY = BASE.map((m, i) => equip({ ...m, level: 5, xp: 0, weaponId: `w${i}`, armorId: `a${i}` }, weapons('Fine', 50, 20), armorFor('Fine', 50)));
+export const FRESH_PARTY = BASE.map((m, i) => equip({ ...m, level: 1, xp: 0, equipped: { weapon: `w${i}` } }, weapons('Common', STARTER_WEAPON_RATING, 0)));
+export const L5_FINE_PARTY = BASE.map((m, i) => equip(
+  { ...m, level: 5, xp: 0, equipped: { weapon: `w${i}`, ...armorSlots(i) } },
+  [...weapons('Uncommon', 50, 20), ...armorFor('Uncommon', 50)],
+));
 
 const SEEDS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 export function winRate(party, nodeType, T = 1) {
@@ -47,7 +59,7 @@ test('§8 gate A: fresh L1 party (Common starters, no armor) loses the area-1 bo
   assert.ok(normalWins >= 9, `fresh party must win area-1 normal fights in ≥ 9/10 seeds; won ${normalWins}/10`);
 });
 
-test('§8 gate B: L5 party with three Fine weapons (rating 50, empower 20) and Fine armor beats the area-1 boss ≥ 8/10, in 40–90 s (§9)', () => {
+test('§8 gate B: L5 party with three T1 Uncommon weapons (rating 50, empower 20) and a full T1 Uncommon armor set beats the area-1 boss ≥ 8/10, in 40–90 s (§9)', () => {
   let wins = 0;
   const durations = [];
   for (const seed of SEEDS) {

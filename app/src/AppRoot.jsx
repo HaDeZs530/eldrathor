@@ -8,6 +8,7 @@ import { DEFAULT_PARTY, AREAS, withIds } from './data.js';
 import { simulateFight, spawnEnemies, rollRewards, deriveStats, mulberry32 } from './combat.js';
 import { equip } from './combat/derive.js';
 import { withStarterWeapons, equippedIds, fightXp, splitXp, applyXp, xpToNext } from './progression/progression.js';
+import { plainName } from './progression/items.js';
 import { Frame, Header } from './components/ui/index.jsx';
 import PlayerScreen from './components/PlayerScreen.jsx';
 import PartyScreen from './components/PartyScreen.jsx';
@@ -50,10 +51,10 @@ const DEFAULT_ROSTER = [
 ];
 const P0 = S0.party ? withIds(S0.party) : withIds(DEFAULT_PARTY);
 const RO0 = withIds(S0.roster || DEFAULT_ROSTER);
-const GEARED = withStarterWeapons([...P0, ...RO0], S0.stash || []);
+const GEARED = withStarterWeapons([...P0, ...RO0], S0.bag || []);
 const PARTY0 = GEARED.members.slice(0, P0.length);
 const ROSTER0 = GEARED.members.slice(P0.length);
-const STASH0 = GEARED.stash;
+const BAG0 = GEARED.bag; // Item Model §5: ONE bag — weapons, armor, cores and materials together
 
 const HUB_LABELS = {
   player: 'Veinbinder',
@@ -84,8 +85,8 @@ export default function Eldrathor() {
   // frozen for the run; the Party tab can't swap/promote while a territory exists.
   const [runParty, setRunParty] = useState(() => R0?.runParty || null);
   const [worldvein, setWorldvein] = useState(() => (typeof S0.worldvein === 'number' ? S0.worldvein : 80));
-  const [stash, setStash] = useState(() => STASH0);
-  const [inventory, setInventory] = useState(() => S0.inventory || { raw: { wood: 4, metal: 2, hunt: 1 }, infused: [], scrap: 0, armor: [] });
+  const [bag, setBag] = useState(() => BAG0);
+  const [inventory, setInventory] = useState(() => S0.inventory || { raw: { wood: 4, metal: 2, hunt: 1 } }); // raw gather mats only — everything else is in the bag
   const [area, setArea] = useState(() => (R0 ? AREAS.find((a) => a.id === R0.areaId) || null : null));
   const [territory, setTerritory] = useState(() => R0?.territory || null);
   const [currentId, setCurrentId] = useState(() => R0?.currentId || null);
@@ -128,7 +129,7 @@ export default function Eldrathor() {
   const [runHp, setRunHp] = useState(() => R0?.runHp || null); // per-Adventurer HP carried across fights, keyed by character id (0 = fallen); null = fresh
   const fieldedRaw = runParty || party; // the party that fights this run
   // M1b §4: equipment applies — the simulator and stat sheets see the equipped weapon / armor items
-  const fielded = useMemo(() => fieldedRaw.map((m) => equip(m, stash, inventory.armor || [])), [fieldedRaw, stash, inventory.armor]);
+  const fielded = useMemo(() => fieldedRaw.map((m) => equip(m, bag)), [fieldedRaw, bag]);
   const hpArrFor = (list) => (runHp ? list.map((m) => runHp[m.id] ?? 1) : undefined);
   const equipped = useMemo(() => equippedIds(party, roster), [party, roster]);
   const extractingRef = useRef(false); // §2: one extraction credit per run
@@ -146,12 +147,14 @@ export default function Eldrathor() {
   useEffect(() => { fightSpeedRef.current = fightSpeed; }, [fightSpeed]);
   const afkRef = useRef(afk);
   const inventoryRef = useRef(inventory);
+  const bagRef = useRef(bag);
   const worldveinRef = useRef(worldvein);
   const partyRef = useRef(party);
   const rosterRef = useRef(roster);
   const unlockedRef = useRef(unlocked);
   useEffect(() => { afkRef.current = afk; }, [afk]);
   useEffect(() => { inventoryRef.current = inventory; }, [inventory]);
+  useEffect(() => { bagRef.current = bag; }, [bag]);
   useEffect(() => { worldveinRef.current = worldvein; }, [worldvein]);
   useEffect(() => { partyRef.current = party; }, [party]);
   useEffect(() => { rosterRef.current = roster; }, [roster]);
@@ -165,8 +168,8 @@ export default function Eldrathor() {
       logSeq: logSeq.current, fight, fightNode, cameraPan: camera.pan, seed: runSeed.current,
       rngCount: typeof runRng.current?.count === 'number' ? runRng.current.count : 0, fightIndex: fightIndex.current,
     } : null;
-    SAVER.schedule({ tab, party, roster, worldvein, stash, inventory, unlocked, afk, afkSavedAt: Date.now(), run });
-  }, [tab, party, roster, worldvein, stash, inventory, unlocked, afk, runStage, area, territory, currentId, prevId, runParty, runHp, runMods, runVein, partyHP, log, logSeen, fight, fightNode, camera.pan]);
+    SAVER.schedule({ tab, party, roster, worldvein, bag, inventory, unlocked, afk, afkSavedAt: Date.now(), run });
+  }, [tab, party, roster, worldvein, bag, inventory, unlocked, afk, runStage, area, territory, currentId, prevId, runParty, runHp, runMods, runVein, partyHP, log, logSeen, fight, fightNode, camera.pan]);
   useEffect(() => {
     if (BOOT.quarantined) doFlash('Save was unreadable — started fresh (copy kept)', colors.mindDanger);
     else if (BOOT.migratedFrom != null) doFlash('Save updated to the current version', colors.mythros);
@@ -179,13 +182,14 @@ export default function Eldrathor() {
   useEffect(() => {
     const reconcile = () => {
       const patch = reconcileAfk({
-        state: afkRef.current, inventory: inventoryRef.current, worldvein: worldveinRef.current,
+        state: afkRef.current, inventory: inventoryRef.current, bag: bagRef.current, worldvein: worldveinRef.current,
         party: partyRef.current, roster: rosterRef.current, unlocked: unlockedRef.current, now: Date.now(),
       });
       if (!patch) return;
       afkRef.current = patch.next; // the next tick must not re-run this span before React commits
       setAfk(patch.next);
       if (patch.inv !== inventoryRef.current) { inventoryRef.current = patch.inv; setInventory(patch.inv); }
+      if (patch.bag !== bagRef.current) { bagRef.current = patch.bag; setBag(patch.bag); }
       if (patch.vein !== worldveinRef.current) { worldveinRef.current = patch.vein; setWorldvein(patch.vein); }
       if (patch.partyNext) { partyRef.current = patch.partyNext; setParty(patch.partyNext); }
       if (patch.rosterNext) { rosterRef.current = patch.rosterNext; setRoster(patch.rosterNext); }
@@ -257,8 +261,8 @@ export default function Eldrathor() {
     if (isTraceOn()) {
       trace('snapshot', {
         build: BUILD, tier: a.tier, worldvein, unlocked,
-        party: fielded.map((m) => ({ id: m.id, name: m.name, arch: m.archetype, lv: m.level, xp: Math.floor(m.xp || 0), weapon: m.weaponItem ? `${m.weaponItem.tier} ${m.weaponItem.weaponType} ${m.weaponItem.baseRating}+${m.weaponItem.empower || 0}` : 'unarmed', armor: m.armorItem ? `${m.armorItem.quality} ${m.armorItem.rating}` : null })),
-        stash: stash.length, armor: (inventory.armor || []).length,
+        party: fielded.map((m) => ({ id: m.id, name: m.name, arch: m.archetype, lv: m.level, xp: Math.floor(m.xp || 0), weapon: m.weaponItem ? `T${m.weaponItem.tier} ${m.weaponItem.rarity} ${m.weaponItem.type} ${m.weaponItem.rating}+${m.weaponItem.empower || 0}` : 'unarmed', armor: (m.armorItems || []).map((a) => `T${a.tier} ${a.rarity} ${a.type} ${a.rating}`) })),
+        bag: bag.length,
       });
     }
     setArea(a); setTerritory(t); setCurrentId(t.entranceId); setCard(null);
@@ -565,7 +569,7 @@ export default function Eldrathor() {
     const bossKill = sim.result.win && eff === 'boss';
     const mapClear = bossKill && allCleared({ ...t, nodes: t.nodes.map((x) => (x.id === n.id ? { ...x, cleared: true } : x)) });
     const rewards = sim.result.win
-      ? rollRewards({ tier: area.tier, nodeType: eff, attuneVein: sim.result.attuneVein, rng, named: !!n.namedRare, mapClear })
+      ? rollRewards({ area: area.id, nodeType: eff, attuneVein: sim.result.attuneVein, rng, named: !!n.namedRare, mapClear })
       : null;
     const derived = fielded.map((m) => deriveStats(m));
     // Progression Loop Lock §3: fight XP on a win, split evenly, the fallen at half; applied at Continue
@@ -631,7 +635,7 @@ export default function Eldrathor() {
     setPartyHP(res.hpPct); setRunHp(Object.fromEntries(fielded.map((m, i) => [m.id, res.partyHpFrac[i] ?? 1])));
     setRunVein((v) => v + (rewards?.worldvein || 0));
     pushLog(`✔ Cleared in ${res.durationSec}s. +${rewards?.worldvein || 0} Worldvein.${f.eff === 'crystal' ? ' The deposit splinters — ×2 harvest.' : ''}`, 'good');
-    for (const g of rewards?.gears || []) { setStash((s) => [...s, g]); pushLog(`  ⬥ Loot: ${g.name} (${g.baseRating}/100)`, 'loot'); }
+    for (const g of rewards?.gears || []) { setBag((b) => [...b, g]); pushLog(`  ⬥ Loot: ${plainName(g)} (${g.rating}/100)`, 'loot'); }
     if (f.xp) applyFightXp(f.xp);
     if (f.rare) pushLog(`☠ Rare slain. ${t.rares.filter((r) => r.alive).length} remain.`, 'rare');
     if (lastRareDown) { pushLog('☠ Every rare on this map is slain.', 'rare'); doFlash('All rares slain', colors.mythros); }
@@ -706,10 +710,10 @@ export default function Eldrathor() {
       <Frame style={S.frame}>
         <Header worldvein={worldvein} hubLabel={tab === 'mountain' ? mountainHubLabel : HUB_LABELS[tab]} actions={<ScreenHeaderActions onMenu={() => setSheet('menu')} onHelp={() => setSheet('help')} />} />
         {flash && <div style={{ ...S.flash, borderColor: flash.color, color: flash.color }}>{flash.msg}</div>}
-        {tab === 'town' && <TownScreen key={rootKey.town || 0} party={party} stash={stash} setStash={setStash} inventory={inventory} setInventory={setInventory} worldvein={worldvein} setWorldvein={setWorldvein} setTab={selectTab} equipped={equipped} />}
-        {tab === 'party' && <PartyScreen key={rootKey.party || 0} party={party} setParty={setParty} roster={roster} setRoster={setRoster} locked={!!territory} stash={stash} setStash={setStash} armor={inventory.armor || []} equipped={equipped} />}
+        {tab === 'town' && <TownScreen key={rootKey.town || 0} party={party} roster={roster} setParty={setParty} setRoster={setRoster} bag={bag} setBag={setBag} worldvein={worldvein} setWorldvein={setWorldvein} setTab={selectTab} equipped={equipped} unlocked={unlocked} locked={!!territory} />}
+        {tab === 'party' && <PartyScreen key={rootKey.party || 0} party={party} setParty={setParty} roster={roster} setRoster={setRoster} locked={!!territory} bag={bag} setBag={setBag} setWorldvein={setWorldvein} equipped={equipped} onEmpower={() => selectTab('town')} />}
         {tab === 'player' && <PlayerScreen key={rootKey.player || 0} worldvein={worldvein} />}
-        {tab === 'afk' && <AfkScreen key={rootKey.afk || 0} unlocked={unlocked} party={party} roster={roster} inventory={inventory} afk={afk} worldvein={worldvein} deployedIds={runParty ? runParty.map((m) => m.id) : []} onUpdateGatherSlot={onUpdateGatherSlot} onToggleGather={onToggleGather} onUpdateProcess={onUpdateProcess} onToggleProcess={onToggleProcess} onUpdateIdle={onUpdateIdle} onToggleIdle={onToggleIdle} />}
+        {tab === 'afk' && <AfkScreen key={rootKey.afk || 0} unlocked={unlocked} party={party} roster={roster} inventory={inventory} bag={bag} afk={afk} worldvein={worldvein} deployedIds={runParty ? runParty.map((m) => m.id) : []} onUpdateGatherSlot={onUpdateGatherSlot} onToggleGather={onToggleGather} onUpdateProcess={onUpdateProcess} onToggleProcess={onToggleProcess} onUpdateIdle={onUpdateIdle} onToggleIdle={onToggleIdle} />}
         {tab === 'mountain' && runStage === 'island' && <IslandWorldMap key={rootKey.mountain || 0} areas={AREAS} unlocked={unlocked} onSelectArea={onSelectArea} onHarbor={() => selectTab('town')} />}
         {tab === 'mountain' && runStage === 'rally' && selectedArea && <RallyScreen area={selectedArea} party={party} roster={roster} onSwap={onRallySwap} onExplore={onRallyExplore} onBack={onRallyBack} />}
         {tab === 'mountain' && RUN_STAGES.has(runStage) && area && territory && (
@@ -719,12 +723,12 @@ export default function Eldrathor() {
               <div className="eld-overlay eld-mode-mind" data-mode-column="mind" key={fightIndex.current}>
                 {runStage === 'sanctuary' && fightNode && <SanctuaryScreen area={area} party={fielded} runHpFrac={hpArrFor(fielded)} pouch={10 * area.tier} onChoose={onSanctuaryChoose} />}
                 {runStage === 'fight' && fightNode && fight && <FightScreen area={area} node={fightNode} party={fielded} fight={fight} elapsedMs={fightElapsed} speed={fightSpeed} onSpeed={setFightSpeed} onSkip={skipFight} />}
-                {runStage === 'loot' && fight && <LootResults area={area} nodeLabel={fightNode ? (nodeTypeMeta[fightNode.type]?.label || 'Node') : null} fight={fight} onContinue={onResultsContinue} />}
+                {runStage === 'loot' && fight && <LootResults area={area} nodeLabel={fightNode ? (nodeTypeMeta[fightNode.type]?.label || 'Node') : null} fight={fight} party={fielded} onContinue={onResultsContinue} />}
               </div>
             )}
             {!MIND_STAGES.has(runStage) && overlayLeaving && (
               <div className="eld-overlay is-leaving eld-mode-mind" data-mode-column="mind" aria-hidden="true">
-                {overlayLeaving.kind === 'loot' && overlayLeaving.fight && <LootResults area={overlayLeaving.area} nodeLabel={overlayLeaving.fightNode ? (nodeTypeMeta[overlayLeaving.fightNode.type]?.label || 'Node') : null} fight={overlayLeaving.fight} onContinue={() => {}} />}
+                {overlayLeaving.kind === 'loot' && overlayLeaving.fight && <LootResults area={overlayLeaving.area} nodeLabel={overlayLeaving.fightNode ? (nodeTypeMeta[overlayLeaving.fightNode.type]?.label || 'Node') : null} fight={overlayLeaving.fight} party={fielded} onContinue={() => {}} />}
                 {overlayLeaving.kind === 'sanctuary' && <SanctuaryScreen area={overlayLeaving.area} party={fielded} runHpFrac={hpArrFor(fielded)} pouch={10 * (overlayLeaving.area?.tier || 1)} onChoose={() => {}} />}
               </div>
             )}

@@ -9,8 +9,9 @@
  * `rng` are injected, so the tests are the spec.
  */
 import { AREAS } from './data.js';
-import { MAT_QUALITY } from './theme/tokens.js';
-import { trainXpPerMinute, applyXp } from './progression/progression.js';
+import { trainXpPerMinute, applyTrainXp, rosterCap } from './progression/progression.js';
+import { RARITIES, rarityIndex, craftCapForArea, tierForArea } from './progression/items.js';
+import { addMaterial } from './town/recipes.js';
 
 /**
  * AFK_TUNING — Progression Loop Lock §9: the prototype's rates are v1, as one named table (tune later via
@@ -26,7 +27,10 @@ export const AFK_TUNING = Object.freeze({
   gatherYield: (tier) => 1 + Math.floor(tier / 2), // raw mats per Gather cycle at an area tier
   gatherXp: (tier) => 3 + tier * 2, // gather skill XP per cycle
   processXp: 4, // process skill XP per infused mat
-  qualityWeights: { Common: 55, Fine: 25, Rare: 12, Epic: 6, Legendary: 2 }, // = MAT_QUALITY weights (theme/tokens.js)
+  // Item Model §1: processing rolls a RARITY, capped by the highest unlocked area (Common→Epic
+  // anywhere, Legendary 6–7, Artifact 8–9, Mythic 10). Weights are the prototype's, extended to the
+  // seven rungs. DESIGN-OPEN: the Artifact / Mythic weights and the "higher areas bias higher" curve.
+  qualityWeights: { Common: 55, Uncommon: 25, Rare: 12, Epic: 6, Legendary: 2, Artifact: 0.8, Mythic: 0.2 },
   offlineSummaryMs: 60000, // §6: show "While you were away" when the reconciled span exceeds 60 s
 });
 export const AFK_TICK_MS = AFK_TUNING.tickMs;
@@ -37,6 +41,16 @@ export const PROCESS_VEIN_COST = AFK_TUNING.processVeinCost;
 export const OFFLINE_SUMMARY_MS = AFK_TUNING.offlineSummaryMs;
 export const GATHER_VEIN_CHANCE = AFK_TUNING.gatherVeinChance;
 export const CYCLE_MS = { gather: GATHER_CYCLE_MS, process: PROCESS_CYCLE_MS, idle: IDLE_CYCLE_MS };
+/** §7: what a Train slot says once its Adventurer reaches the roster ceiling. */
+export const TRAIN_CAP_STOP = 'at roster cap';
+
+/**
+ * Item Model §7: Gathering yield / tier stays capped by the highest unlocked area, and processed
+ * materials carry that area's TIER BAND. DESIGN-OPEN: raw materials are an untiered count today, so a
+ * Process cycle infuses at the highest unlocked area's band rather than at the band it was gathered in.
+ */
+export const processTier = (unlocked) => tierForArea(Math.max(1, unlocked || 1));
+export const processRarityCap = (unlocked) => craftCapForArea(Math.max(1, unlocked || 1));
 
 /** Highest unlocked area tier (Tmax in the lock's Train formula). */
 export function maxUnlockedTier(unlocked) {
@@ -65,14 +79,16 @@ export function emptyAfkState() {
   };
 }
 
-export function rollInfusedQuality(rng = Math.random) {
-  const entries = Object.entries(MAT_QUALITY);
-  const total = entries.reduce((n, [, v]) => n + v.weight, 0);
+/**
+ * Roll a processed material's RARITY (Item Model §1). Rungs above the area's craft cap are excluded,
+ * so Legendary needs areas 6–7, Artifact 8–9 and Mythic 10 — the cap is the gate, not a re-roll.
+ */
+export function rollInfusedQuality(rng = Math.random, unlocked = 1) {
+  const cap = rarityIndex(processRarityCap(unlocked));
+  const entries = RARITIES.filter((r) => rarityIndex(r) <= cap).map((r) => [r, AFK_TUNING.qualityWeights[r] || 0]);
+  const total = entries.reduce((n, [, w]) => n + w, 0);
   let r = rng() * total;
-  for (const [name, meta] of entries) {
-    r -= meta.weight;
-    if (r <= 0) return name;
-  }
+  for (const [name, w] of entries) { r -= w; if (r <= 0) return name; }
   return 'Common';
 }
 
@@ -175,7 +191,7 @@ export function cyclesElapsed(progress, elapsedMs, cycleMs) {
  * { elapsedMs, raw: {family: n}, gatherXp, vein, infused: {quality: n}, processXp, xp: [{id,name,gain,from,to}],
  *   stops: ['process: out of raw wood'] }. `null` when no job is running.
  */
-export function reconcileAfk({ state, inventory, worldvein, party, roster, unlocked, now, rng = Math.random }) {
+export function reconcileAfk({ state, inventory, bag = [], worldvein, party, roster, unlocked, now, rng = Math.random }) {
   const jobs = [...state.gatherSlots, state.process, state.idle];
   if (!jobs.some((j) => j.running && !j.suspended)) return null;
 
@@ -187,6 +203,7 @@ export function reconcileAfk({ state, inventory, worldvein, party, roster, unloc
     idle: { ...state.idle },
   };
   let inv = inventory;
+  let bagNext = bag;
   let vein = worldvein;
   let partyNext = null;
   let rosterNext = null;
@@ -217,20 +234,19 @@ export function reconcileAfk({ state, inventory, worldvein, party, roster, unloc
     const { cycles, progress } = cyclesElapsed(job.progress, span(job), PROCESS_CYCLE_MS);
     let done = 0;
     let exhausted = null;
-    let infused = inv.infused.map((m) => ({ ...m }));
     let raw = { ...inv.raw };
+    const tier = processTier(unlocked);
     for (let c = 0; c < cycles; c++) {
       if ((raw[fam] || 0) < 1) { exhausted = `out of raw ${fam}`; break; }
       if (vein < PROCESS_VEIN_COST) { exhausted = 'out of Worldvein'; break; }
       vein -= PROCESS_VEIN_COST;
       raw[fam] -= 1;
-      const quality = rollInfusedQuality(rng);
-      const existing = infused.find((m) => m.family === fam && m.quality === quality);
-      if (existing) existing.qty += 1; else infused.push({ family: fam, quality, qty: 1 });
-      summary.infused[quality] = (summary.infused[quality] || 0) + 1;
+      const rarity = rollInfusedQuality(rng, unlocked);
+      bagNext = addMaterial(bagNext, { family: fam, rarity, tier, qty: 1 });
+      summary.infused[rarity] = (summary.infused[rarity] || 0) + 1;
       done += 1;
     }
-    if (done) { inv = { ...inv, raw, infused }; next.processSkillXp += AFK_TUNING.processXp * done; summary.processXp += AFK_TUNING.processXp * done; }
+    if (done) { inv = { ...inv, raw }; next.processSkillXp += AFK_TUNING.processXp * done; summary.processXp += AFK_TUNING.processXp * done; }
     if (exhausted) { summary.stops.push(`process: ${exhausted}`); next.process = stopped(job); }
     else next.process = { ...job, progress, lastReconciledAt: now };
   }
@@ -240,20 +256,26 @@ export function reconcileAfk({ state, inventory, worldvein, party, roster, unloc
     const { cycles, progress } = cyclesElapsed(job.progress, span(job), IDLE_CYCLE_MS);
     if (cycles > 0) {
       const resolved = resolveCharKey(job.charKey, party, roster);
+      // Item Model §7 (supersedes Progression lock §3's "no catch-up cap"): Train can raise an
+      // Adventurer only up to the highest level in the roster. At the cap the job stops cleanly.
+      const cap = rosterCap([...(party || []), ...(roster || [])]);
       if (resolved?.member) {
-        // Progression Loop Lock §3: Train grants trainXpPerMinute(Tmax) XP per minute at the highest
-        // unlocked area tier — a flat rate, no catch-up cap, slower than fighting.
+        // Train grants trainXpPerMinute(Tmax) XP per minute at the highest unlocked area tier, up to
+        // the §7 ceiling; a long offline span is clamped at the ceiling and the slot stops there.
         const gain = trainXpGain(unlocked, IDLE_CYCLE_MS) * cycles;
-        const { member: bumped } = applyXp(resolved.member, gain);
-        if (resolved.source === 'party') partyNext = party.map((m, i) => (i === resolved.index ? bumped : m));
-        else rosterNext = roster.map((m, i) => (i === resolved.index ? bumped : m));
-        summary.xp.push({ id: resolved.member.id, name: resolved.member.name, gain, from: resolved.member.level || 1, to: bumped.level });
-      }
-    }
-    next.idle = { ...job, progress, lastReconciledAt: now };
+        const { member: bumped, capped } = applyTrainXp(resolved.member, gain, cap);
+        if (bumped !== resolved.member) {
+          if (resolved.source === 'party') partyNext = party.map((m, i) => (i === resolved.index ? bumped : m));
+          else rosterNext = roster.map((m, i) => (i === resolved.index ? bumped : m));
+          summary.xp.push({ id: resolved.member.id, name: resolved.member.name, gain, from: resolved.member.level || 1, to: bumped.level });
+        }
+        if (capped) { summary.stops.push(`train: ${TRAIN_CAP_STOP}`); next.idle = stopped(job); }
+        else next.idle = { ...job, progress, lastReconciledAt: now };
+      } else next.idle = { ...job, progress, lastReconciledAt: now };
+    } else next.idle = { ...job, progress, lastReconciledAt: now };
   }
 
-  return { next, inv, vein, partyNext, rosterNext, summary };
+  return { next, inv, bag: bagNext, vein, partyNext, rosterNext, summary };
 }
 
 /** True when the reconciled span deserves the Offline summary sheet (§6: > 60 s) and something happened. */

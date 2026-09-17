@@ -1,12 +1,19 @@
-import { useLayoutEffect, useRef, useState } from 'react';
-import { TIER_COLOR, newId } from '../data.js';
-import { MAT_QUALITY } from '../theme/tokens.js';
-import { previewEmpower, EMPOWER_MAX, RARITY, weaponDamageMult } from '../progression/progression.js';
-import { ARMOR_RECIPES, canCraft, consume, rollArmorRating, matPrice, describeInputs } from '../town/recipes.js';
+import { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { RARITY_COLOR } from '../data.js';
+import { previewEmpower, EMPOWER_MAX, weaponDamageMult } from '../progression/progression.js';
+import {
+  ARMOR_TYPES, craftableRarities, craftCapForArea, upgradeGrade, upgradeStepFor, upgradeCost,
+  displayName, tierForArea,
+} from '../progression/items.js';
+import { armorRecipe, canCraft, consume, craftArmor, describeInputs, countFor, upgradeRecipe, canUpgrade, coresOfType, upgradeOnly } from '../town/recipes.js';
 import { TOWN_LAYOUT, TOWN_DESTINATIONS, TOWN_ART } from '../town/townLayout.js';
 import TownArt from './town/TownArt.jsx';
+import BagScreen from './BagScreen.jsx';
+import RosterPanel from './RosterPanel.jsx';
+import ItemRow from './items/ItemRow.jsx';
 import { DestinationRow } from './ui/index.jsx';
 import './town/town.css';
+import './items/items.css';
 
 /**
  * Town — Veinharbor. VISUAL PASS, REVISION 1 (2026-09-14, Anthony-approved concept via ChatGPT):
@@ -19,10 +26,15 @@ import './town/town.css';
  */
 // Recipes, rolled ratings and the material floor live in town/recipes.js (Progression Loop Lock §9, tested).
 
-const SECTION_TITLE = { crafter: 'Crafter', upgrade: 'Smith', market: 'Market' };
+const SECTION_TITLE = { bag: 'Bag', roster: 'Roster', crafter: 'Crafter', upgrade: 'Smith', market: 'Market' };
 
-export default function TownScreen({ party, stash, setStash, inventory, setInventory, worldvein, setWorldvein, setTab, equipped }) {
+export default function TownScreen({ party, roster, setParty, setRoster, bag, setBag, worldvein, setWorldvein, setTab, equipped, unlocked = 1, locked = false }) {
   const taken = equipped || new Set();
+  const ownerOf = useMemo(() => {
+    const map = new Map();
+    for (const m of [...(party || []), ...(roster || [])]) for (const id of Object.values(m.equipped || {})) if (id) map.set(id, m.name);
+    return (id) => map.get(id) || null;
+  }, [party, roster]);
   const [section, setSection] = useState('hub');
   const scrollRef = useRef(null);
   const harborScroll = useRef(0); // Harbor scroll position, kept while a destination is open
@@ -48,7 +60,7 @@ export default function TownScreen({ party, stash, setStash, inventory, setInven
     <div ref={scrollRef} className="eld-town" style={{ ...S.wrap, '--town-transition-ms': `${TOWN_LAYOUT.transitionMs}ms` }}>
       {section === 'hub' ? (
         <div key="hub" className="eld-town-section">
-          <HarborLanding party={party} stash={stash} onOpen={open} />
+          <HarborLanding party={party} bag={bag} onOpen={open} />
         </div>
       ) : (
         <div key={section} className="eld-town-section" style={S.dest}>
@@ -56,25 +68,28 @@ export default function TownScreen({ party, stash, setStash, inventory, setInven
             <button type="button" className="eld-town-back" onClick={() => go('hub')} aria-label="Back to Veinharbor">← Back to Veinharbor</button>
             <div className="eld-town-display eld-town-dest-title" style={{ fontSize: TOWN_LAYOUT.titlePx }}>{SECTION_TITLE[section]}</div>
           </div>
-          {section === 'crafter' && <CrafterPanel inventory={inventory} setInventory={setInventory} />}
-          {section === 'upgrade' && <UpgradePanel stash={stash} setStash={setStash} worldvein={worldvein} setWorldvein={setWorldvein} taken={taken} />}
-          {section === 'market' && <MarketPanel inventory={inventory} setInventory={setInventory} stash={stash} setStash={setStash} worldvein={worldvein} setWorldvein={setWorldvein} taken={taken} />}
+          {section === 'bag' && <BagScreen bag={bag} setBag={setBag} equipped={taken} ownerOf={ownerOf} setWorldvein={setWorldvein} title={null} />}
+          {section === 'roster' && <RosterPanel party={party} roster={roster} setParty={setParty} setRoster={setRoster} bag={bag} setBag={setBag} worldvein={worldvein} setWorldvein={setWorldvein} locked={locked} />}
+          {section === 'crafter' && <CrafterPanel bag={bag} setBag={setBag} unlocked={unlocked} />}
+          {section === 'upgrade' && <UpgradePanel bag={bag} setBag={setBag} worldvein={worldvein} setWorldvein={setWorldvein} taken={taken} unlocked={unlocked} />}
+          {section === 'market' && <BagScreen bag={bag} setBag={setBag} equipped={taken} ownerOf={ownerOf} setWorldvein={setWorldvein} title={null} emptyNote="Nothing to sell." />}
         </div>
       )}
     </div>
   );
 }
 
-/** Harbor landing: hero + title, four destination rows, then the stash (kept below the list for now). */
-function HarborLanding({ party, stash, onOpen }) {
+/** Harbor landing: hero + title, then the destination rows. The stash list is gone — Bag owns it (§5). */
+function HarborLanding({ party, bag, onOpen }) {
   const L = TOWN_LAYOUT;
+  const carried = (bag || []).reduce((n, i) => n + (i.qty || 1), 0);
   return (
     <>
       <div className="eld-town-hero" style={{ height: L.heroHeight }}>
         <TownArt slot="veinharbor-hero" alt="" />
         <div className="eld-town-hero-scrim" />
         <div className="eld-town-hero-title">
-          <div className="eld-town-hero-kicker">Harbor town · {party.length} bonded</div>
+          <div className="eld-town-hero-kicker">Harbor town · {party.length} bonded · {carried} carried</div>
           <div className="eld-town-display" style={{ fontSize: 28 }}>Veinharbor</div>
         </div>
       </div>
@@ -84,200 +99,169 @@ function HarborLanding({ party, stash, onOpen }) {
           <DestinationRow key={d.id} art={TOWN_ART[d.art].art} position={TOWN_ART[d.art].position} title={d.title} subtitle={d.subtitle} onClick={() => onOpen(d)} />
         ))}
       </div>
-
-      <div style={{ padding: `0 ${L.listPaddingX}px ${L.listPaddingY + 4}px` }}>
-        <div className="eld-town-display" style={S.secT}>Stash weapons</div>
-        <div className="eld-panel" style={S.stash}>
-          {stash.length === 0 && <div style={S.empty}>No weapon loot yet.</div>}
-          {stash.slice(-5).reverse().map((g) => (
-            <div key={g.id} style={{ ...S.chip, borderColor: TIER_COLOR[g.tier] || '#8b5a2b' }}>
-              <span style={{ color: TIER_COLOR[g.tier] }}>{g.name}</span>
-              <span style={S.rating}>{g.baseRating}/100{g.empower ? ` +${g.empower}` : ''}</span>
-            </div>
-          ))}
-        </div>
-      </div>
     </>
   );
 }
 
-function CrafterPanel({ inventory, setInventory }) {
-  function countQuality(q) {
-    return (inventory.infused || []).filter((m) => m.quality === q).reduce((n, m) => n + m.qty, 0);
-  }
+/**
+ * Crafter — Item Model §1 / §2. Armor is crafted, never dropped. Four types (Cuirass · Helm ·
+ * Gauntlets · Greaves) at every rarity the highest unlocked area allows: Common → Epic anywhere,
+ * Legendary with areas 6–7, and Artifact / Mythic only as Smith UPGRADES of the rung below.
+ * A recipe consumes the piece's tier-band materials at the target rarity; the rating rolls here.
+ */
+function CrafterPanel({ bag, setBag, unlocked }) {
+  const tier = tierForArea(unlocked);
+  const [rarity, setRarity] = useState('Common');
+  const rarities = craftableRarities(unlocked);
+  const cap = craftCapForArea(unlocked);
   function craft(recipe) {
-    // decided from current props (bug-fix pass 1 §10): the rating rolls once, here
-    const infused = consume(inventory.infused || [], recipe);
-    if (!infused) return;
-    const armor = [...(inventory.armor || []), {
-      id: newId('a'), recipeId: recipe.id, name: recipe.name, quality: recipe.quality, rating: rollArmorRating(), slot: 'chest',
-    }];
-    setInventory({ ...inventory, infused, armor });
+    const rest = consume(bag, recipe, unlocked);
+    if (!rest) return;
+    setBag([...rest, craftArmor(recipe)]);
   }
   return (
     <div style={S.col}>
-      <div style={S.note}>Craft body armor from infused mats. The rating rolls 1–100 at the bench. No +1-tier gate.</div>
-      <div className="eld-panel" style={S.strip}>
-        {RARITY.map((q) => (
-          <span key={q} style={{ color: MAT_QUALITY[q]?.color }}>{q} {countQuality(q)}</span>
+      <div style={S.note}>
+        Armor is crafted from processed materials. This band is <strong>T{tier}</strong> — the highest area you have
+        reached. Craftable up to <span style={{ color: RARITY_COLOR[cap] }}>{cap}</span>; Artifact and Mythic pieces are
+        Smith upgrades, not crafts.
+      </div>
+      <div className="eld-bag-chips">
+        {rarities.map((r) => (
+          <button key={r} type="button" className={`eld-bag-chip${rarity === r ? ' is-on' : ''}`} style={rarity === r ? { color: RARITY_COLOR[r], borderColor: RARITY_COLOR[r] } : undefined} onClick={() => setRarity(r)}>{r}</button>
         ))}
       </div>
-      {ARMOR_RECIPES.map((r) => {
-        const ok = canCraft(inventory.infused || [], r);
+      {upgradeOnly(rarity) ? (
+        <div className="eld-panel" style={S.emptyBox}>{rarity} armor is forged at the Smith by upgrading the rung below with a Core.</div>
+      ) : Object.keys(ARMOR_TYPES).map((type) => {
+        const r = armorRecipe(type, rarity, tier);
+        const ok = canCraft(bag, r, unlocked);
         return (
-          <div key={r.id} className="eld-card" style={S.card}>
+          <div key={type} className="eld-card" style={S.card}>
             <div style={S.row}>
-              <span style={{ ...S.fnN, color: MAT_QUALITY[r.quality]?.color }}>{r.name}</span>
-              <span style={S.rating}>rolls 1–100</span>
+              <span style={{ ...S.fnN, color: RARITY_COLOR[rarity] }}>{r.name}</span>
+              <span style={S.rating}>{ARMOR_TYPES[type].share === 1 ? 'body' : `${ARMOR_TYPES[type].slot} · ½ values`}</span>
             </div>
-            <div style={S.fnS}>Needs {describeInputs(r)} · have {r.inputs.map((i) => (inventory.infused || []).filter((m) => m.quality === i.quality && (!i.family || m.family === i.family)).reduce((n, m) => n + m.qty, 0)).join(' / ')}</div>
+            <div style={S.fnS}>Needs {describeInputs(r)} · have {r.inputs.map((i) => countFor(bag, i)).join(' / ')} · rating rolls 1–100</div>
             <button type="button" className="eld-btn" disabled={!ok} style={S.wide} onClick={() => craft(r)}>Craft</button>
           </div>
         );
       })}
-      <div className="eld-town-display" style={S.secT}>Owned armor</div>
-      <div className="eld-panel" style={S.stash}>
-        {(inventory.armor || []).length === 0 && <div style={S.empty}>No armor crafted yet.</div>}
-        {(inventory.armor || []).map((a) => (
-          <div key={a.id} style={{ ...S.chip, borderColor: MAT_QUALITY[a.quality]?.color || '#8b5a2b' }}>
-            <span style={{ color: MAT_QUALITY[a.quality]?.color }}>{a.name}</span>
-            <span style={S.rating}>{a.rating}/100</span>
-          </div>
-        ))}
-      </div>
     </div>
   );
 }
 
 /**
- * Smith — weapon empowerment (Progression Loop Lock §4). Pick a target and a fodder weapon; the bench
- * shows the empower gain, the Worldvein cost and the resulting hit multiplier BEFORE you commit.
- * `baseRating` never changes; `empower` climbs 0–100. Fodder is consumed. Equipped weapons can be
- * empowered but never fed. Merge-as-average is gone.
+ * Smith — two benches.
+ * **Empower** (Progression lock §4): feed one weapon into another; `rating` is fixed at the drop,
+ * `empower` climbs 0–100 and multiplies hit damage. Equipped weapons can be empowered, never fed.
+ * **Upgrade grade** (Item Model §1): Legendary + Artifact Core + zone materials → Artifact;
+ * Artifact + Mythic Core → Mythic. Rating and empower carry over; the tier never changes.
  */
-function UpgradePanel({ stash, setStash, worldvein, setWorldvein, taken }) {
+function UpgradePanel({ bag, setBag, worldvein, setWorldvein, taken, unlocked }) {
+  const [bench, setBench] = useState('empower');
+  const weapons = bag.filter((i) => i.kind === 'weapon');
   const [targetId, setTargetId] = useState(null);
   const [fodderId, setFodderId] = useState(null);
-  const target = stash.find((w) => w.id === targetId) || null;
-  const fodder = stash.find((w) => w.id === fodderId) || null;
-  const fodders = stash.filter((w) => w.id !== targetId && !taken.has(w.id));
+  const target = weapons.find((w) => w.id === targetId) || null;
+  const fodder = weapons.find((w) => w.id === fodderId) || null;
+  const fodders = weapons.filter((w) => w.id !== targetId && !taken.has(w.id));
   const preview = target && fodder ? previewEmpower(target, fodder, worldvein) : null;
   const canCommit = !!preview && preview.useful && preview.affordable;
+
   function commit() {
     if (!canCommit) return;
-    // decided from current props, then set (bug-fix pass 1 §10)
     setWorldvein((v) => v - preview.cost);
-    setStash(stash.filter((w) => w.id !== fodder.id).map((w) => (w.id === target.id ? { ...w, empower: preview.next } : w)));
+    setBag(bag.filter((i) => i.id !== fodder.id).map((i) => (i.id === target.id ? { ...i, empower: preview.next } : i)));
     setFodderId(null);
   }
-  const label = (w) => `${w.name} · ${w.baseRating}/100${w.empower ? ` +${w.empower}` : ''}${taken.has(w.id) ? ' · equipped' : ''}`;
+
+  // upgrade-grade bench
+  const upgradeable = bag.filter((i) => (i.kind === 'weapon' || i.kind === 'armor') && upgradeStepFor(i));
+  const [gradeId, setGradeId] = useState(null);
+  const grade = upgradeable.find((i) => i.id === gradeId) || null;
+  const gradeRecipe = grade ? upgradeRecipe(grade) : null;
+  const gradeReady = grade ? canUpgrade(bag, grade, unlocked) : false;
+  const gradePrice = grade ? upgradeCost(grade) : 0;
+  function commitGrade() {
+    if (!grade || !gradeReady || worldvein < gradePrice) return;
+    const core = coresOfType(bag, gradeRecipe.core)[0];
+    let rest = consume(bag, { ...gradeRecipe, rarity: grade.rarity }, unlocked) || bag;
+    rest = rest.filter((i) => i.id !== core.id);
+    setBag(rest.map((i) => (i.id === grade.id ? upgradeGrade(grade, core) : i)));
+    setWorldvein((v) => v - gradePrice);
+    setGradeId(null);
+  }
+
   return (
     <div style={S.col}>
-      <div style={S.note}>Feed one weapon into another. Rating is fixed at the drop; empowerment grows to +{EMPOWER_MAX} and multiplies hit damage. Same-type fodder counts double; higher rarity and rating feed more.</div>
+      <div className="eld-bag-chips">
+        <button type="button" className={`eld-bag-chip${bench === 'empower' ? ' is-on' : ''}`} onClick={() => setBench('empower')}>Empower</button>
+        <button type="button" className={`eld-bag-chip${bench === 'grade' ? ' is-on' : ''}`} onClick={() => setBench('grade')}>Upgrade grade</button>
+      </div>
       <div className="eld-panel" style={S.strip}><span>❖ {worldvein} Worldvein</span></div>
-      {stash.length === 0 && <div className="eld-panel" style={S.emptyBox}>Bring mountain weapon drops here.</div>}
-      <div className="eld-town-display" style={S.secT}>Target</div>
-      {stash.map((w) => (
-        <button key={w.id} type="button" className={`eld-card${w.id === targetId ? ' is-selected' : ''}`} style={{ ...S.fn, borderLeftWidth: 3, borderLeftColor: TIER_COLOR[w.tier] || undefined }} onClick={() => { setTargetId(w.id); if (fodderId === w.id) setFodderId(null); }}>
-          <div style={{ ...S.fnN, color: TIER_COLOR[w.tier] }}>{label(w)}</div>
-          <div style={S.fnS}>{w.tier} · ×{weaponDamageMult(w).toFixed(2)} hit{(w.empower || 0) >= EMPOWER_MAX ? ' · fully empowered' : ''}</div>
-        </button>
-      ))}
-      {target && (
+
+      {bench === 'empower' ? (
         <>
-          <div className="eld-town-display" style={S.secT}>Fodder (consumed)</div>
-          {fodders.length === 0 && <div style={S.empty}>No spare weapons — equipped weapons can't be fed.</div>}
-          {fodders.map((w) => {
-            const pv = previewEmpower(target, w, worldvein);
-            return (
-              <button key={w.id} type="button" className={`eld-card${w.id === fodderId ? ' is-selected' : ''}`} style={{ ...S.fn, borderLeftWidth: 3, borderLeftColor: TIER_COLOR[w.tier] || undefined }} onClick={() => setFodderId(w.id)}>
-                <div style={{ ...S.fnN, color: TIER_COLOR[w.tier] }}>{label(w)}</div>
-                <div style={S.fnS}>{w.tier}{w.weaponType === target.weaponType ? ' · same type' : ' · other type (half)'} · +{pv ? pv.gain : 0} empower</div>
+          <div style={S.note}>Feed one weapon into another. Rating is fixed at the drop; empowerment grows to +{EMPOWER_MAX} and multiplies hit damage. Same-type fodder counts double; higher rarity and rating feed more.</div>
+          {weapons.length === 0 && <div className="eld-panel" style={S.emptyBox}>Bring mountain weapon drops here.</div>}
+          <div className="eld-town-display" style={S.secT}>Target</div>
+          <div className="eld-bag-list">
+            {weapons.map((w) => (
+              <ItemRow key={w.id} item={w} selected={w.id === targetId} note={`×${weaponDamageMult(w).toFixed(2)} hit${(w.empower || 0) >= EMPOWER_MAX ? ' · fully empowered' : ''}`} onClick={() => { setTargetId(w.id); if (fodderId === w.id) setFodderId(null); }} />
+            ))}
+          </div>
+          {target && (
+            <>
+              <div className="eld-town-display" style={S.secT}>Fodder (consumed)</div>
+              {fodders.length === 0 && <div style={S.empty}>No spare weapons — equipped weapons can&apos;t be fed.</div>}
+              <div className="eld-bag-list">
+                {fodders.map((w) => {
+                  const pv = previewEmpower(target, w, worldvein);
+                  return <ItemRow key={w.id} item={w} selected={w.id === fodderId} note={`${w.type === target.type ? 'same type' : 'other type (half)'} · +${pv ? pv.gain : 0} empower`} onClick={() => setFodderId(w.id)} />;
+                })}
+              </div>
+            </>
+          )}
+          {target && fodder && preview && (
+            <div className="eld-card" style={S.card}>
+              <div style={S.row}><span>Empower</span><span style={S.rating}>+{target.empower || 0} → +{preview.next}</span></div>
+              <div style={S.row}><span>Cost</span><span style={{ ...S.rating, color: preview.affordable ? undefined : 'var(--eld-danger)' }}>{preview.cost} ❖</span></div>
+              <div style={S.row}><span>Hit multiplier</span><span style={S.rating}>×{weaponDamageMult(target).toFixed(2)} → ×{weaponDamageMult({ ...target, empower: preview.next }).toFixed(2)}</span></div>
+              <div style={S.fnS}>Consumes {displayName(fodder)}.</div>
+              <button type="button" className="eld-btn" style={S.wide} disabled={!canCommit} onClick={commit}>
+                {(target.empower || 0) >= EMPOWER_MAX ? 'Fully empowered' : !preview.affordable ? 'Not enough Worldvein' : 'Empower'}
               </button>
-            );
-          })}
+            </div>
+          )}
+        </>
+      ) : (
+        <>
+          <div style={S.note}>
+            A Legendary piece plus an <strong>Artifact Core</strong> and its band&apos;s materials becomes Artifact; an Artifact
+            plus a <strong>Mythic Core</strong> becomes Mythic. Rating and empowerment carry over — the tier never changes.
+            Cores are hunted in areas 8–9; the Mythic Core drops from Vaelyx.
+          </div>
+          {upgradeable.length === 0 && <div className="eld-panel" style={S.emptyBox}>Nothing to upgrade yet — bring a Legendary or Artifact piece.</div>}
+          <div className="eld-bag-list">
+            {upgradeable.map((i) => (
+              <ItemRow key={i.id} item={i} selected={i.id === gradeId} note={`→ ${upgradeStepFor(i).to}`} onClick={() => setGradeId(i.id)} />
+            ))}
+          </div>
+          {grade && gradeRecipe && (
+            <div className="eld-card" style={S.card}>
+              <div style={S.row}><span>Becomes</span><span style={{ ...S.rating, color: RARITY_COLOR[gradeRecipe.to] }}>{gradeRecipe.to} {grade.type}</span></div>
+              <div style={S.row}><span>Core</span><span style={S.rating}>{gradeRecipe.core} · have {coresOfType(bag, gradeRecipe.core).length}</span></div>
+              <div style={S.fnS}>Needs {describeInputs(gradeRecipe)} · have {gradeRecipe.inputs.map((i) => countFor(bag, i)).join(' / ')}</div>
+              <div style={S.row}><span>Cost</span><span style={{ ...S.rating, color: worldvein >= gradePrice ? undefined : 'var(--eld-danger)' }}>{gradePrice} ❖</span></div>
+              <div style={S.fnS}>Rating {grade.rating}/100{grade.empower ? ` and +${grade.empower} empowerment` : ''} carries over.</div>
+              <button type="button" className="eld-btn" style={S.wide} disabled={!gradeReady || worldvein < gradePrice} onClick={commitGrade}>
+                {!gradeReady ? 'Missing core or materials' : worldvein < gradePrice ? 'Not enough Worldvein' : `Upgrade to ${gradeRecipe.to}`}
+              </button>
+            </div>
+          )}
         </>
       )}
-      {target && fodder && preview && (
-        <div className="eld-card" style={S.card}>
-          <div style={S.row}><span>Empower</span><span style={S.rating}>+{target.empower || 0} → +{preview.next}</span></div>
-          <div style={S.row}><span>Gain</span><span style={S.rating}>+{preview.gain}</span></div>
-          <div style={S.row}><span>Cost</span><span style={{ ...S.rating, color: preview.affordable ? undefined : '#e05d6f' }}>{preview.cost} ❖</span></div>
-          <div style={S.row}><span>Hit multiplier</span><span style={S.rating}>×{weaponDamageMult(target).toFixed(2)} → ×{weaponDamageMult({ ...target, empower: preview.next }).toFixed(2)}</span></div>
-          <div style={S.fnS}>Consumes {fodder.name}.</div>
-          <button type="button" className="eld-btn" style={S.wide} disabled={!canCommit} onClick={commit}>
-            {(target.empower || 0) >= EMPOWER_MAX ? 'Fully empowered' : !preview.affordable ? 'Not enough Worldvein' : 'Empower'}
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function MarketPanel({ inventory, setInventory, stash, setStash, worldvein, setWorldvein, taken }) {
-  function sellScrap() {
-    const n = inventory.scrap || 0;
-    if (n <= 0) return;
-    setWorldvein((v) => v + n * 2);
-    setInventory((inv) => ({ ...inv, scrap: 0 }));
-  }
-  // bug-fix pass 1 §10: decide from current props, then set — never set state inside an updater
-  // (StrictMode runs updaters twice; nested setters credited twice)
-  function sellArmor(idx) {
-    const armor = [...(inventory.armor || [])];
-    const [gone] = armor.splice(idx, 1);
-    if (!gone || taken.has(gone.id)) return; // equipped armor is never sold
-    setInventory({ ...inventory, armor, scrap: (inventory.scrap || 0) + 1 });
-    setWorldvein((v) => v + Math.max(8, Math.floor((gone.rating || 20) / 2)));
-  }
-  function scrapWeapon(idx) {
-    const next = [...stash];
-    const [gone] = next.splice(idx, 1);
-    if (!gone || taken.has(gone.id)) return; // equipped weapons are never scrapped
-    setStash(next);
-    setInventory((inv) => ({ ...inv, scrap: (inv.scrap || 0) + 1 }));
-    setWorldvein((v) => v + Math.max(3, Math.floor((gone.baseRating || 10) / 5)));
-  }
-  // Progression Loop Lock §2: every material tier sells at the market floor.
-  function sellMats(quality) {
-    const lots = (inventory.infused || []).filter((m) => m.quality === quality);
-    const qty = lots.reduce((n, m) => n + m.qty, 0);
-    if (qty <= 0) return;
-    setInventory({ ...inventory, infused: (inventory.infused || []).filter((m) => m.quality !== quality) });
-    setWorldvein((v) => v + qty * matPrice(quality));
-  }
-  const matQty = (q) => (inventory.infused || []).filter((m) => m.quality === q).reduce((n, m) => n + m.qty, 0);
-  return (
-    <div style={S.col}>
-      <div style={S.note}>Vendor under Town — sell scrap / excess armor for Worldvein. DESIGN-OPEN: full vendor stock.</div>
-      <div className="eld-panel" style={S.strip}><span>❖ {worldvein}</span><span>Scrap {inventory.scrap || 0}</span></div>
-      <button type="button" className="eld-btn" style={S.wide} disabled={!inventory.scrap} onClick={sellScrap}>
-        Sell all scrap (+{(inventory.scrap || 0) * 2} ❖)
-      </button>
-      <div className="eld-town-display" style={S.secT}>Sell infused materials</div>
-      <div className="eld-panel" style={S.strip}>
-        {RARITY.map((q) => (
-          <button key={q} type="button" className="eld-btn eld-btn-ghost" disabled={matQty(q) === 0} style={{ color: MAT_QUALITY[q]?.color }} onClick={() => sellMats(q)}>
-            {q} ×{matQty(q)} → {matQty(q) * matPrice(q)} ❖
-          </button>
-        ))}
-      </div>
-      <div className="eld-town-display" style={S.secT}>Sell armor</div>
-      {(inventory.armor || []).length === 0 && <div style={S.empty}>No armor to sell.</div>}
-      {(inventory.armor || []).map((a, i) => (
-        <div key={a.id} className="eld-card" style={S.card}>
-          <div style={S.row}><span>{a.name}{taken.has(a.id) ? ' · equipped' : ''}</span><span style={S.rating}>~{Math.max(8, Math.floor((a.rating || 20) / 2))} ❖</span></div>
-          <button type="button" className="eld-btn" style={S.wide} disabled={taken.has(a.id)} onClick={() => sellArmor(i)}>{taken.has(a.id) ? 'Equipped' : 'Sell'}</button>
-        </div>
-      ))}
-      <div className="eld-town-display" style={S.secT}>Scrap weapons</div>
-      {stash.length === 0 && <div style={S.empty}>No stash weapons.</div>}
-      {stash.map((g, i) => (
-        <div key={g.id} className="eld-card" style={S.card}>
-          <div style={S.row}><span>{g.name}{taken.has(g.id) ? ' · equipped' : ''}</span><span style={S.rating}>{g.baseRating}/100 · scrap + ❖</span></div>
-          <button type="button" className="eld-btn eld-btn-ghost" style={S.wide} disabled={taken.has(g.id)} onClick={() => scrapWeapon(i)}>{taken.has(g.id) ? 'Equipped' : 'Scrap'}</button>
-        </div>
-      ))}
     </div>
   );
 }

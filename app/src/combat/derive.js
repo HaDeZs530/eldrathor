@@ -2,13 +2,17 @@
  * Derived combat values from the nine seeds — docs/Eldrathor_Combat_v2_Lock.md §2, with equipment
  * applied per docs/Eldrathor_Progression_Loop_Lock.md §4 and the §5 crit correction (M1b).
  * Seeds come from ARCHETYPE_SEEDS (10 base / 15 specialty). Gem multipliers `g` are 0 until the gem
- * tree ships. Level L is 1+. Equipment: `adventurer.weaponItem` (a stash weapon: weaponType,
- * baseRating, empower) sets the weapon type and scales hit damage; `adventurer.armorItem` (tier,
- * rating) adds HP and mitigation. Without a weapon item the archetype's default type applies at
- * rating 0 / empower 0 (×0.8) — being unarmed hurts.
+ * tree ships. Level L is 1+.
+ *
+ * Equipment is the six-slot map of docs/Eldrathor_Item_Model_Lock.md §6, resolved by `equip()`:
+ * `adventurer.weaponItem` sets the weapon type and scales hit damage by tier × rarity × rating ×
+ * empower, and `adventurer.armorItems` (body / head / hands / feet) add HP and mitigation, with head,
+ * hands and feet worth half the body values. Without a weapon the archetype's default type applies at
+ * ×0.8 — being unarmed hurts.
  */
 import { ARCHETYPE_SEEDS, WEAPONS } from '../data.js';
-import { weaponDamageMult, armorBonus, critMult, MITIGATION_CAP } from '../progression/progression.js';
+import { critMult, MITIGATION_CAP } from '../progression/progression.js';
+import { weaponDamageMult, armorTotals, ARMOR_SLOTS, UNARMED_MULT } from '../progression/items.js';
 
 const NO_GEMS = Object.freeze({
   hp: 0, mana: 0, manaRegen: 0, power: 0, mitigation: 0, attackSpeed: 0, critChance: 0, critDamage: 0, healingPower: 0,
@@ -28,12 +32,12 @@ export function deriveStats(adventurer) {
   const s = ARCHETYPE_SEEDS[adventurer.archetype] || FALLBACK_SEEDS;
   const g = { ...NO_GEMS, ...(adventurer.gems || {}) };
   const wi = adventurer.weaponItem || null;
-  const weaponType = wi?.weaponType || adventurer.weapon || 'Sword + Shield';
+  const weaponType = wi?.type || adventurer.weapon || 'Sword + Shield';
   const w = WEAPONS[weaponType] || WEAPONS['Sword + Shield'];
   const L = Math.max(1, adventurer.level || 1);
   const lvl = 1 + 0.05 * (L - 1);
-  const wm = weaponDamageMult(wi || { baseRating: 0, empower: 0 });
-  const ar = armorBonus(adventurer.armorItem || null);
+  const wm = wi ? weaponDamageMult(wi) : UNARMED_MULT; // unarmed: ×0.8
+  const ar = armorTotals(adventurer.armorItems || []);
 
   return {
     level: L,
@@ -75,9 +79,13 @@ export function deriveDisplay(adventurer) {
   };
 }
 
-/** Attach the equipped items (by id) to an Adventurer so deriveStats / the simulator see them. */
-export function equip(member, stash = [], armor = []) {
-  const weaponItem = member.weaponId ? stash.find((w) => w.id === member.weaponId) || null : null;
-  const armorItem = member.armorId ? armor.find((a) => a.id === member.armorId) || null : null;
-  return { ...member, weaponItem, armorItem };
+/**
+ * Attach the equipped items (by id, from the one bag) to an Adventurer so deriveStats / the simulator
+ * see them. `member.equipped` is the six-slot map `{weapon, body, head, hands, feet, gem}` (§6).
+ */
+export function equip(member, bag = []) {
+  const eq = member.equipped || {};
+  const byId = (id) => (id ? bag.find((i) => i.id === id) || null : null);
+  const armorItems = ARMOR_SLOTS.map((slot) => byId(eq[slot])).filter(Boolean);
+  return { ...member, weaponItem: byId(eq.weapon), armorItems, gemItem: byId(eq.gem) };
 }
