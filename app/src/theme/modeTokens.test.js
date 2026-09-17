@@ -1,0 +1,215 @@
+/**
+ * Every mode defines its own tokens; nothing falls back to Town brown.
+ * Brief: docs/CLAUDE_BRIEFS/2026-09-16_mode-tokens-fix.md · Spec: Style Bible §A + §D.
+ *
+ * The bug: ui.css read the mode tokens as `var(--eld-panel, #141210)` — Veinharbor values baked in as
+ * fallbacks — so any column that failed to define a token silently rendered Town brown. The fix is that
+ * each column defines the FULL set (theme/styleBible.js MODE_TOKENS) and ui.css reads them with none.
+ *
+ * "Render each screen and assert the computed panel background" without a DOM: the test links the real
+ * stylesheets in the ThemeProvider's import order, resolves the cascade for each screen's class set
+ * (specificity, then source order, then `var()` substitution) and reads the value off the result.
+ */
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { MODE_TOKENS, MODE_TOKEN_NAMES, MODE_SELECTOR, MODE_COLUMNS, modeColumn } from './styleBible.js';
+import { MODE, HUB_SKIN, TAB_HUB_SKIN } from './tokens.js';
+
+/* ---------- a minimal CSS cascade, over the sheets in ThemeProvider link order ---------- */
+const SHEETS = ['../components/ui/ui.css', './world.css', './explore.css', './mind.css', './hub.css'];
+const read = (f) => readFileSync(new URL(f, import.meta.url), 'utf8');
+
+function parse(css, rules = []) {
+  let depth = 0, start = 0, sel = '';
+  for (let k = 0; k < css.length; k++) {
+    if (css[k] === '{') { if (depth === 0) { sel = css.slice(start, k).trim(); start = k + 1; } depth++; }
+    else if (css[k] === '}') {
+      depth--;
+      if (depth === 0) {
+        const body = css.slice(start, k);
+        if (sel.startsWith('@')) parse(body, rules); else rules.push({ sel, body });
+        start = k + 1;
+      }
+    }
+  }
+  return rules;
+}
+const RULES = SHEETS.flatMap((f) => parse(read(f).replace(/\/\*[\s\S]*?\*\//g, '')));
+
+/** :not() contributes its argument's weight, so every selector here is counted in classes. */
+const specificity = (sel) => (sel.replace(/:not\(([^)]*)\)/g, '$1').match(/\.[\w-]+|:[\w-]+/g) || []).length;
+
+function matchCompound(compound, classes) {
+  const nots = [...compound.matchAll(/:not\(([^)]*)\)/g)].map((m) => m[1]);
+  const base = compound.replace(/:not\([^)]*\)/g, '');
+  if (/^[a-zA-Z]/.test(base.trim())) return false; // bare element selectors don't apply to our chain
+  for (const c of base.match(/\.[\w-]+/g) || []) if (!classes.has(c.slice(1))) return false;
+  for (const n of nots) {
+    const need = (n.match(/\.[\w-]+/g) || []).map((c) => c.slice(1));
+    if (need.length && need.every((c) => classes.has(c))) return false;
+  }
+  return true;
+}
+
+/** `chain` is the ancestor list, root first, each a Set of class names. Descendant combinators only. */
+function matches(sel, chain) {
+  if (/[>+~]|::/.test(sel)) return false;
+  const parts = sel.trim().split(/\s+/);
+  if (!matchCompound(parts.at(-1), chain.at(-1))) return false;
+  let i = chain.length - 2;
+  for (let p = parts.length - 2; p >= 0; p--) {
+    while (i >= 0 && !matchCompound(parts[p], chain[i])) i--;
+    if (i < 0) return false;
+    i--;
+  }
+  return true;
+}
+
+function declarations(body) {
+  const out = [];
+  let depth = 0, cur = '';
+  for (const ch of body) {
+    if (ch === '(') depth++; else if (ch === ')') depth--;
+    if (ch === ';' && depth === 0) { out.push(cur); cur = ''; } else cur += ch;
+  }
+  if (cur.trim()) out.push(cur);
+  return out.flatMap((d) => { const i = d.indexOf(':'); return i < 0 ? [] : [[d.slice(0, i).trim(), d.slice(i + 1).trim()]]; });
+}
+
+/** The winning declaration of `prop` for the element at the end of `chain`. */
+function declared(chain, prop) {
+  let value = null, best = -1;
+  RULES.forEach((rule, order) => {
+    for (const sel of rule.sel.split(',').map((x) => x.trim()).filter(Boolean)) {
+      if (!matches(sel, chain)) continue;
+      for (const [p, v] of declarations(rule.body)) {
+        if (p !== prop) continue;
+        const weight = specificity(sel) * 10000 + order;
+        if (weight >= best) { best = weight; value = v; }
+      }
+    }
+  });
+  return value;
+}
+
+/** Custom properties inherit, so walk up the chain until one element declares it. */
+function token(chain, name) {
+  for (let i = chain.length; i > 0; i--) {
+    const v = declared(chain.slice(0, i), name);
+    if (v != null) return v;
+  }
+  return null;
+}
+
+/** Resolve a property, substituting `var(--x)` / `var(--x, fallback)` from the chain's tokens. */
+function computed(chain, prop) {
+  const raw = declared(chain, prop);
+  if (raw == null) return null;
+  const sub = (text, depth = 0) => {
+    if (depth > 8) return text;
+    return text.replace(/var\((--[\w-]+)(?:,([^()]*|[^()]*\([^()]*\)[^()]*))?\)/g, (_, name, fb) => {
+      const v = token(chain, name);
+      return v != null ? sub(v, depth + 1) : (fb != null ? sub(fb.trim(), depth + 1) : 'UNSET');
+    });
+  };
+  return sub(raw);
+}
+
+/* ---------- the screens, as the class sets ThemeProvider + the screen roots put on them ---------- */
+const set = (...c) => new Set(c);
+const root = (mode, skin) => set('eld-root', `mode-${mode.toLowerCase()}`, `hub-${skin}`);
+const SCREENS = [
+  { name: 'Town', chain: [root(MODE.WORLD, TAB_HUB_SKIN.town)], column: 'veinharbor' },
+  { name: 'Party', chain: [root(MODE.WORLD, TAB_HUB_SKIN.party)], column: 'veinharbor' },
+  { name: 'Player', chain: [root(MODE.WORLD, TAB_HUB_SKIN.player)], column: 'veinharbor' },
+  { name: 'Hearth', chain: [root(MODE.WORLD, TAB_HUB_SKIN.afk)], column: 'veinharbor' },
+  { name: 'Island', chain: [root(MODE.WORLD, HUB_SKIN.MOUNTAIN), set('eld-mode-explore')], column: 'explore' },
+  { name: 'Rally', chain: [root(MODE.WORLD, HUB_SKIN.MOUNTAIN), set('eld-mode-explore')], column: 'explore' },
+  { name: 'Route map', chain: [root(MODE.WORLD, HUB_SKIN.MOUNTAIN), set('eld-map-wrap', 'eld-mode-explore')], column: 'explore' },
+  { name: 'Fight', chain: [root(MODE.MIND, HUB_SKIN.MOUNTAIN), set('eld-overlay', 'eld-mode-mind')], column: 'mind' },
+  { name: 'Results', chain: [root(MODE.MIND, HUB_SKIN.MOUNTAIN), set('eld-overlay', 'eld-mode-mind')], column: 'mind' },
+  { name: 'Sanctuary', chain: [root(MODE.MIND, HUB_SKIN.MOUNTAIN), set('eld-overlay', 'eld-mode-mind')], column: 'mind' },
+  // the buried route map keeps its own column while a Mind View overlay sits on top of it
+  { name: 'Route map under a fight', chain: [root(MODE.MIND, HUB_SKIN.MOUNTAIN), set('eld-map-wrap', 'eld-mode-explore')], column: 'explore' },
+];
+
+test('§A: every mode stylesheet defines the FULL token set — the three columns agree on the list', () => {
+  assert.deepEqual(MODE_COLUMNS, Object.keys(MODE_TOKENS));
+  for (const col of MODE_COLUMNS) assert.deepEqual(Object.keys(MODE_TOKENS[col]), MODE_TOKEN_NAMES, col);
+  for (const [col, selector] of Object.entries(MODE_SELECTOR)) {
+    const rule = RULES.find((r) => r.sel.trim() === selector);
+    assert.ok(rule, `${col} token block (${selector})`);
+    const declaredNames = declarations(rule.body).map(([p]) => p);
+    for (const name of MODE_TOKEN_NAMES) assert.ok(declaredNames.includes(name), `${selector} is missing ${name}`);
+  }
+});
+
+test('§A: no screen is missing a token, and every token carries its own column\'s value — never Veinharbor\'s', () => {
+  for (const screen of SCREENS) {
+    for (const name of MODE_TOKEN_NAMES) {
+      const got = token(screen.chain, name);
+      assert.ok(got != null, `${screen.name}: ${name} is undefined — it would fall back`);
+      assert.equal(got, MODE_TOKENS[screen.column][name], `${screen.name}: ${name}`);
+    }
+  }
+});
+
+test('§A: ui.css reads the mode tokens with NO fallback value (a missing token must fail loudly)', () => {
+  const ui = read('../components/ui/ui.css').replace(/\/\*[\s\S]*?\*\//g, '');
+  const withFallback = [...ui.matchAll(/var\((--eld-[\w-]+)\s*,/g)].map((m) => m[1]);
+  assert.deepEqual(withFallback.filter((n) => MODE_TOKEN_NAMES.includes(n)), [], 'ui.css still bakes in fallbacks');
+  // before the §D scopes (which legitimately spell every column out) nothing may hard-code Veinharbor
+  const shared = ui.slice(0, ui.indexOf('.eld-mode-veinharbor'));
+  assert.ok(!/#141210|#c9bfae|#a89c88|#f0e2bd|#191613|#292823/.test(shared), 'Veinharbor literals in the shared chrome');
+});
+
+test('§3: the panel background computes to three distinct values — one per mode', () => {
+  const panelOf = (screen) => computed([...screen.chain, set('eld-panel')], 'background');
+  const byColumn = {};
+  for (const screen of SCREENS) {
+    const bg = panelOf(screen);
+    assert.ok(bg && !bg.includes('UNSET'), `${screen.name}: panel background unresolved (${bg})`);
+    assert.ok(bg.includes(MODE_TOKENS[screen.column]['--eld-panel']), `${screen.name}: panel is ${bg}`);
+    (byColumn[screen.column] ||= new Set()).add(bg);
+  }
+  const distinct = new Set(MODE_COLUMNS.map((c) => [...byColumn[c]][0]));
+  assert.equal(distinct.size, 3, `expected three distinct panel fills, got ${[...distinct].join(' | ')}`);
+});
+
+test('§D: the ☰ Menu sheet over each mode yields three distinct panels (the frozen column wins)', () => {
+  // Sheet freezes modeColumn(currentMode, hubSkin) at open time onto the backdrop; .eld-sheet is .eld-panel.
+  const over = (mode, skin) => {
+    const column = modeColumn(mode, skin);
+    const chain = [root(mode, skin), set('eld-sheet-backdrop', `eld-mode-${column}`), set('eld-sheet', 'eld-panel')];
+    return { column, background: computed(chain, 'background'), title: computed([...chain, set('eld-sheet-title')], 'color') };
+  };
+  const menus = [over(MODE.WORLD, TAB_HUB_SKIN.town), over(MODE.WORLD, HUB_SKIN.MOUNTAIN), over(MODE.MIND, HUB_SKIN.MOUNTAIN)];
+  assert.deepEqual(menus.map((m) => m.column), MODE_COLUMNS);
+  for (const m of menus) {
+    assert.ok(m.background && !m.background.includes('UNSET'), `menu panel unresolved: ${m.background}`);
+    assert.ok(m.background.includes(MODE_TOKENS[m.column]['--eld-panel']), `menu over ${m.column} is ${m.background}`);
+    assert.equal(m.title, MODE_TOKENS[m.column]['--eld-display']);
+  }
+  assert.equal(new Set(menus.map((m) => m.background)).size, 3, 'three distinct menu panels');
+  assert.equal(new Set(menus.map((m) => m.title)).size, 3, 'three distinct menu titles');
+});
+
+test('§D: each .eld-mode-<column> scope also carries the full set, so a pinned subtree inherits nothing', () => {
+  for (const col of MODE_COLUMNS) {
+    const chain = [set('eld-root', 'mode-world', 'hub-rpg'), set(`eld-mode-${col}`)];
+    for (const name of MODE_TOKEN_NAMES) assert.equal(token(chain, name), MODE_TOKENS[col][name], `${col} ${name}`);
+  }
+});
+
+test('the sheets are linked in the order this test assumes, and only the mode files define mode tokens', () => {
+  const provider = readFileSync(new URL('./ThemeProvider.jsx', import.meta.url), 'utf8');
+  const imported = [...provider.matchAll(/^import '([^']+\.css)';$/gm)].map((m) => m[1]);
+  assert.deepEqual(imported, SHEETS);
+  const hub = read('./hub.css').replace(/\/\*[\s\S]*?\*\//g, '');
+  for (const name of MODE_TOKEN_NAMES) {
+    // hub.css is shared chrome; the tab-bar icon may zero out the art placeholder, nothing else.
+    if (name.startsWith('--eld-art-ph-')) continue;
+    assert.ok(!new RegExp(`${name}\\s*:`).test(hub), `hub.css must not define ${name}`);
+  }
+});

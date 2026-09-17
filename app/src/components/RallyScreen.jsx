@@ -12,8 +12,9 @@ export default function RallyScreen({ area, party, roster, onSwap, onExplore, on
   const slots = [0, 1, 2].map((i) => party[i] || null);
   const fielded = slots.filter(Boolean).length;
 
+  // Style Bible §D: Rally is the Exploration column (parchment), pinned so it never reads the hub skin.
   return (
-    <div style={S.wrap}>
+    <div className="eld-mode-explore" data-mode-column="explore" style={S.wrap}>
       <div style={S.head}>
         <div style={S.kick}>Rally the bond</div>
         <div className="eld-display eld-screen-title" style={S.title}>{area.name}</div>

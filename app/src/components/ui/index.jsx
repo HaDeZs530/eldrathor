@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import Art from '../../art/Art.jsx';
-import { FRAME, modeColumn } from '../../theme/styleBible.js';
+import { FRAME } from '../../theme/styleBible.js';
 import { useTheme } from '../../theme/ThemeProvider.jsx';
 import './ui.css';
 
@@ -107,7 +107,7 @@ export function PartyCard({ name, portraitArt, hp, hpMax, mp, mpMax, hpColor = '
  */
 export function Sheet({ title, label, onClose, maxHeight, className = '', column, children }) {
   const theme = useTheme();
-  const [frozen] = useState(() => column || modeColumn(theme.currentMode, theme.hubSkin));
+  const [frozen] = useState(() => column || theme.column);
   return (
     <div className={`eld-sheet-backdrop eld-mode-${frozen}`} data-mode-column={frozen} onClick={onClose} role="presentation">
       <div className={`eld-sheet eld-panel ${className}`.trim()} onClick={(e) => e.stopPropagation()} role="dialog" aria-label={label || title} style={maxHeight ? { maxHeight } : undefined}>

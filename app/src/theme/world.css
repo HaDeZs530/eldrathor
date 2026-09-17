@@ -4,11 +4,12 @@
  * frame, panel #141210 with 1 px #5a4a22 + 1 px #292823 inner, Cinzel 26/20 #f0e2bd, system UI 16
  * #c9bfae, gold #e8c46a accent, dark buttons with gold text. FLAT: no drop shadows on Town.
  * Applies to every hub skin while the expedition is in WORLD mode (mind + rpg skins share it; the
- * mountain skin is the Exploration column in hub.css).
+ * mountain skin is the Exploration column in explore.css).
+ *
+ * The block below is the FULL token set (theme/styleBible.js MODE_TOKENS.veinharbor) — ui.css reads
+ * every one of these with no fallback, so nothing here may be left to another column to supply.
  */
 
-.eld-root.mode-world.hub-rpg,
-.eld-root.mode-world.hub-mind,
 .eld-root.mode-world:not(.hub-mountain) {
   --eld-bg: #080807;
   --eld-bg-mid: #0e0d0b;
@@ -26,11 +27,17 @@
   --eld-mythros: #2cabf8;
   --eld-good: #20a95e;
   --eld-danger: #e5484d;
+  --eld-header-bg: transparent;
   --eld-btn-bg: #141210;
   --eld-btn-text: #e8c46a;
   --eld-btn-border: #5a4a22;
+  --eld-btn-shadow: none;
   --eld-btn-primary-bg: #e8c46a;
   --eld-btn-primary-text: #1a1206;
+  --eld-btn-ghost-border: #5a4a22;
+  --eld-btn-ghost-text: #c9bfae;
+  --eld-bar-track: rgba(0, 0, 0, 0.45);
+  --eld-bar-border: rgba(255, 255, 255, 0.12);
   --eld-tabbar-bg: #0f151d;
   --eld-tab-active: #e8c46a;
   --eld-tab-inactive: #a89c88;
@@ -49,11 +56,6 @@
   background:
     repeating-linear-gradient(90deg, rgba(90, 74, 34, 0.05) 0 2px, transparent 2px 9px),
     linear-gradient(180deg, #0b0a08 0%, #080807 100%);
-}
-
-.eld-root.mode-world:not(.hub-mountain) .eld-header {
-  background: transparent;
-  border-bottom: 1px solid #5a4a22;
 }
 
 .eld-root.mode-world:not(.hub-mountain) .eld-panel,

@@ -80,11 +80,11 @@ function Slot({ slot, size, accent }) {
         ...S.slot,
         width: size,
         height: Math.round(size * 0.72),
-        borderColor: filled ? accent : 'var(--eld-border, #1c3a44)',
+        borderColor: filled ? accent : 'var(--eld-border)',
         boxShadow: filled ? `0 0 10px ${accent}55` : 'none',
       }}
     >
-      <span style={{ ...S.slotGlyph, color: filled ? accent : 'var(--eld-muted, #5f8494)' }}>
+      <span style={{ ...S.slotGlyph, color: filled ? accent : 'var(--eld-muted)' }}>
         {slot.glyph}
       </span>
       <span style={S.slotLbl}>{slot.filled || slot.sub || slot.label}</span>
@@ -98,7 +98,7 @@ const S = {
     fontSize: 'var(--mv-label, 15px)',
     letterSpacing: '0.16em',
     textTransform: 'uppercase',
-    color: 'var(--eld-muted, #5f8494)',
+    color: 'var(--eld-muted)',
     marginBottom: 8,
     textAlign: 'center',
   },
@@ -131,10 +131,10 @@ const S = {
     fontSize: 'var(--mv-label, 15px)',
     letterSpacing: '0.1em',
     textTransform: 'uppercase',
-    color: 'var(--eld-text, #cfe0e8)',
-    fontFamily: 'var(--eld-font-display, Cinzel, Georgia, serif)',
+    color: 'var(--eld-text)',
+    fontFamily: 'var(--eld-font-display)',
   },
-  dressHint: { fontSize: 'var(--mv-label, 15px)', color: 'var(--eld-muted, #5f8494)', fontStyle: 'italic' },
+  dressHint: { fontSize: 'var(--mv-label, 15px)', color: 'var(--eld-muted)', fontStyle: 'italic' },
   slot: {
     borderRadius: 8,
     border: '1px solid',
@@ -154,7 +154,7 @@ const S = {
     fontSize: 'var(--mv-label, 15px)',
     letterSpacing: '0.02em',
     textTransform: 'uppercase',
-    color: 'var(--eld-muted, #5f8494)',
+    color: 'var(--eld-muted)',
     maxWidth: '100%',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
@@ -164,7 +164,7 @@ const S = {
   foot: {
     marginTop: 8,
     fontSize: 'var(--mv-label, 15px)',
-    color: 'var(--eld-muted, #5f8494)',
+    color: 'var(--eld-muted)',
     fontStyle: 'italic',
     textAlign: 'center',
     lineHeight: 1.35,

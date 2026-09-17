@@ -1,0 +1,95 @@
+/*
+ * EXPLORATION mode — island map / Rally / route map (docs/Eldrathor_Style_Bible_Lock.md §A, column 2).
+ * "Parchment — worlds unfold": parchment ground #e8d5b7 with 6 % paper grain, cards #f1e6cf with a
+ * 1 px #8a7350 border at 6 px radius, Cinzel 20 ink #2b2118, body #3a2e22, teal ink #345d66 (cleared)
+ * and gold #c9962e (party ring / Explore). Carried by the mountain hub skin while the expedition is in
+ * WORLD mode; a fight / results / sanctuary overlay flips the root to Mind View (mind.css).
+ *
+ * Split out of hub.css by the 2026-09-16 mode-tokens brief so all three columns sit side by side.
+ * The block below is the FULL token set (theme/styleBible.js MODE_TOKENS.explore) — ui.css reads every
+ * one of these with no fallback, so an Exploration screen can never inherit Veinharbor brown.
+ */
+
+.eld-root.hub-mountain:not(.mode-mind) {
+  --eld-bg: #e8d5b7;
+  --eld-bg-mid: #e8d5b7;
+  --eld-panel: #f1e6cf;
+  --eld-card: #f1e6cf;
+  --eld-border: #8a7350;
+  --eld-border-inner: transparent;
+  --eld-panel-shadow: none;
+  --eld-text: #3a2e22;
+  --eld-display: #2b2118;
+  --eld-muted: #6f5d48;
+  --eld-accent: #345d66;
+  --eld-accent-glow: rgba(52, 93, 102, 0.25);
+  --eld-gold: #c9962e;
+  --eld-mythros: #2cabf8;
+  --eld-good: #20a95e;
+  --eld-danger: #e5484d;
+  --eld-header-bg: #e8d5b7;
+  --eld-btn-bg: #f1e6cf;
+  --eld-btn-text: #2b2118;
+  --eld-btn-border: #8a7350;
+  --eld-btn-shadow: none;
+  --eld-btn-primary-bg: #c9962e;
+  --eld-btn-primary-text: #2b2118;
+  --eld-btn-ghost-border: #8a7350;
+  --eld-btn-ghost-text: #3a2e22;
+  --eld-bar-track: rgba(43, 33, 24, 0.25);
+  --eld-bar-border: #8a7350;
+  --eld-tabbar-bg: #0f151d;
+  --eld-tab-active: #e8c46a;
+  --eld-tab-inactive: #a89c88;
+  --eld-font-display: Cinzel, 'Palatino Linotype', Georgia, serif;
+  --eld-font-body: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --eld-radius: 6px;
+  --eld-shadow: none;
+  --eld-art-ph-bg: #f1e6cf;
+  --eld-art-ph-line: #8a7350;
+  --eld-art-ph-text: #6f5d48;
+  image-rendering: auto;
+}
+
+/* parchment ground with paper grain at 6 % */
+.eld-root.hub-mountain:not(.mode-mind) .eld-frame {
+  background:
+    repeating-linear-gradient(0deg, rgba(90, 60, 30, 0.06) 0 1px, transparent 1px 4px),
+    repeating-linear-gradient(90deg, rgba(90, 60, 30, 0.04) 0 1px, transparent 1px 6px),
+    #e8d5b7;
+}
+
+.eld-root.hub-mountain:not(.mode-mind) .eld-header .eld-brand-name,
+.eld-root.hub-mountain:not(.mode-mind) .eld-wordmark { color: #2b2118; }
+
+.eld-root.hub-mountain:not(.mode-mind) .eld-vein-counter {
+  background: rgba(241, 230, 207, 0.9);
+  color: #2b2118;
+}
+
+.eld-root.hub-mountain:not(.mode-mind) .eld-hdr-btn {
+  border-color: #8a7350;
+  color: #2b2118;
+}
+
+.eld-root.hub-mountain:not(.mode-mind) .eld-panel,
+.eld-root.hub-mountain:not(.mode-mind) .eld-card {
+  background: #f1e6cf;
+  border: 1px solid #8a7350;
+  border-radius: 6px;
+  box-shadow: none;
+}
+
+/* primary = filled gold #c9962e with dark text; secondary = parchment outline */
+.eld-root.hub-mountain:not(.mode-mind) .eld-btn:not(.eld-btn-ghost):not(.eld-btn-secondary) {
+  background: #c9962e;
+  color: #2b2118;
+  border-color: #a77a20;
+}
+
+.eld-root.hub-mountain:not(.mode-mind) .eld-btn-ghost,
+.eld-root.hub-mountain:not(.mode-mind) .eld-btn.eld-btn-secondary {
+  background: #f1e6cf;
+  color: #3a2e22;
+  border-color: #8a7350;
+}

@@ -1,8 +1,13 @@
 /*
  * Shared chrome components — docs/Eldrathor_Style_Bible_Lock.md §A.
  * Frame · Header · Panel · Buttons · Bar · DestinationRow · PartyCard · Sheet.
- * Colours come from the mode tokens set on .eld-root (theme/world.css = Veinharbor, theme/hub.css
- * hub-mountain = Exploration, theme/mind.css = Mind View); the numbers here are the lock's.
+ * Colours come from the mode tokens set on .eld-root (theme/world.css = Veinharbor, theme/explore.css
+ * = Exploration, theme/mind.css = Mind View); the numbers here are the lock's.
+ *
+ * NO FALLBACKS: every `var(--eld-*)` below is read WITHOUT a fallback value, on purpose. Each mode
+ * stylesheet defines the full set (theme/styleBible.js MODE_TOKENS), so a column that drops a token
+ * renders visibly unset instead of quietly inheriting Veinharbor brown — the 2026-09-16 bug. The only
+ * literals left here are the ones the lock shares across all three modes (frame gold, bar label white).
  */
 
 /* ---------- shared frame: 2 px antique gold + 1 px inner line, 10 px radius ---------- */
@@ -10,7 +15,7 @@
   border: 2px solid #b8973f;
   box-shadow: inset 0 0 0 1px #5a4a22;
   border-radius: 10px;
-  background: var(--eld-bg, #080807);
+  background: var(--eld-bg);
 }
 
 /* ---------- header: 57 px, wordmark Cinzel 22 / 0.08 em #e6d6a8, Worldvein counter, 32 px round icons ---------- */
@@ -24,8 +29,8 @@
   box-sizing: border-box;
   flex-shrink: 0;
   min-width: 0;
-  background: var(--eld-header-bg, transparent);
-  border-bottom: 1px solid var(--eld-border, #5a4a22);
+  background: var(--eld-header-bg);
+  border-bottom: 1px solid var(--eld-border);
 }
 
 .eld-header-brand {
@@ -38,7 +43,7 @@
 
 .eld-header .eld-brand-name,
 .eld-wordmark {
-  font-family: var(--eld-font-display, Cinzel, Georgia, serif);
+  font-family: var(--eld-font-display);
   font-weight: 700;
   font-size: 22px;
   letter-spacing: 0.08em;
@@ -64,17 +69,17 @@
   padding: 4px 8px;
   border-radius: 8px;
   background: rgba(0, 0, 0, 0.25);
-  border: 1px solid var(--eld-border, #5a4a22);
+  border: 1px solid var(--eld-border);
   white-space: nowrap;
-  font-family: var(--eld-font-display, Cinzel, Georgia, serif);
+  font-family: var(--eld-font-display);
   font-weight: 700;
   font-size: 16px;
   font-variant-numeric: tabular-nums;
-  color: var(--eld-display, #f0e2bd);
+  color: var(--eld-display);
 }
 
 .eld-vein-counter .eld-vein-glyph {
-  color: var(--eld-mythros, #2cabf8);
+  color: var(--eld-mythros);
   font-size: 16px;
   line-height: 1;
 }
@@ -93,10 +98,10 @@
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  border: 1px solid var(--eld-accent, #e8c46a);
+  border: 1px solid var(--eld-accent);
   background: transparent;
-  color: var(--eld-display, #f0e2bd);
-  font-family: var(--eld-font-display, Cinzel, Georgia, serif);
+  color: var(--eld-display);
+  font-family: var(--eld-font-display);
   font-weight: 700;
   font-size: 15px;
   line-height: 1;
@@ -106,19 +111,19 @@
 }
 
 .eld-hdr-btn:active { filter: brightness(1.3); }
-.eld-hdr-btn:focus-visible { outline: 2px solid var(--eld-accent, #e8c46a); outline-offset: 2px; }
+.eld-hdr-btn:focus-visible { outline: 2px solid var(--eld-accent); outline-offset: 2px; }
 
 /* ---------- panels / cards (mode-aware through the tokens) ---------- */
 .eld-panel,
 .eld-card {
-  background: var(--eld-panel, #141210);
-  border: 1px solid var(--eld-border, #5a4a22);
-  border-radius: var(--eld-radius, 10px);
-  box-shadow: var(--eld-panel-shadow, inset 0 0 0 1px #292823);
-  color: var(--eld-text, #c9bfae);
+  background: var(--eld-panel);
+  border: 1px solid var(--eld-border);
+  border-radius: var(--eld-radius);
+  box-shadow: var(--eld-panel-shadow);
+  color: var(--eld-text);
 }
 
-.eld-card { background: var(--eld-card, var(--eld-panel, #141210)); }
+.eld-card { background: var(--eld-card); }
 
 /* ---------- buttons ---------- */
 .eld-btn {
@@ -128,42 +133,42 @@
   gap: 6px;
   padding: 10px 14px;
   min-height: 44px;
-  border-radius: var(--eld-radius, 10px);
-  border: 1px solid var(--eld-btn-border, var(--eld-accent, #e8c46a));
-  background: var(--eld-btn-bg, var(--eld-panel, #141210));
-  color: var(--eld-btn-text, var(--eld-accent, #e8c46a));
-  font-family: var(--eld-font-display, Cinzel, Georgia, serif);
+  border-radius: var(--eld-radius);
+  border: 1px solid var(--eld-btn-border);
+  background: var(--eld-btn-bg);
+  color: var(--eld-btn-text);
+  font-family: var(--eld-font-display);
   font-weight: 700;
   font-size: 15px;
   letter-spacing: 0.04em;
   cursor: pointer;
-  box-shadow: var(--eld-btn-shadow, none);
+  box-shadow: var(--eld-btn-shadow);
   -webkit-tap-highlight-color: transparent;
   transition: border-color 150ms ease, background-color 150ms ease, transform 120ms ease, opacity 150ms ease, box-shadow 150ms ease;
 }
 
 .eld-btn:hover:not(:disabled) { filter: brightness(1.1); }
 .eld-btn:active:not(:disabled) { transform: translateY(1px); }
-.eld-btn:focus-visible { outline: 2px solid var(--eld-accent, #e8c46a); outline-offset: 2px; }
+.eld-btn:focus-visible { outline: 2px solid var(--eld-accent); outline-offset: 2px; }
 .eld-btn:disabled { opacity: 0.45; cursor: default; transform: none; }
 
 /* secondary / ghost: outline only */
 .eld-btn-ghost,
 .eld-btn.eld-btn-secondary {
   background: transparent;
-  border-color: var(--eld-btn-ghost-border, var(--eld-border, #5a4a22));
-  color: var(--eld-btn-ghost-text, var(--eld-text, #c9bfae));
+  border-color: var(--eld-btn-ghost-border);
+  color: var(--eld-btn-ghost-text);
   box-shadow: none;
 }
 
 /* primary: filled */
 .eld-btn.eld-btn-primary {
-  background: var(--eld-btn-primary-bg, var(--eld-accent, #e8c46a));
-  color: var(--eld-btn-primary-text, #1a1206);
-  border-color: var(--eld-btn-primary-bg, var(--eld-accent, #e8c46a));
+  background: var(--eld-btn-primary-bg);
+  color: var(--eld-btn-primary-text);
+  border-color: var(--eld-btn-primary-bg);
 }
 
-.eld-btn.is-active { border-color: #e8c46a; box-shadow: 0 0 0 1px #e8c46a; }
+.eld-btn.is-active { border-color: var(--eld-gold); box-shadow: 0 0 0 1px var(--eld-gold); }
 
 /* ---------- bars: 14 px HP / MP ---------- */
 .eld-bar {
@@ -171,8 +176,8 @@
   height: 14px;
   border-radius: 4px;
   overflow: hidden;
-  background: var(--eld-bar-track, rgba(0, 0, 0, 0.45));
-  border: 1px solid var(--eld-bar-border, rgba(255, 255, 255, 0.12));
+  background: var(--eld-bar-track);
+  border: 1px solid var(--eld-bar-border);
   box-sizing: border-box;
 }
 
@@ -189,7 +194,7 @@
   align-items: center;
   justify-content: flex-end;
   padding: 0 4px;
-  font-family: var(--eld-font-display, Cinzel, Georgia, serif);
+  font-family: var(--eld-font-display);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.02em;
@@ -207,11 +212,11 @@
 }
 
 .eld-bar-row .eld-bar-key {
-  font-family: var(--eld-font-display, Cinzel, Georgia, serif);
+  font-family: var(--eld-font-display);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.06em;
-  color: var(--eld-muted, #a89c88);
+  color: var(--eld-muted);
 }
 
 /* ---------- destination rows: 92 px, 120 px illustration, Cinzel 22 + 13 px subtitle + chevron ---------- */
@@ -224,12 +229,12 @@
   padding: 0;
   margin: 0;
   text-align: left;
-  color: var(--eld-text, #c9bfae);
-  font-family: var(--eld-font-body, system-ui, sans-serif);
-  background: var(--eld-panel, #141210);
-  border: 1px solid var(--eld-border, #5a4a22);
-  box-shadow: inset 0 0 0 1px var(--eld-border-inner, #292823);
-  border-radius: var(--eld-radius, 10px);
+  color: var(--eld-text);
+  font-family: var(--eld-font-body);
+  background: var(--eld-panel);
+  border: 1px solid var(--eld-border);
+  box-shadow: inset 0 0 0 1px var(--eld-border-inner);
+  border-radius: var(--eld-radius);
   overflow: hidden;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
@@ -240,7 +245,7 @@
   width: 120px;
   height: 100%;
   min-height: 90px;
-  border-right: 1px solid var(--eld-border, #5a4a22);
+  border-right: 1px solid var(--eld-border);
 }
 
 .eld-dest-text {
@@ -253,30 +258,30 @@
 }
 
 .eld-dest-title {
-  font-family: var(--eld-font-display, Cinzel, Georgia, serif);
+  font-family: var(--eld-font-display);
   font-weight: 700;
   font-size: 22px;
   line-height: 1.1;
-  color: var(--eld-display, #f0e2bd);
+  color: var(--eld-display);
 }
 
 .eld-dest-sub {
   font-size: 13px;
   line-height: 1.35;
-  color: #a89c88;
+  color: var(--eld-muted);
 }
 
 .eld-dest-chev {
   display: flex;
   align-items: center;
   padding: 0 14px 0 4px;
-  color: var(--eld-accent, #e8c46a);
+  color: var(--eld-accent);
   font-size: 20px;
 }
 
-.eld-dest-row:hover { border-color: var(--eld-accent, #e8c46a); }
+.eld-dest-row:hover { border-color: var(--eld-accent); }
 .eld-dest-row:active { transform: translateY(1px); }
-.eld-dest-row:focus-visible { outline: 2px solid var(--eld-accent, #e8c46a); outline-offset: 2px; }
+.eld-dest-row:focus-visible { outline: 2px solid var(--eld-accent); outline-offset: 2px; }
 .eld-dest-row:disabled { opacity: 0.45; cursor: default; transform: none; }
 
 /* ---------- fight party cards: 3 across, ≥ 120 px, 64 px portrait in a 1 px gold frame, name Cinzel 15, 14 px bars, two 28 px icons ---------- */
@@ -301,7 +306,7 @@
 .eld-party-card.is-dead { opacity: 0.45; filter: grayscale(0.6); }
 
 .eld-party-card-name {
-  font-family: var(--eld-font-display, Cinzel, Georgia, serif);
+  font-family: var(--eld-font-display);
   font-weight: 700;
   font-size: 15px;
   line-height: 1.1;
@@ -309,7 +314,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 100%;
-  color: var(--eld-display, #dfe9f5);
+  color: var(--eld-display);
 }
 
 .eld-party-card .eld-portrait {
@@ -318,7 +323,7 @@
   border: 1px solid #b8973f;
   border-radius: 6px;
   box-sizing: border-box;
-  --eld-art-ph-bg: var(--eld-card, #23353f);
+  --eld-art-ph-bg: var(--eld-card);
 }
 
 .eld-party-card .eld-portrait .eld-art-ph-name { font-size: 9px; }
@@ -346,14 +351,14 @@
   font-size: 18px;
   line-height: 1;
   background: rgba(0, 0, 0, 0.25);
-  color: var(--eld-mythros, #2cabf8);
+  color: var(--eld-mythros);
   --eld-art-ph-bg: transparent;
   --eld-art-ph-line: transparent;
 }
 
 .eld-icon-28 .eld-art { width: 28px; height: 28px; background: transparent; }
 .eld-icon-28.is-dim { opacity: 0.4; }
-.eld-icon-28.is-lit { box-shadow: 0 0 0 1px var(--eld-mythros, #2cabf8), 0 0 10px rgba(44, 171, 248, 0.6); }
+.eld-icon-28.is-lit { box-shadow: 0 0 0 1px var(--eld-mythros), 0 0 10px rgba(44, 171, 248, 0.6); }
 
 /* ---------- sheets ---------- */
 .eld-sheet-backdrop {
@@ -381,17 +386,17 @@
   width: 36px;
   height: 4px;
   border-radius: 2px;
-  background: var(--eld-border, #5a4a22);
+  background: var(--eld-border);
   margin: 0 auto 10px;
 }
 
 .eld-sheet-title {
-  font-family: var(--eld-font-display, Cinzel, Georgia, serif);
+  font-family: var(--eld-font-display);
   font-weight: 700;
   font-size: 20px;
   letter-spacing: 0.04em;
   margin-bottom: 8px;
-  color: var(--eld-display, #f0e2bd);
+  color: var(--eld-display);
 }
 
 @keyframes eld-sheet-up {
@@ -401,18 +406,18 @@
 
 /* ---------- section titles / labels shared across screens ---------- */
 .eld-display {
-  font-family: var(--eld-font-display, Cinzel, Georgia, serif);
+  font-family: var(--eld-font-display);
   font-weight: 700;
   letter-spacing: 0.04em;
-  color: var(--eld-display, #f0e2bd);
+  color: var(--eld-display);
 }
 
 .eld-kicker {
-  font-family: var(--eld-font-display, Cinzel, Georgia, serif);
+  font-family: var(--eld-font-display);
   font-size: 12px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--eld-muted, #a89c88);
+  color: var(--eld-muted);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -421,20 +426,54 @@
 }
 
 /* ==========================================================================================
-   Style Bible §D — mode scopes. A sheet / card / overlay carries `.eld-mode-<column>` for the column of
-   the screen it opened over (frozen at open time by the Sheet component). The repeated class gives the
-   scope more weight than the hub-skin rules in theme/*.css (which describe the screen underneath), so a
+   Style Bible §D — mode scopes. A screen root, sheet, card or overlay carries `.eld-mode-<column>` for
+   its own column: screens pin theirs (the route map stays Exploration under a Mind View fight overlay),
+   and a Sheet freezes the column of the screen it opened over at open time. The repeated class gives the
+   scope more weight than the mode rules in theme/*.css (which describe the screen underneath), so a
    frozen sheet keeps its look even while the theme transitions beneath it.
+   Each block below carries the FULL token set (theme/styleBible.js MODE_TOKENS) — same rule as the mode
+   stylesheets: a pinned subtree supplies every token itself and inherits nothing from the column outside.
    ========================================================================================== */
 
 /* --- Veinharbor: #141210 panel, 1 px #5a4a22 + #292823 inner, Cinzel #f0e2bd, gold primary, no glow --- */
 .eld-root .eld-mode-veinharbor.eld-mode-veinharbor.eld-mode-veinharbor {
-  --eld-panel: #141210; --eld-card: #191613; --eld-border: #5a4a22; --eld-border-inner: #292823;
-  --eld-panel-shadow: inset 0 0 0 1px #292823; --eld-text: #c9bfae; --eld-display: #f0e2bd; --eld-muted: #a89c88;
-  --eld-accent: #e8c46a; --eld-gold: #e8c46a; --eld-radius: 10px;
-  --eld-btn-bg: #141210; --eld-btn-text: #e8c46a; --eld-btn-border: #5a4a22; --eld-btn-shadow: none;
-  --eld-btn-primary-bg: #e8c46a; --eld-btn-primary-text: #1a1206; --eld-btn-ghost-border: #5a4a22; --eld-btn-ghost-text: #c9bfae;
-  --eld-bar-track: rgba(0, 0, 0, 0.45); --eld-bar-border: rgba(255, 255, 255, 0.12);
+  --eld-bg: #080807;
+  --eld-bg-mid: #0e0d0b;
+  --eld-panel: #141210;
+  --eld-card: #191613;
+  --eld-border: #5a4a22;
+  --eld-border-inner: #292823;
+  --eld-panel-shadow: inset 0 0 0 1px #292823;
+  --eld-text: #c9bfae;
+  --eld-display: #f0e2bd;
+  --eld-muted: #a89c88;
+  --eld-accent: #e8c46a;
+  --eld-accent-glow: rgba(232, 196, 106, 0.25);
+  --eld-gold: #e8c46a;
+  --eld-mythros: #2cabf8;
+  --eld-good: #20a95e;
+  --eld-danger: #e5484d;
+  --eld-header-bg: transparent;
+  --eld-btn-bg: #141210;
+  --eld-btn-text: #e8c46a;
+  --eld-btn-border: #5a4a22;
+  --eld-btn-shadow: none;
+  --eld-btn-primary-bg: #e8c46a;
+  --eld-btn-primary-text: #1a1206;
+  --eld-btn-ghost-border: #5a4a22;
+  --eld-btn-ghost-text: #c9bfae;
+  --eld-bar-track: rgba(0, 0, 0, 0.45);
+  --eld-bar-border: rgba(255, 255, 255, 0.12);
+  --eld-tabbar-bg: #0f151d;
+  --eld-tab-active: #e8c46a;
+  --eld-tab-inactive: #a89c88;
+  --eld-font-display: Cinzel, 'Palatino Linotype', Georgia, serif;
+  --eld-font-body: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --eld-radius: 10px;
+  --eld-shadow: none;
+  --eld-art-ph-bg: #141210;
+  --eld-art-ph-line: #5a4a22;
+  --eld-art-ph-text: #a89c88;
   color: #c9bfae;
 }
 .eld-root .eld-mode-veinharbor.eld-mode-veinharbor.eld-mode-veinharbor .eld-panel,
@@ -452,12 +491,43 @@
 
 /* --- Exploration: parchment #f1e6cf card, 1 px #8a7350 (6 px), ink text, gold-filled primary / parchment-outline secondary, paper grain --- */
 .eld-root .eld-mode-explore.eld-mode-explore.eld-mode-explore {
-  --eld-panel: #f1e6cf; --eld-card: #f1e6cf; --eld-border: #8a7350; --eld-border-inner: transparent;
-  --eld-panel-shadow: none; --eld-text: #3a2e22; --eld-display: #2b2118; --eld-muted: #6f5d48;
-  --eld-accent: #345d66; --eld-gold: #c9962e; --eld-radius: 6px;
-  --eld-btn-bg: #c9962e; --eld-btn-text: #2b2118; --eld-btn-border: #a77a20; --eld-btn-shadow: none;
-  --eld-btn-primary-bg: #c9962e; --eld-btn-primary-text: #2b2118; --eld-btn-ghost-border: #8a7350; --eld-btn-ghost-text: #3a2e22;
-  --eld-bar-track: rgba(43, 33, 24, 0.25); --eld-bar-border: #8a7350;
+  --eld-bg: #e8d5b7;
+  --eld-bg-mid: #e8d5b7;
+  --eld-panel: #f1e6cf;
+  --eld-card: #f1e6cf;
+  --eld-border: #8a7350;
+  --eld-border-inner: transparent;
+  --eld-panel-shadow: none;
+  --eld-text: #3a2e22;
+  --eld-display: #2b2118;
+  --eld-muted: #6f5d48;
+  --eld-accent: #345d66;
+  --eld-accent-glow: rgba(52, 93, 102, 0.25);
+  --eld-gold: #c9962e;
+  --eld-mythros: #2cabf8;
+  --eld-good: #20a95e;
+  --eld-danger: #e5484d;
+  --eld-header-bg: #e8d5b7;
+  --eld-btn-bg: #f1e6cf;
+  --eld-btn-text: #2b2118;
+  --eld-btn-border: #8a7350;
+  --eld-btn-shadow: none;
+  --eld-btn-primary-bg: #c9962e;
+  --eld-btn-primary-text: #2b2118;
+  --eld-btn-ghost-border: #8a7350;
+  --eld-btn-ghost-text: #3a2e22;
+  --eld-bar-track: rgba(43, 33, 24, 0.25);
+  --eld-bar-border: #8a7350;
+  --eld-tabbar-bg: #0f151d;
+  --eld-tab-active: #e8c46a;
+  --eld-tab-inactive: #a89c88;
+  --eld-font-display: Cinzel, 'Palatino Linotype', Georgia, serif;
+  --eld-font-body: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --eld-radius: 6px;
+  --eld-shadow: none;
+  --eld-art-ph-bg: #f1e6cf;
+  --eld-art-ph-line: #8a7350;
+  --eld-art-ph-text: #6f5d48;
   color: #3a2e22;
 }
 .eld-root .eld-mode-explore.eld-mode-explore.eld-mode-explore .eld-panel,
@@ -478,13 +548,44 @@
 
 /* --- Mind View: #1a2b3b panel (cards #23353f), 1 px #3d6fa8 + 6 px #2cabf8 glow @ 25 %, #dfe9f5 title, outline buttons --- */
 .eld-root .eld-mode-mind.eld-mode-mind.eld-mode-mind {
-  --eld-panel: #1a2b3b; --eld-card: #23353f; --eld-border: #3d6fa8; --eld-border-inner: transparent;
-  --eld-panel-shadow: 0 0 6px rgba(44, 171, 248, 0.25); --eld-text: #b7c6d8; --eld-display: #dfe9f5; --eld-muted: #7f97b0;
-  --eld-accent: #2cabf8; --eld-gold: #e8c46a; --eld-mythros: #2cabf8; --eld-good: #20a95e; --eld-danger: #e5484d; --eld-crit: #f2c14e; --eld-radius: 8px;
-  --eld-btn-bg: #1a2b3b; --eld-btn-text: #dfe9f5; --eld-btn-border: #3d6fa8; --eld-btn-shadow: 0 0 6px rgba(44, 171, 248, 0.25);
-  --eld-btn-primary-bg: #2cabf8; --eld-btn-primary-text: #06121f; --eld-btn-ghost-border: #3d6fa8; --eld-btn-ghost-text: #b7c6d8;
-  --eld-bar-track: #0a1522; --eld-bar-border: #2b4a6e;
-  --eld-art-ph-bg: #1a2b3b; --eld-art-ph-line: #3d6fa8; --eld-art-ph-text: #7f97b0;
+  --eld-bg: #0c1a2b;
+  --eld-bg-mid: #152a41;
+  --eld-panel: #1a2b3b;
+  --eld-card: #23353f;
+  --eld-border: #3d6fa8;
+  --eld-border-inner: transparent;
+  --eld-panel-shadow: 0 0 6px rgba(44, 171, 248, 0.25);
+  --eld-text: #b7c6d8;
+  --eld-display: #dfe9f5;
+  --eld-muted: #7f97b0;
+  --eld-accent: #2cabf8;
+  --eld-accent-glow: rgba(44, 171, 248, 0.45);
+  --eld-gold: #e8c46a;
+  --eld-mythros: #2cabf8;
+  --eld-good: #20a95e;
+  --eld-danger: #e5484d;
+  --eld-header-bg: transparent;
+  --eld-btn-bg: #1a2b3b;
+  --eld-btn-text: #dfe9f5;
+  --eld-btn-border: #3d6fa8;
+  --eld-btn-shadow: 0 0 6px rgba(44, 171, 248, 0.25);
+  --eld-btn-primary-bg: #2cabf8;
+  --eld-btn-primary-text: #06121f;
+  --eld-btn-ghost-border: #3d6fa8;
+  --eld-btn-ghost-text: #b7c6d8;
+  --eld-bar-track: #0a1522;
+  --eld-bar-border: #2b4a6e;
+  --eld-tabbar-bg: #0f151d;
+  --eld-tab-active: #e8c46a;
+  --eld-tab-inactive: #7f97b0;
+  --eld-font-display: Cinzel, 'Palatino Linotype', Georgia, serif;
+  --eld-font-body: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --eld-radius: 8px;
+  --eld-shadow: 0 0 6px rgba(44, 171, 248, 0.25);
+  --eld-art-ph-bg: #1a2b3b;
+  --eld-art-ph-line: #3d6fa8;
+  --eld-art-ph-text: #7f97b0;
+  --eld-crit: #f2c14e;
   color: #b7c6d8;
 }
 .eld-root .eld-mode-mind.eld-mode-mind.eld-mode-mind .eld-panel,
