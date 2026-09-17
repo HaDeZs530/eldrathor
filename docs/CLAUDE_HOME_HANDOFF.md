@@ -58,6 +58,7 @@
 - PR #29 — route polish 2: run log sheet + badge + toast, node scale (40/34/26), planar outward generator (Gabriel + band-filtered, 200-map crossing test), 350 ms glide + eased camera follow
 
 ## Still OPEN (Anthony deciding / later)
+- **UI mode ownership** — Player / Party render Veinharbor per Style Bible §A + Progression lock §9, but Anthony expected them off the Town look; see `docs/notes/2026-09-17_ui-mode-ownership.md` (issue + proposed rules for how UI is treated). Design Chat to write the tab → column lock; Anthony decides whether Player / Party / Hearth flip to Mind View.
 - ~~AFK root tab final name~~ — **Hearth** (Progression Loop Lock §9, shipped #56)
 - Rally / Prepare-the-bond screen title
 - Gem tree screen; enemy rosters per area; weapon skill trees (Design Chat specs next)
