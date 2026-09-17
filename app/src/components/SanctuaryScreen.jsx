@@ -54,7 +54,7 @@ export default function SanctuaryScreen({ area, party, runHpFrac, pouch, onChoos
 const S = {
   wrap: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 12, padding: '14px 16px 12px', textAlign: 'left', overflowY: 'auto' },
   head: { flexShrink: 0 },
-  kick: { fontSize: 'var(--mv-label, 15px)', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--eld-muted)', fontFamily: 'var(--eld-font-display, Cinzel, Georgia, serif)' },
+  kick: { fontSize: 'var(--mv-label, 15px)', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--eld-muted)', fontFamily: 'var(--eld-font-display)' },
   title: { fontSize: 'var(--mv-title, 26px)', fontWeight: 700, marginTop: 4, lineHeight: 1.1, color: '#bfffe0', textShadow: '0 0 16px rgba(127,214,160,0.5)' },
   sub: { fontSize: 'var(--mv-label, 15px)', color: 'var(--eld-muted)', marginTop: 4, fontStyle: 'italic' },
   panel: { padding: 14, background: 'radial-gradient(circle at 50% 30%, #0f2a22 0%, #060d11 80%)', border: '1px solid rgba(127,214,160,0.45)', boxShadow: '0 0 24px rgba(127,214,160,0.25)' },
@@ -68,5 +68,5 @@ const S = {
   choice: { display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2, padding: '12px 14px', minHeight: 'var(--mv-tap, 52px)', textAlign: 'left' },
   choiceGlyph: { fontSize: 'var(--mv-num, 24px)' },
   choiceLabel: { fontSize: 'var(--mv-text, 18px)', fontWeight: 700 },
-  choiceBlurb: { fontSize: 'var(--mv-label, 15px)', opacity: 0.8, textTransform: 'none', letterSpacing: 0, fontFamily: 'var(--eld-font-body, system-ui, sans-serif)' },
+  choiceBlurb: { fontSize: 'var(--mv-label, 15px)', opacity: 0.8, textTransform: 'none', letterSpacing: 0, fontFamily: 'var(--eld-font-body)' },
 };

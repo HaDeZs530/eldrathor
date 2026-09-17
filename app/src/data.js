@@ -88,9 +88,18 @@ export const newId = (prefix = 'i') => `${prefix}-${Date.now().toString(36)}${Ma
 export const newCharId = () => newId('c');
 export const withIds = (list) => list.map((m) => (m.id ? m : { ...m, id: newCharId() }));
 
-export const TIER_COLOR = {
-  Common: '#9fb2bd', Fine: '#7fd6a0', Rare: '#6fb7d6', Epic: '#b58fe0', Legendary: '#e0a04d',
+/**
+ * The seven-rung rarity ladder and its colours — docs/Eldrathor_Item_Model_Lock.md §1
+ * (LOCKED 2026-09-16; supersedes the five-rung ladder of Progression Loop Lock §2).
+ * They live here, with no dependencies, so `progression/items.js` can build the model on top.
+ */
+export const RARITIES = ['Common', 'Uncommon', 'Rare', 'Epic', 'Legendary', 'Artifact', 'Mythic'];
+export const RARITY_COLOR = {
+  Common: '#9aa3ad', Uncommon: '#5fbf8a', Rare: '#4fa3ff', Epic: '#a678f0',
+  Legendary: '#e8c46a', Artifact: '#ff8a3d', Mythic: '#ff5c8a', // Mythic shimmers (CSS)
 };
+/** Kept as the old name for call sites that still say "tier" where they mean rarity. */
+export const TIER_COLOR = RARITY_COLOR;
 
 export const rand = (a, b) => a + Math.random() * (b - a);
 export const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];

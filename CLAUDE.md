@@ -23,6 +23,7 @@ Eldrathor: a UI-based iOS RPG (Vite + React now; Capacitor iOS wrap later). The 
    - `docs/Eldrathor_BaseStats_Lock.md` — the nine stats every system uses (LOCKED July 2026).
    - `docs/Eldrathor_ClassGemTrees_Lock.md` — full 40-pt trees for Tank/DPS/Controller/Healer (LOCKED July 2026).
    - `docs/Eldrathor_Archetype_Seeds_DRAFT.md` — archetype base numbers (approved for build 2026-09-11).
+   - `docs/Eldrathor_Item_Model_Lock.md` — seven-rung ladder (Common→Mythic), Artifact/Mythic via cores from areas 8–9 / Vaelyx, fixed types spanning rarities, weapon special names (bag only), rows + item sheet with real stats, slot icons, Train capped at roster max level (LOCKED 2026-09-16).
    - `docs/Eldrathor_Progression_Loop_Lock.md` — Milestone 1: ids + save/resume, rarity ladder, XP, equipment/empower/armor that apply, crit fix, true-idle AFK, balance gates (LOCKED 2026-09-14).
    - `docs/Eldrathor_Combat_v2_Lock.md` — resolver formulas, innates, enemy tiers, fight screen (LOCKED 2026-09-11).
 3. `docs/SESSION_LOG.md` — chronology + cross-cutting locks.
@@ -61,7 +62,7 @@ Every brief that sets a number or a rule ships with a unit test asserting it. A 
 - Doc files handed over by the Design Chat are committed verbatim unless the brief says otherwise.
 
 ## "go" / "next" — Tony's standing command
-When Tony says **go**, **next**, **do next**, or **continue**, with nothing else: `git pull origin main` → read `docs/CLAUDE_HOME_HANDOFF.md` → take the **top active brief** → read its spec docs → implement on a branch → `npm run build` + tests → PR → **merge it yourself** (`gh pr merge --squash`) → mark the brief DONE, move it in the handoff and briefs README, append a DONE line to `docs/SESSION_LOG.md` → report: PR number, one-line summary, any `DESIGN-OPEN` placeholders. Then stop; don't start the next brief unless told **next** again or the handoff says "run through".
+When Tony says **go**, **next**, **do next**, or **continue**, with nothing else: `git pull origin main` → read `docs/CLAUDE_HOME_HANDOFF.md` → take the **top active brief** → read its spec docs → implement on a branch → `npm run build` + tests → PR → **merge it yourself** (`gh pr merge --squash`) → mark the brief DONE, move it in the handoff and briefs README, append a DONE line to `docs/SESSION_LOG.md` → report: PR number, one-line summary, any `DESIGN-OPEN` placeholders. **Branch discipline (cloud or PC):** before writing code, check `git branch -r` and open PRs for a branch named for the top brief (`feat/<brief-slug>`); if one exists, resume it rather than starting over. Commit and push WIP to that branch after every deliverable (at least every ~30 min) so a session that ends mid-brief loses nothing. If you stop before the brief is done, push, then report "PARTIAL: <what's done / what's left>" so the next **next** resumes. Then stop; don't start the next brief unless told **next** again or the handoff says "run through".
 
 ## Git workflow
 - Always `git pull` first. Clear commits. Push when done. No force-push over others.

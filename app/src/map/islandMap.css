@@ -120,13 +120,12 @@
   opacity: 0.75;
 }
 
+/* a locked pin reads as the column's own muted ink; its label keeps the cream + halo every pin has and
+   is dimmed by the .is-locked opacity above (was Veinharbor #a89c88 / #c9bfae - Town brown leaking onto
+   the Exploration column, 2026-09-16 mode-tokens brief) */
 .eld-hotspot.is-locked .eld-hotspot-pin {
-  background: #a89c88;
+  background: var(--eld-muted);
   color: #3a2e22;
-}
-
-.eld-hotspot.is-locked .eld-hotspot-lbl {
-  color: #c9bfae;
 }
 
 .eld-hotspot.is-harbor .eld-hotspot-pin {

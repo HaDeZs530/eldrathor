@@ -165,8 +165,9 @@ export default function IslandWorldMap({ areas, unlocked, onSelectArea, onHarbor
   const held = areas.filter((a) => a.id < unlocked).length;
   const total = areas.length;
 
+  // Style Bible §D: the island map is the Exploration column (parchment), pinned like Rally and the route map.
   return (
-    <div style={S.wrap}>
+    <div className="eld-mode-explore" data-mode-column="explore" style={S.wrap}>
       <div style={S.hud}>
         <div style={S.kick}>The climb begins</div>
         <div className="eld-display" style={S.title}>The Island</div>
@@ -298,20 +299,20 @@ const S = {
     fontSize: 9,
     letterSpacing: '0.28em',
     textTransform: 'uppercase',
-    color: 'var(--eld-muted, #8aa09a)',
-    fontFamily: 'var(--eld-font-display, Cinzel, Georgia, serif)',
+    color: 'var(--eld-muted)',
+    fontFamily: 'var(--eld-font-display)',
   },
   title: {
     fontSize: 18,
     fontWeight: 700,
     letterSpacing: '0.14em',
     marginTop: 3,
-    color: 'var(--eld-text, #e4efe8)',
+    color: 'var(--eld-text)',
   },
   prog: {
     fontSize: 11,
     fontStyle: 'italic',
-    color: 'var(--eld-muted, #8aa09a)',
+    color: 'var(--eld-muted)',
     marginTop: 4,
   },
 };

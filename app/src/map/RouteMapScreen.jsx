@@ -404,8 +404,11 @@ export default function RouteMapScreen({
   }, [fogKey]);
   const markerPos = cur ? sheetPt(cur) : { x: 0, y: 0 };
 
+  // Style Bible §D: the map, its HUD and its cards are PINNED to the Exploration column. The map stays
+  // mounted under the fight / results / sanctuary overlay, which flips .eld-root to Mind View — without
+  // the pin the buried chrome re-skins underneath it.
   return (
-    <div className="eld-map-wrap" style={styles.wrap}>
+    <div className="eld-map-wrap eld-mode-explore" data-mode-column="explore" style={styles.wrap}>
       <div ref={vpRef} className="eld-route-viewport eld-route-viewport--full" onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerCancel}>
         <div ref={sheetRef} className={`eld-parchment-sheet${artReady('parchment-tile') ? ' has-tile' : ''}`} style={{ width: sheet.w, height: sheet.h, transform: sheetTransform(pan), '--eld-parchment-tile': artReady('parchment-tile') ? `url(${artSrc('parchment-tile')})` : undefined }}>
           <svg className="eld-parchment-svg" width={sheet.w} height={sheet.h} viewBox={`${-M.x} ${-M.top} ${VW} ${VH}`}>

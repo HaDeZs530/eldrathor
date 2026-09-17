@@ -7,7 +7,7 @@
 - Versioned save `eldrathor.save.v1` (localStorage now; Capacitor Preferences later) holding: roster, fielded party ids, stash, materials, Worldvein, unlocked areas, AFK assignments + timestamps, Veinbinder trees, and the **active run** (area, territory, node states, party ids, per-id HP fractions, run mods, banked run Worldvein, run log, camera focus, RNG seed + counter). Written on every state transition (debounced ≤ 1 s) and on visibility change. App close mid-run → reopen in place.
 - Menu → Settings: Export save (JSON to clipboard) / Import / Reset with confirm. Corrupt or older-version saves: migrate if possible, else quarantine + fresh start with a notice.
 
-## 2. The five-rung rarity ladder (one ladder for everything)
+## 2. ~~The five-rung rarity ladder~~ — SUPERSEDED 2026-09-16 by `Eldrathor_Item_Model_Lock.md` §1 (seven rungs; Artifact/Mythic via cores; Fine → Uncommon)
 **Common · Fine · Rare · Epic · Legendary.** Used by weapons, armor and materials. ("Mythic" is retired.)
 - **Weapon drop rarity band by area tier:** 1–2 Common, 3–4 Fine, 5–6 Rare, 7–8 Epic, 9 Legendary. Roll: 70% band, 20% one up, 10% one down (floor Common, cap Legendary). Attune Vein: one-up chance becomes 40%. Rating 1–100 uniform. Rares roll +1 band; bosses +1 band with rating floor 40.
 - **Material tier** = the area's band; gathering yields tier-tagged raw, processing preserves tier, recipes exist for every tier, every tier sells at the market floor. No orphan tiers.
@@ -15,7 +15,7 @@
 ## 3. Character XP (design doc §8e — active fighting + idle training)
 - Fight XP = Σ enemies `12 × 1.5^(T−1)` (T = area tier) × 3 for rares × 8 for bosses, split evenly to all three fielded, dead included at half. (tune)
 - `xpToNext(L) = 100 × 1.35^(L−1)`. Cap 50 for now. Level applies the existing `1 + 0.05(L−1)` to HP and hit damage (Combat v2 §2).
-- **Train (AFK)** grants XP at `6 × 1.5^(Tmax−1)` per minute where Tmax = highest unlocked area, **with no catch-up cap** — training raises the ceiling, slower than fighting.
+- **Train (AFK)** grants XP at `6 × 1.5^(Tmax−1)` per minute where Tmax = highest unlocked area, **capped at the highest level in the roster** (Item Model lock §7 — restores the AFK/Town lock's catch-up intent; "no cap" was a 2026-09-14 error).
 
 ## 4. Equipment actually applies (the missing chain)
 - **Weapon:** an Adventurer equips one weapon *item* from the stash (not a free type pick). Hit damage `× (0.8 + 0.4 × rating/100) × (1 + empower/100)`. Type sets tempo/dmg/mit as before.
@@ -49,7 +49,7 @@ With Combat v2 numbers as tuned by this milestone:
 - Principle recorded: **walls are made of HP and time, not one-shots.**
 
 **DESIGN-OPEN answered:**
-- Armor recipes: Epic = "Wardplate" (8 Epic metal + 4 Epic fabric), Legendary = "Veinweave" (10 Legendary metal + 6 Legendary fabric); rating rolls 1–100 as always. Material market floor = 1 ❖ × rarity index (1–5). 
+- ~~Armor recipes Wardplate/Veinweave~~ — retracted 2026-09-16 (recipe = piece + rarity, Item Model lock §1). Market floor number stays DESIGN-OPEN. 
 - AFK rates: the prototype numbers become v1 as a named table `AFK_TUNING` (gather yield/XP per cycle, 15% Worldvein roll, Process cost 5 ❖, quality odds) — tune later via playtest, not now.
 - **AFK tab name: "Hearth."** The bench works at the hearth while the party is away. Replace "Seam" everywhere (help copy, tab, locks' working label).
 - Enemy rosters per area: Milestone 2 lock (Design Chat, next).

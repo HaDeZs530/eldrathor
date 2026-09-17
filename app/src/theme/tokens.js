@@ -87,14 +87,12 @@ export const nodeTypeMeta = {
   boss: { label: 'Boss', glyph: '♛', color: '#e0a04d' },
 };
 
-/** Infused mat quality ladder (Process RNG). */
-export const MAT_QUALITY = {
-  Common: { color: '#9fb2bd', weight: 55 },
-  Fine: { color: '#7fd6a0', weight: 25 },
-  Rare: { color: '#6fb7d6', weight: 12 },
-  Epic: { color: '#b58fe0', weight: 6 },
-  Legendary: { color: '#e0a04d', weight: 2 }, // Progression Loop Lock §2: Mythic retired, the ladder tops at Legendary
-};
+/**
+ * Rarity colours — docs/Eldrathor_Item_Model_Lock.md §1 (seven rungs, M2 lock 1).
+ * `MAT_QUALITY` is kept as the old name for the Hearth's process-odds strip; the weights live in
+ * `AFK_TUNING.qualityWeights` and the colours in `progression/items.js`.
+ */
+export { RARITY_COLOR, RARITIES } from '../data.js';
 
 export const GATHER_FAMILIES = [
   { id: 'wood', label: 'Wood', glyph: '🌲' },

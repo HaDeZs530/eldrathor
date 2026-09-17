@@ -109,3 +109,143 @@ export function modeColumn(expeditionMode, hubSkin) {
   return MODE_FOR_SKIN[hubSkin] || 'veinharbor';
 }
 export const MODE_COLUMNS = ['veinharbor', 'explore', 'mind'];
+
+/**
+ * §A — the FULL `--eld-*` token set every mode stylesheet must define (brief 2026-09-16, mode tokens).
+ * Nothing falls back: `components/ui/ui.css` reads these with NO fallback value, so a column that
+ * forgets a token renders visibly unset instead of quietly inheriting Veinharbor brown. The three
+ * mode blocks are mutually exclusive and exhaustive over (expedition mode × hub skin):
+ *   theme/world.css   `.eld-root.mode-world:not(.hub-mountain)`  → veinharbor
+ *   theme/explore.css `.eld-root.hub-mountain:not(.mode-mind)`   → explore
+ *   theme/mind.css    `.eld-root.mode-mind`                      → mind
+ * `modeTokens.test.js` resolves the real cascade and asserts every column against this table.
+ */
+export const MODE_TOKENS = {
+  veinharbor: {
+    '--eld-bg': MODES.veinharbor.bg,
+    '--eld-bg-mid': '#0e0d0b',
+    '--eld-panel': MODES.veinharbor.panel,
+    '--eld-card': '#191613',
+    '--eld-border': MODES.veinharbor.border,
+    '--eld-border-inner': MODES.veinharbor.borderInner,
+    '--eld-panel-shadow': `inset 0 0 0 1px ${MODES.veinharbor.borderInner}`,
+    '--eld-text': MODES.veinharbor.body,
+    '--eld-display': MODES.veinharbor.display,
+    '--eld-muted': MODES.veinharbor.subtitle,
+    '--eld-accent': MODES.veinharbor.accent,
+    '--eld-accent-glow': 'rgba(232, 196, 106, 0.25)',
+    '--eld-gold': '#e8c46a',
+    '--eld-mythros': '#2cabf8',
+    '--eld-good': '#20a95e',
+    '--eld-danger': '#e5484d',
+    '--eld-header-bg': 'transparent',
+    '--eld-btn-bg': MODES.veinharbor.button.bg,
+    '--eld-btn-text': MODES.veinharbor.button.text,
+    '--eld-btn-border': MODES.veinharbor.border,
+    '--eld-btn-shadow': 'none',
+    '--eld-btn-primary-bg': MODES.veinharbor.accent,
+    '--eld-btn-primary-text': '#1a1206',
+    '--eld-btn-ghost-border': MODES.veinharbor.border,
+    '--eld-btn-ghost-text': MODES.veinharbor.body,
+    '--eld-bar-track': 'rgba(0, 0, 0, 0.45)',
+    '--eld-bar-border': 'rgba(255, 255, 255, 0.12)',
+    '--eld-tabbar-bg': FRAME.tabBarBg,
+    '--eld-tab-active': FRAME.tabActive,
+    '--eld-tab-inactive': MODES.veinharbor.subtitle,
+    '--eld-font-display': FONTS.display,
+    '--eld-font-body': FONTS.body,
+    '--eld-radius': `${MODES.veinharbor.radiusPx}px`,
+    '--eld-shadow': 'none', // Veinharbor is FLAT — no drop shadows
+    '--eld-art-ph-bg': MODES.veinharbor.panel,
+    '--eld-art-ph-line': MODES.veinharbor.border,
+    '--eld-art-ph-text': MODES.veinharbor.subtitle,
+  },
+  explore: {
+    '--eld-bg': MODES.explore.bg,
+    '--eld-bg-mid': MODES.explore.bg,
+    '--eld-panel': MODES.explore.panel,
+    '--eld-card': MODES.explore.panel,
+    '--eld-border': MODES.explore.border,
+    '--eld-border-inner': 'transparent',
+    '--eld-panel-shadow': 'none',
+    '--eld-text': MODES.explore.body,
+    '--eld-display': MODES.explore.display,
+    '--eld-muted': '#6f5d48',
+    '--eld-accent': MODES.explore.accent,
+    '--eld-accent-glow': 'rgba(52, 93, 102, 0.25)',
+    '--eld-gold': MODES.explore.gold,
+    '--eld-mythros': '#2cabf8',
+    '--eld-good': '#20a95e',
+    '--eld-danger': '#e5484d',
+    '--eld-header-bg': MODES.explore.bg,
+    '--eld-btn-bg': MODES.explore.panel,
+    '--eld-btn-text': MODES.explore.display,
+    '--eld-btn-border': MODES.explore.border,
+    '--eld-btn-shadow': 'none',
+    '--eld-btn-primary-bg': MODES.explore.button.primaryBg,
+    '--eld-btn-primary-text': MODES.explore.button.primaryText,
+    '--eld-btn-ghost-border': MODES.explore.button.secondaryOutline,
+    '--eld-btn-ghost-text': MODES.explore.body,
+    '--eld-bar-track': 'rgba(43, 33, 24, 0.25)',
+    '--eld-bar-border': MODES.explore.border,
+    '--eld-tabbar-bg': FRAME.tabBarBg,
+    '--eld-tab-active': FRAME.tabActive,
+    '--eld-tab-inactive': '#a89c88',
+    '--eld-font-display': FONTS.display,
+    '--eld-font-body': FONTS.body,
+    '--eld-radius': `${MODES.explore.radiusPx}px`,
+    '--eld-shadow': 'none',
+    '--eld-art-ph-bg': MODES.explore.panel,
+    '--eld-art-ph-line': MODES.explore.border,
+    '--eld-art-ph-text': '#6f5d48',
+  },
+  mind: {
+    '--eld-bg': MODES.mind.bgTop,
+    '--eld-bg-mid': MODES.mind.bgBottom,
+    '--eld-panel': MODES.mind.panel,
+    '--eld-card': MODES.mind.card,
+    '--eld-border': MODES.mind.border,
+    '--eld-border-inner': 'transparent',
+    '--eld-panel-shadow': '0 0 6px rgba(44, 171, 248, 0.25)',
+    '--eld-text': MODES.mind.body,
+    '--eld-display': MODES.mind.display,
+    '--eld-muted': '#7f97b0',
+    '--eld-accent': MODES.mind.mythros,
+    '--eld-accent-glow': 'rgba(44, 171, 248, 0.45)',
+    '--eld-gold': '#e8c46a',
+    '--eld-mythros': MODES.mind.mythros,
+    '--eld-good': '#20a95e',
+    '--eld-danger': MODES.mind.damage,
+    '--eld-header-bg': 'transparent',
+    '--eld-btn-bg': MODES.mind.button.bg,
+    '--eld-btn-text': MODES.mind.display,
+    '--eld-btn-border': MODES.mind.button.outline,
+    '--eld-btn-shadow': '0 0 6px rgba(44, 171, 248, 0.25)',
+    '--eld-btn-primary-bg': MODES.mind.mythros,
+    '--eld-btn-primary-text': '#06121f',
+    '--eld-btn-ghost-border': MODES.mind.button.outline,
+    '--eld-btn-ghost-text': MODES.mind.body,
+    '--eld-bar-track': '#0a1522',
+    '--eld-bar-border': '#2b4a6e',
+    '--eld-tabbar-bg': FRAME.tabBarBg,
+    '--eld-tab-active': FRAME.tabActive,
+    '--eld-tab-inactive': '#7f97b0',
+    '--eld-font-display': FONTS.display,
+    '--eld-font-body': FONTS.body,
+    '--eld-radius': `${MODES.mind.radiusPx}px`,
+    '--eld-shadow': '0 0 6px rgba(44, 171, 248, 0.25)', // Mind View is the ONLY mode with glow
+    '--eld-art-ph-bg': MODES.mind.panel,
+    '--eld-art-ph-line': MODES.mind.border,
+    '--eld-art-ph-text': '#7f97b0',
+  },
+};
+
+/** Every token name a mode stylesheet must define (the three columns are asserted to agree on this list). */
+export const MODE_TOKEN_NAMES = Object.keys(MODE_TOKENS.veinharbor);
+
+/** The CSS selector that carries each column's token block, in ThemeProvider link order. */
+export const MODE_SELECTOR = {
+  veinharbor: '.eld-root.mode-world:not(.hub-mountain)',
+  explore: '.eld-root.hub-mountain:not(.mode-mind)',
+  mind: '.eld-root.mode-mind',
+};

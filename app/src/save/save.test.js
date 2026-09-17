@@ -49,13 +49,14 @@ test('corrupt save → quarantined under a timestamped key, main key removed, fr
   const r3 = store.load(); assert.equal(r3.quarantined, true); assert.match(r3.error, /newer/);
 });
 
-test('unversioned (positional, id-less) save migrates to v1: every Adventurer, weapon and armor piece gets an id', () => {
+test('unversioned (positional, id-less) save migrates all the way: ids at v1, then the one bag at v3', () => {
   const old = JSON.stringify({ party: [{ name: 'Kessa' }], roster: [{ name: 'Nyra' }], worldvein: 80, stash: [{ name: 'Common Sword', rating: 20 }], inventory: { armor: [{ name: 'Vest' }] }, run: null });
   const d = deserialize(old);
-  assert.ok(d.ok); assert.equal(d.migratedFrom, 0);
+  assert.ok(d.ok, d.error); assert.equal(d.migratedFrom, 0);
   for (const m of [...d.state.party, ...d.state.roster]) assert.match(m.id, /^c-/);
-  assert.match(d.state.stash[0].id, /^w-/);
-  assert.match(d.state.inventory.armor[0].id, /^a-/);
+  assert.equal(d.state.stash, undefined, 'the stash is folded into the bag');
+  assert.ok(d.state.bag.some((i) => i.kind === 'weapon'));
+  assert.ok(d.state.bag.some((i) => i.kind === 'armor'));
   // ensureIds never overwrites an existing id
   const kept = ensureIds({ party: [{ id: 'c-keep' }], roster: [], stash: [] });
   assert.equal(kept.party[0].id, 'c-keep');
@@ -103,18 +104,53 @@ test('export / import: importText validates and installs the save; reset clears 
   const back = store.load(); assert.equal(back.fresh, false); assert.equal(back.state.run.currentId, 'n4');
 });
 
-test('v1 → v2 (M1b): weapon rating becomes immutable baseRating + empower 0, Mythic → Legendary, members carry xp and an equipped Common starter', () => {
+test('v1 → v3: the M1b weapon split still happens, then every item takes the one shape and lands in the bag', () => {
   const v1 = JSON.stringify({ v: 1, party: [{ id: 'c-1', name: 'Kessa', archetype: 'Bulwark', weapon: 'Sword + Shield', level: 3 }], roster: [{ id: 'c-2', name: 'Nyra', archetype: 'Adept', weapon: 'Staff', level: 1 }], worldvein: 10,
     stash: [{ id: 'w-1', name: 'Fine Bow', tier: 'Fine', weaponType: 'Bow', rating: 61 }], inventory: { raw: {}, infused: [{ family: 'wood', quality: 'Mythic', qty: 1 }], scrap: 0, armor: [{ id: 'a-1', name: 'Court-Bound Carapace', quality: 'Mythic', rating: 82 }] }, run: null });
   const d = deserialize(v1);
-  assert.ok(d.ok); assert.equal(d.migratedFrom, 1);
-  const bow = d.state.stash.find((w) => w.id === 'w-1');
-  assert.equal(bow.baseRating, 61); assert.equal(bow.empower, 0); assert.equal('rating' in bow, false);
-  assert.equal(d.state.inventory.armor[0].quality, 'Legendary'); assert.equal(d.state.inventory.infused[0].quality, 'Legendary');
+  assert.ok(d.ok, d.error); assert.equal(d.migratedFrom, 1);
+  const bow = d.state.bag.find((i) => i.id === 'w-1');
+  assert.equal(bow.kind, 'weapon'); assert.equal(bow.type, 'Bow'); assert.equal(bow.rating, 61); assert.equal(bow.empower, 0);
+  assert.equal(bow.rarity, 'Uncommon', 'Fine → Uncommon on the seven-rung ladder');
+  assert.equal(bow.tier, 1, 'legacy items land at T1 — tierMult 1.0, so no power is granted retroactively');
+  // v1→v2 folded Mythic down to Legendary; v2→v3 keeps it there (Mythic is upgrade-only now)
+  assert.equal(d.state.bag.find((i) => i.id === 'a-1').rarity, 'Legendary');
+  assert.equal(d.state.bag.find((i) => i.kind === 'material').rarity, 'Legendary');
   for (const m of [...d.state.party, ...d.state.roster]) {
     assert.equal(m.xp, 0);
-    const w = d.state.stash.find((x) => x.id === m.weaponId);
-    assert.ok(w, `${m.name} has an equipped weapon`); assert.equal(w.tier, 'Common'); assert.equal(w.weaponType, m.weapon);
+    assert.equal(m.weaponId, undefined, 'weaponId is replaced by the six-slot map');
+    const w = d.state.bag.find((x) => x.id === m.equipped.weapon);
+    assert.ok(w, `${m.name} has an equipped weapon`); assert.equal(w.rarity, 'Common'); assert.equal(w.type, m.weapon);
   }
-  assert.equal(d.state.stash.length, 3);
+  assert.equal(d.state.bag.filter((i) => i.kind === 'weapon').length, 3);
+});
+
+test('v2 → v3 (M2 lock 1): stash + armor + infused collapse into one bag, Fine → Uncommon, six-slot equip map, scrap paid out', () => {
+  const v2 = JSON.stringify({ v: 2,
+    party: [{ id: 'c-1', name: 'Kessa', archetype: 'Bulwark', weapon: 'Sword + Shield', level: 3, xp: 0, weaponId: 'w-1', armorId: 'a-1' }],
+    roster: [], worldvein: 100,
+    stash: [{ id: 'w-1', name: 'Fine Greatsword', tier: 'Fine', weaponType: 'Greatsword', baseRating: 55, empower: 12 }],
+    inventory: { raw: { wood: 2 }, infused: [{ family: 'metal', quality: 'Fine', qty: 7 }], armor: [{ id: 'a-1', name: 'Boundweave Mail', quality: 'Fine', rating: 44 }], scrap: 3 },
+    run: null });
+  const d = deserialize(v2);
+  assert.ok(d.ok, d.error); assert.equal(d.migratedFrom, 2);
+  assert.equal(d.state.stash, undefined);
+  assert.equal(d.state.inventory.armor, undefined);
+  assert.equal(d.state.inventory.infused, undefined);
+  assert.deepEqual(d.state.inventory.raw, { wood: 2 }, 'raw gather mats stay put');
+  assert.equal(d.state.worldvein, 106, 'leftover scrap pays out at 2 ❖ each — there is no Scrap action now');
+
+  const w = d.state.bag.find((i) => i.id === 'w-1');
+  assert.deepEqual(
+    { kind: w.kind, type: w.type, tier: w.tier, rarity: w.rarity, rating: w.rating, empower: w.empower },
+    { kind: 'weapon', type: 'Greatsword', tier: 1, rarity: 'Uncommon', rating: 55, empower: 12 },
+  );
+  const a = d.state.bag.find((i) => i.id === 'a-1');
+  assert.deepEqual({ kind: a.kind, type: a.type, rarity: a.rarity, rating: a.rating }, { kind: 'armor', type: 'Cuirass', rarity: 'Uncommon', rating: 44 });
+  const m = d.state.bag.find((i) => i.kind === 'material');
+  assert.deepEqual({ type: m.type, rarity: m.rarity, qty: m.qty }, { type: 'metal', rarity: 'Uncommon', qty: 7 });
+
+  assert.deepEqual(d.state.party[0].equipped, { weapon: 'w-1', body: 'a-1' });
+  assert.equal(d.state.party[0].weaponId, undefined);
+  assert.equal(d.state.party[0].armorId, undefined);
 });

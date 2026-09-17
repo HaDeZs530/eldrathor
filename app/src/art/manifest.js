@@ -42,8 +42,12 @@ export function enemySlug(name) {
 
 const entry = (name, w, h, { transparent = false, kind, label, note } = {}) => ({ name, file: `${name}.png`, src: `${ART_BASE}${name}.png`, w, h, transparent, kind, label: label || name, note });
 
+import { EQUIP_SLOTS } from '../progression/items.js';
+
+export { EQUIP_SLOTS };
 export const NODE_KINDS = ['unknown', 'fight', 'crystal', 'sanctuary', 'rare', 'boss', 'cleared', 'named'];
 export const TAB_IDS = ['player', 'party', 'mountain', 'town', 'hearth'];
+
 export const PORTRAITS_PER_ARCHETYPE = 3;
 
 function build() {
@@ -69,6 +73,8 @@ function build() {
     list.push(entry(`icon-aura-${slug(inn.aura.id)}`, 96, 96, { kind: 'icon', transparent: true, label: inn.aura.name }));
   }
   for (const t of TAB_IDS) list.push(entry(`icon-tab-${t}`, 96, 96, { kind: 'icon', transparent: true, label: `tab ${t}` }));
+  // Item Model §6: six premade equip-slot icons, made once, greyed by CSS when the slot is empty
+  for (const s of EQUIP_SLOTS) list.push(entry(`icon-slot-${s}`, 96, 96, { kind: 'icon', transparent: true, label: `slot ${s}` }));
   return list;
 }
 

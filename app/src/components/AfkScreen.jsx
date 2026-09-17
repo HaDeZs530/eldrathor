@@ -1,9 +1,14 @@
 import { useState } from 'react';
 import { AREAS, ARCHETYPES } from '../data.js';
-import { GATHER_FAMILIES, MAT_QUALITY } from '../theme/tokens.js';
-import { trainXpGain, maxUnlockedTier } from '../afkRuntime.js';
-import { xpToNext, LEVEL_CAP } from '../progression/progression.js';
-import { GATHER_CYCLE_MS, PROCESS_CYCLE_MS, IDLE_CYCLE_MS, PROCESS_VEIN_COST } from '../afkRuntime.js';
+import { GATHER_FAMILIES } from '../theme/tokens.js';
+import { rosterCap, TRAIN_CAP_MESSAGE, xpToNext, LEVEL_CAP } from '../progression/progression.js';
+import { rarityIndex, RARITIES } from '../progression/items.js';
+import ItemRow from './items/ItemRow.jsx';
+import {
+  trainXpGain, maxUnlockedTier, processTier, processRarityCap, AFK_TUNING,
+  GATHER_CYCLE_MS, PROCESS_CYCLE_MS, IDLE_CYCLE_MS, PROCESS_VEIN_COST,
+} from '../afkRuntime.js';
+import './items/items.css';
 
 const SUBS = [
   { id: 'gather', label: 'Gather' },
@@ -13,7 +18,7 @@ const SUBS = [
 
 /** AFK tab — the Hearth (Progression Loop Lock §9). Accrual lives in afkRuntime; the app reconciles it. */
 export default function AfkScreen({
-  unlocked, party, roster, inventory, afk, deployedIds = [],
+  unlocked, party, roster, inventory, bag = [], afk, deployedIds = [],
   onUpdateGatherSlot, onToggleGather, onUpdateProcess, onToggleProcess, onUpdateIdle, onToggleIdle, worldvein,
 }) {
   const deployed = new Set(deployedIds);
@@ -40,7 +45,7 @@ export default function AfkScreen({
           inventory={inventory} onUpdate={onUpdateGatherSlot} onToggle={onToggleGather} />
       )}
       {sub === 'process' && (
-        <ProcessPanel process={afk.process} bench={bench} inventory={inventory} worldvein={worldvein}
+        <ProcessPanel process={afk.process} bench={bench} inventory={inventory} bag={bag} unlocked={unlocked} worldvein={worldvein}
           skillXp={afk.processSkillXp} onUpdate={onUpdateProcess} onToggle={onToggleProcess} />
       )}
       {sub === 'idle' && (
@@ -118,20 +123,25 @@ const PROCESS_RECIPES = GATHER_FAMILIES.map((f) => ({
   vein: PROCESS_VEIN_COST,
   output: `1 infused ${f.label.toLowerCase()}`,
 }));
-const QUALITY_ODDS = (() => {
-  const total = Object.values(MAT_QUALITY).reduce((n, q) => n + q.weight, 0);
-  return Object.entries(MAT_QUALITY).map(([name, q]) => `${name} ${Math.round((q.weight / total) * 100)}%`).join(' · ');
-})();
+/** Item Model §1: the rarity roll is capped by the highest unlocked area, so the odds strip is too. */
+function qualityOdds(unlocked) {
+  const cap = rarityIndex(processRarityCap(unlocked));
+  const rows = RARITIES.filter((r) => rarityIndex(r) <= cap).map((r) => [r, AFK_TUNING.qualityWeights[r] || 0]);
+  const total = rows.reduce((n, [, w]) => n + w, 0) || 1;
+  return rows.map(([r, w]) => `${r} ${Math.round((w / total) * 100)}%`).join(' · ');
+}
 
-function ProcessPanel({ process, bench, inventory, worldvein, skillXp, onUpdate, onToggle }) {
+function ProcessPanel({ process, bench, inventory, bag, unlocked, worldvein, skillXp, onUpdate, onToggle }) {
   const rawAvail = inventory.raw[process.family] || 0;
+  const tier = processTier(unlocked);
+  const materials = (bag || []).filter((i) => i.kind === 'material');
   const cost = PROCESS_VEIN_COST;
   const recipe = PROCESS_RECIPES.find((r) => r.id === process.family) || PROCESS_RECIPES[0];
   return (
     <div style={S.col}>
       <div className="eld-panel" style={S.help}>
         <div style={S.helpH}>Process — turn raw mats into infused mats</div>
-        <div>Pick a recipe below. Each cycle (~{Math.round(PROCESS_CYCLE_MS / 1000)}s) consumes the listed raw mats <em>and Worldvein</em>, and produces one infused mat with a quality roll ({QUALITY_ODDS}). Infused mats are what the Town Crafter turns into armor. {/* DESIGN-OPEN: rates, art theme */}</div>
+        <div>Pick a recipe below. Each cycle (~{Math.round(PROCESS_CYCLE_MS / 1000)}s) consumes the listed raw mats <em>and Worldvein</em>, and produces one material with a rarity roll ({qualityOdds(unlocked)}), at your highest area&apos;s band (T{tier}). Infused mats are what the Town Crafter turns into armor. {/* DESIGN-OPEN: rates, art theme */}</div>
       </div>
       <div className="eld-panel" style={{ ...S.strip, boxShadow: '0 0 18px rgba(224,120,60,0.25)' }}>
         <span>❖ {worldvein} Worldvein</span><span>Process XP {skillXp}</span><span>Raw {process.family}: {rawAvail}</span>
@@ -172,15 +182,10 @@ function ProcessPanel({ process, bench, inventory, worldvein, skillXp, onUpdate,
           disabled={!process.charKey || (rawAvail < 1 && !process.running) || (worldvein < cost && !process.running)}
           onClick={onToggle}>{process.running ? 'Stop process' : 'Start process'}</button>
       </div>
-      <div style={S.h}>Infused inventory</div>
-      <div className="eld-panel" style={S.list}>
-        {inventory.infused.length === 0 && <div style={S.dim}>No infused mats yet.</div>}
-        {inventory.infused.map((m, i) => (
-          <div key={i} style={{ ...S.mat, borderLeftColor: MAT_QUALITY[m.quality]?.color || 'var(--eld-text)' }}>
-            <span style={{ color: MAT_QUALITY[m.quality]?.color }}>{m.quality}</span>
-            <span>{m.family} ×{m.qty}</span>
-          </div>
-        ))}
+      <div style={S.h}>Materials in the bag</div>
+      <div className="eld-bag-list">
+        {materials.length === 0 && <div style={S.dim}>No materials yet.</div>}
+        {materials.map((m) => <ItemRow key={m.id} item={m} />)}
       </div>
     </div>
   );
@@ -191,11 +196,14 @@ function IdlePanel({ idle, bench, party, roster, unlocked, onUpdate, onToggle })
   const live = trainee ? [...party, ...roster].find((m) => m.id === trainee.key) : null;
   const perMin = trainXpGain(unlocked, 60000);
   const rateNote = `${perMin.toFixed(1)} XP / min at tier ${maxUnlockedTier(unlocked)} (your highest unlocked area)`;
+  // Item Model §7: Train stops at the highest level in the roster — the Mountain raises the ceiling.
+  const cap = rosterCap([...party, ...roster]);
+  const atCap = !!live && Math.max(1, live.level || 1) >= cap;
   return (
     <div style={S.col}>
       <div className="eld-panel" style={S.help}>
         <div style={S.helpH}>Train — steady XP for one Adventurer</div>
-        <div>Assign one Adventurer. They earn a flat trickle of XP every cycle (~{Math.round(IDLE_CYCLE_MS / 1000)}s), scaled by your highest unlocked area — slower than fighting, with no cap. No materials, no cost.</div>
+        <div>Assign one Adventurer. They earn a flat trickle of XP every cycle (~{Math.round(IDLE_CYCLE_MS / 1000)}s), scaled by your highest unlocked area — slower than fighting. Train only raises someone <em>up to your highest roster level</em> ({cap}); past that the Mountain is the only way up.</div>
       </div>
       <div className="eld-card" style={S.card}>
         <div style={S.row}><span style={S.h}>Training berth</span>
@@ -211,8 +219,9 @@ function IdlePanel({ idle, bench, party, roster, unlocked, onUpdate, onToggle })
         <Bar value={idle.progress} accent="#7fd6a0" />
         <div style={S.meta}>{rateNote}</div>
         {live && <div style={S.ok}>{live.name} · Lv {live.level}{live.level >= LEVEL_CAP ? ' · max' : ` · ${Math.floor(live.xp || 0)} / ${xpToNext(live.level)} XP`}</div>}
-        <button type="button" className="eld-btn" style={S.wide} disabled={!idle.charKey} onClick={onToggle}>
-          {idle.running ? 'Stop training' : 'Start training'}
+        {atCap && <div style={{ ...S.meta, color: 'var(--eld-gold)' }}>{TRAIN_CAP_MESSAGE}</div>}
+        <button type="button" className="eld-btn" style={S.wide} disabled={!idle.charKey || atCap} onClick={onToggle}>
+          {atCap ? TRAIN_CAP_MESSAGE : idle.running ? 'Stop training' : 'Start training'}
         </button>
       </div>
     </div>
@@ -240,30 +249,30 @@ function Bar({ value, accent }) {
 
 const S = {
   wrap: { flex: 1, minHeight: 0, overflowY: 'auto', padding: '12px 14px 16px', textAlign: 'left' },
-  kick: { fontSize: 'var(--mv-label, 15px)', letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--eld-muted)', fontFamily: 'var(--eld-font-display, Cinzel, Georgia, serif)' },
+  kick: { fontSize: 'var(--mv-label, 15px)', letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--eld-muted)', fontFamily: 'var(--eld-font-display)' },
   title: { fontSize: 'var(--mv-title, 26px)', fontWeight: 700, marginTop: 4 },
   sub: { fontSize: 'var(--mv-text, 18px)', color: 'var(--eld-muted)', fontStyle: 'italic', margin: '4px 0 12px', lineHeight: 1.4 },
   col: { display: 'flex', flexDirection: 'column', gap: 10 },
   note: { fontSize: 'var(--mv-label, 15px)', color: 'var(--eld-muted)', lineHeight: 1.4 },
   help: { padding: '10px 12px', fontSize: 'var(--mv-label, 15px)', color: 'var(--eld-muted)', lineHeight: 1.45 },
-  helpH: { fontSize: 'var(--mv-label, 15px)', fontWeight: 700, color: 'var(--eld-text, #cfe0e8)', marginBottom: 4, letterSpacing: '0.04em' },
+  helpH: { fontSize: 'var(--mv-label, 15px)', fontWeight: 700, color: 'var(--eld-text)', marginBottom: 4, letterSpacing: '0.04em' },
   recipeList: { display: 'flex', flexDirection: 'column', gap: 6 },
   recipe: { textAlign: 'left', padding: '8px 10px', width: '100%', color: 'inherit', fontFamily: 'inherit', cursor: 'pointer' },
   recipeName: { fontSize: 'var(--mv-text, 18px)', fontWeight: 700 },
   recipeIo: { display: 'flex', flexWrap: 'wrap', gap: '4px 10px', fontSize: 'var(--mv-label, 15px)', marginTop: 4, color: 'var(--eld-muted)' },
   strip: { display: 'flex', flexWrap: 'wrap', gap: 10, padding: '8px 10px', fontSize: 'var(--mv-label, 15px)', fontVariantNumeric: 'tabular-nums' },
-  xp: { fontSize: 'var(--mv-label, 15px)', color: 'var(--eld-accent, #5fc7e0)' },
+  xp: { fontSize: 'var(--mv-label, 15px)', color: 'var(--eld-accent)' },
   card: { padding: 12 },
   row: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
   rowWrap: { display: 'flex', gap: 6, flexWrap: 'wrap' },
-  h: { fontSize: 'var(--mv-text, 18px)', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: 'var(--eld-font-display, inherit)' },
+  h: { fontSize: 'var(--mv-text, 18px)', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: 'var(--eld-font-display)' },
   live: { fontSize: 'var(--mv-label, 15px)', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--eld-good)' },
   dim: { fontSize: 'var(--mv-label, 15px)', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--eld-muted)' },
   lbl: { fontSize: 'var(--mv-label, 15px)', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--eld-muted)', display: 'block', margin: '8px 0 4px' },
-  sel: { width: '100%', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--eld-border, #1c3a44)', color: 'inherit', borderRadius: 6, padding: '8px 10px', fontSize: 'var(--mv-text, 18px)', boxSizing: 'border-box' },
+  sel: { width: '100%', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--eld-border)', color: 'inherit', borderRadius: 6, padding: '8px 10px', fontSize: 'var(--mv-text, 18px)', boxSizing: 'border-box' },
   fam: { padding: '8px 10px', flex: '1 1 80px', minHeight: 'var(--mv-tap, 52px)' },
   meta: { fontSize: 'var(--mv-label, 15px)', color: 'var(--eld-muted)', marginTop: 6 },
-  ok: { fontSize: 'var(--mv-text, 18px)', color: 'var(--eld-accent, #5fc7e0)', marginTop: 4 },
+  ok: { fontSize: 'var(--mv-text, 18px)', color: 'var(--eld-accent)', marginTop: 4 },
   wide: { width: '100%', marginTop: 10, padding: '10px 8px', minHeight: 'var(--mv-tap, 52px)' },
   list: { padding: 10, display: 'flex', flexDirection: 'column', gap: 6 },
   mat: { display: 'flex', justifyContent: 'space-between', padding: '6px 8px', borderLeft: '3px solid', fontSize: 'var(--mv-text, 18px)', background: 'rgba(0,0,0,0.2)' },

@@ -41,10 +41,16 @@ export const TOWN_ART = {
   'town-market': { art: 'town-market', src: artEntry('town-market').src, target: TOWN_ART_TARGETS.thumb, position: '50% 50%', label: 'Market', glyph: '⚖' },
 };
 
-/** The four stacked destinations, in order. `section` is the existing Town section each one opens. */
+/**
+ * The stacked destinations, in order. `section` is the Town section each one opens.
+ * Item Model §5: **Bag** replaces the old stash list on the Harbor landing; §8 adds **Roster**.
+ * Both reuse an existing illustration until their own art lands (DESIGN-OPEN: bag / roster art).
+ */
 export const TOWN_DESTINATIONS = [
+  { id: 'bag', art: 'town-market', title: 'Bag', subtitle: 'Everything you carry', opens: { section: 'bag' } },
   { id: 'party', art: 'town-party', title: 'Party', subtitle: 'Prepare your companions', opens: { tab: 'party' } },
-  { id: 'crafter', art: 'town-crafter', title: 'Crafter', subtitle: 'Work with infused materials', opens: { section: 'crafter' } },
-  { id: 'smith', art: 'town-smith', title: 'Smith', subtitle: 'Merge and empower weapons', opens: { section: 'upgrade' } },
-  { id: 'market', art: 'town-market', title: 'Market', subtitle: 'Trade your finds', opens: { section: 'market' } },
+  { id: 'roster', art: 'town-party', title: 'Roster', subtitle: 'Recruit and manage Adventurers', opens: { section: 'roster' } },
+  { id: 'crafter', art: 'town-crafter', title: 'Crafter', subtitle: 'Craft armor from materials', opens: { section: 'crafter' } },
+  { id: 'smith', art: 'town-smith', title: 'Smith', subtitle: 'Empower and upgrade weapons', opens: { section: 'upgrade' } },
+  { id: 'market', art: 'town-market', title: 'Market', subtitle: 'Sell what you do not need', opens: { section: 'market' } },
 ];
