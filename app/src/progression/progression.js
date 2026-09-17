@@ -1,34 +1,31 @@
 /**
- * Progression formulas — docs/Eldrathor_Progression_Loop_Lock.md §2–§5 (M1b). Pure; every number
- * here is asserted by progression.test.js ("tests are the spec").
+ * Progression formulas — docs/Eldrathor_Progression_Loop_Lock.md §3–§5 (M1b), with the item model of
+ * docs/Eldrathor_Item_Model_Lock.md layered on top (M2 lock 1). Pure; every number here is asserted by
+ * progression.test.js ("tests are the spec").
+ *
+ * The ladder, the two-axis power formula, craft gating, cores and sell value moved to
+ * `progression/items.js` when the seven-rung model landed; they are re-exported here so existing
+ * imports keep working.
  */
-import { newId } from '../data.js';
+import { RARITIES, rarityIndex as itemRarityIndex, EMPOWER_MAX, clampRating, makeWeapon, weaponDamageMult as itemWeaponDamageMult, armorBonus as itemArmorBonus } from './items.js';
 
-// ---------- §2 rarity ladder ----------
-export const RARITY = ['Common', 'Fine', 'Rare', 'Epic', 'Legendary'];
-export const rarityIndex = (r) => Math.max(1, RARITY.indexOf(r) + 1); // 1–5 (unknown → 1)
+export {
+  RARITIES, RARITY_COLOR, TIER_MULT, RARITY_MULT, TIER_FOR_AREA, tierForArea, tierMult, rarityMult,
+  ratingScale, empowerScale, itemMult, makeItem, makeWeapon, makeArmor, makeCore, makeMaterial,
+  plainName, displayName, weaponAttackPower, weaponTempo, weaponMit, armorTotals, ARMOR_TYPES,
+  ARMOR_SLOTS, EQUIP_SLOTS, SLOT_LABEL, armorTypeForSlot, WEAPON_TYPES, craftCapForArea,
+  canCraftRarity, craftableRarities, CORE_TYPES, UPGRADE_STEP, upgradeStepFor, upgradeGrade,
+  upgradeCost, UPGRADE_COST, sellValue, SELL_BASE, gearScore, EMPOWER_MAX, clampRating, clampEmpower,
+  UNARMED_MULT,
+} from './items.js';
 
-/** Drop band index (0–4) by area tier: 1–2 Common, 3–4 Fine, 5–6 Rare, 7–8 Epic, 9 Legendary. */
-export function bandForTier(T) {
-  const t = Math.max(1, Math.min(9, T | 0));
-  if (t <= 2) return 0;
-  if (t <= 4) return 1;
-  if (t <= 6) return 2;
-  if (t <= 8) return 3;
-  return 4;
-}
-
-/**
- * Roll a rarity: 70 % band, 20 % one up, 10 % one down (Attune Vein: one-up becomes 40 %),
- * floored at Common and capped at Legendary. `shift` = extra bands (rare +1, boss +1).
- */
-export function rollRarity(rng, T, { attune = false, shift = 0 } = {}) {
-  const up = attune ? 0.4 : 0.2;
-  const r = rng();
-  const delta = r < up ? 1 : r < up + 0.1 ? -1 : 0;
-  const idx = Math.max(0, Math.min(RARITY.length - 1, bandForTier(T) + shift + delta));
-  return RARITY[idx];
-}
+/** The seven-rung ladder (Item Model §1). `RARITY` is kept as the old name for existing call sites. */
+export const RARITY = RARITIES;
+export const rarityIndex = itemRarityIndex;
+/** Hit-damage multiplier from the equipped weapon: tier × rarity × rating × empower (Item Model §1). */
+export const weaponDamageMult = itemWeaponDamageMult;
+/** Armor HP / mitigation for one piece; head, hands and feet give half the body values (Item Model §2). */
+export const armorBonus = itemArmorBonus;
 
 // ---------- §3 character XP ----------
 export const LEVEL_CAP = 50;
@@ -54,20 +51,38 @@ export function applyXp(member, gain) {
   if (level >= LEVEL_CAP) xp = 0;
   return { member: { ...member, level, xp }, levelsGained: level - from };
 }
-/** Train (AFK): XP per minute at the highest unlocked area tier — no catch-up cap, slower than fighting. */
+/** Train (AFK): XP per minute at the highest unlocked area tier — slower than fighting. */
 export const trainXpPerMinute = (Tmax) => 6 * Math.pow(1.5, Math.max(1, Tmax) - 1);
+/**
+ * §7 (Item Model lock, restores the AFK/Town lock intent and supersedes Progression lock §3's
+ * "no catch-up cap"): Train can raise an Adventurer only up to the HIGHEST level in the roster.
+ * The Mountain is the only way to raise the ceiling.
+ */
+export const rosterCap = (members = []) => Math.max(1, ...members.map((m) => Math.max(1, m?.level || 1)));
+export const TRAIN_CAP_MESSAGE = 'At roster cap — climb the mountain';
+/** True when Train can still give this member XP. At the cap the slot shows TRAIN_CAP_MESSAGE. */
+export const canTrain = (member, members = []) => Math.max(1, member?.level || 1) < rosterCap(members);
+/**
+ * Apply Train XP under the §7 ceiling. A long offline span is reconciled in one go, so the cap has to
+ * clamp the RESULT, not just gate the start: levelling stops exactly at `cap` with the leftover XP
+ * dropped, and `capped` tells the caller to stop the slot.
+ */
+export function applyTrainXp(member, gain, cap) {
+  const ceiling = Math.max(1, cap || 1);
+  if (Math.max(1, member?.level || 1) >= ceiling) return { member, levelsGained: 0, capped: true };
+  const r = applyXp(member, gain);
+  if (r.member.level < ceiling) return { ...r, capped: false };
+  return { member: { ...r.member, level: ceiling, xp: 0 }, levelsGained: ceiling - Math.max(1, member.level || 1), capped: true };
+}
 
-// ---------- §4 equipment ----------
-/** Hit-damage multiplier from the equipped weapon item: rating (immutable) and empower (0–100). */
-export const weaponDamageMult = (w) => (0.8 + 0.4 * Math.max(0, Math.min(100, w?.baseRating ?? w?.rating ?? 0)) / 100) * (1 + Math.max(0, Math.min(100, w?.empower || 0)) / 100);
+// ---------- §4 empowerment (the Smith bench) ----------
 /** Empowerment gain from feeding `fodder` into `target`: 2 × rarityIndex(fodder) × (same type ? 1 : 0.5) × (1 + fodderRating/200), rounded, min 1. */
 export function empowerGain(target, fodder) {
   if (!target || !fodder) return 0;
-  const same = target.weaponType === fodder.weaponType;
-  const fr = Math.max(0, Math.min(100, fodder.baseRating ?? fodder.rating ?? 0));
-  return Math.max(1, Math.round(2 * rarityIndex(fodder.tier) * (same ? 1 : 0.5) * (1 + fr / 200)));
+  const same = target.type === fodder.type;
+  const fr = clampRating(fodder.rating);
+  return Math.max(1, Math.round(2 * itemRarityIndex(fodder.rarity) * (same ? 1 : 0.5) * (1 + fr / 200)));
 }
-export const EMPOWER_MAX = 100;
 export const empowerCost = (empower) => 15 + Math.max(0, Math.min(EMPOWER_MAX, empower | 0));
 /** Preview an empowerment: gain is clipped at the cap; null when it would do nothing. */
 export function previewEmpower(target, fodder, worldvein) {
@@ -77,45 +92,34 @@ export function previewEmpower(target, fodder, worldvein) {
   const cost = empowerCost(cur);
   return { gain, cost, next: cur + gain, affordable: worldvein >= cost, useful: gain > 0 && cur < EMPOWER_MAX };
 }
-/** Body armor bonus: tier q (1–5 by rarity), rating r → +HP 25·q·(0.8+0.4r/100), +mitigation 0.02·q. */
-export function armorBonus(armor) {
-  if (!armor) return { hp: 0, mit: 0 };
-  const q = rarityIndex(armor.tier || armor.quality);
-  const r = Math.max(0, Math.min(100, armor.rating || 0));
-  return { hp: 25 * q * (0.8 + 0.4 * r / 100), mit: 0.02 * q };
-}
 export const MITIGATION_CAP = 0.6;
 
 // ---------- §5 crit ----------
 /** critMult = 1.5 + (seed − 10) × 0.05 + gemCritDamage — the gem term is ADDITIVE (a +0.5 gem on a seed-10 archetype = 2.0×). */
 export const critMult = (critDamageSeed, gemCritDamage = 0) => 1.5 + (critDamageSeed - 10) * 0.05 + (gemCritDamage || 0);
 
-// ---------- starter gear (DESIGN-OPEN: rating; the lock says "Common weapons") ----------
+// ---------- starter gear + the six-slot equip map ----------
+// DESIGN-OPEN: the starter rating; the lock only says "Common weapons".
 export const STARTER_WEAPON_RATING = 30;
-
-// ---------- weapon items ----------
-/** A stash weapon item. `baseRating` never changes after the roll; `empower` grows 0–100 at the Smith. */
-export const makeWeapon = ({ tier, weaponType, baseRating, empower = 0, starter = false }) => ({
-  id: newId('w'), name: `${tier} ${weaponType}`, tier, weaponType, baseRating: Math.max(1, Math.min(100, Math.round(baseRating))), empower, ...(starter ? { starter: true } : {}),
-});
-/** The Common weapon every Adventurer starts with (the lock's "fresh party, Common weapons"). */
-export const starterWeapon = (weaponType) => makeWeapon({ tier: 'Common', weaponType, baseRating: STARTER_WEAPON_RATING, starter: true });
+/** The T1 Common weapon every Adventurer starts with (the lock's "fresh party, Common weapons"). */
+export const starterWeapon = (type) => makeWeapon({ tier: 1, rarity: 'Common', type, rating: STARTER_WEAPON_RATING, starter: true });
 /**
  * Give every member without an equipped weapon a starter of their archetype's default type.
- * Idempotent. @returns {{members:object[], stash:object[]}}
+ * Idempotent. @returns {{members:object[], bag:object[]}}
  */
-export function withStarterWeapons(members, stash = []) {
-  const out = [...stash];
+export function withStarterWeapons(members, bag = []) {
+  const out = [...bag];
   const next = members.map((m) => {
-    if (m.weaponId && out.some((w) => w.id === m.weaponId)) return m;
+    const eq = m.equipped || {};
+    if (eq.weapon && out.some((w) => w.id === eq.weapon)) return m;
     const w = starterWeapon(m.weapon || 'Sword + Shield');
     out.push(w);
-    return { ...m, weaponId: w.id, xp: m.xp || 0 };
+    return { ...m, equipped: { ...eq, weapon: w.id }, xp: m.xp || 0 };
   });
-  return { members: next, stash: out };
+  return { members: next, bag: out };
 }
-/** Ids of every item currently equipped by anyone (weapons and armor). */
-export const equippedIds = (...lists) => new Set(lists.flat().flatMap((m) => [m?.weaponId, m?.armorId]).filter(Boolean));
+/** Ids of every item currently equipped by anyone, across all six slots (§6). */
+export const equippedIds = (...lists) => new Set(lists.flat().flatMap((m) => Object.values(m?.equipped || {})).filter(Boolean));
 /** §7 name rule: 1–16 characters after trimming. */
 export const validName = (s) => { const t = String(s ?? '').trim(); return t.length >= 1 && t.length <= 16; };
 export const NAME_MAX = 16;

@@ -1,0 +1,123 @@
+/* Item rows, the item sheet and the character-sheet slots — docs/Eldrathor_Item_Model_Lock.md §3 / §6.
+   Colours come from the mode tokens; the rarity colour arrives per row as `--rarity`. */
+
+.eld-item-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: var(--mv-tap, 52px);
+  padding: 8px 10px;
+  text-align: left;
+  background: var(--eld-card);
+  border: 1px solid var(--eld-border);
+  border-left: 3px solid var(--rarity, var(--eld-border));
+  border-radius: var(--eld-radius);
+  color: var(--eld-text);
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.eld-item-row:disabled { opacity: 0.45; cursor: default; }
+.eld-item-row.is-selected { box-shadow: inset 0 0 0 1px var(--eld-gold); }
+
+.eld-item-main { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
+
+.eld-item-name {
+  font-family: var(--eld-font-display);
+  font-weight: 700;
+  font-size: var(--mv-text, 18px);
+  line-height: 1.15;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.eld-item-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; }
+
+.eld-item-chip {
+  font-size: var(--mv-label, 15px);
+  line-height: 1;
+  padding: 2px 6px;
+  border: 1px solid var(--eld-border);
+  border-radius: 4px;
+  color: var(--eld-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.eld-item-chip.is-empower { color: var(--eld-gold); border-color: var(--eld-gold); }
+.eld-item-qty { font-size: var(--mv-label, 15px); color: var(--eld-muted); font-variant-numeric: tabular-nums; }
+.eld-item-note { font-size: var(--mv-label, 15px); color: var(--eld-muted); }
+
+.eld-item-equipped {
+  flex-shrink: 0;
+  font-size: var(--mv-label, 15px);
+  color: var(--eld-gold);
+  white-space: nowrap;
+}
+
+/* Mythic shimmers (§1) */
+.eld-item-row.is-mythic .eld-item-name {
+  background: linear-gradient(90deg, #ff5c8a, #ffd1e0, #ff5c8a);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: eld-mythic-shimmer 3s linear infinite;
+}
+
+@keyframes eld-mythic-shimmer { to { background-position: -200% 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .eld-item-row.is-mythic .eld-item-name { animation: none; }
+}
+
+/* ---------- item sheet (§3) ---------- */
+.eld-item-sheet-head { margin-bottom: 10px; }
+.eld-item-sheet-special { font-family: var(--eld-font-display); font-weight: 700; font-size: var(--mv-title, 26px); line-height: 1.1; }
+.eld-item-sheet-plain { font-size: var(--mv-label, 15px); color: var(--eld-muted); margin-top: 2px; }
+
+.eld-item-stats { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.eld-item-stat { display: flex; justify-content: space-between; gap: 10px; font-size: var(--mv-text, 18px); }
+.eld-item-stat-k { color: var(--eld-muted); }
+.eld-item-stat-v { font-variant-numeric: tabular-nums; font-weight: 700; }
+.eld-item-stat-v .is-up { color: var(--eld-good); }
+.eld-item-stat-v .is-down { color: var(--eld-danger); }
+.eld-item-empty { font-size: var(--mv-label, 15px); color: var(--eld-muted); font-style: italic; }
+
+.eld-item-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.eld-item-actions .eld-btn { width: 100%; min-height: var(--mv-tap, 52px); }
+
+/* ---------- bag (§5) ---------- */
+.eld-bag { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; text-align: left; }
+.eld-bag-controls { display: flex; flex-direction: column; gap: 6px; position: sticky; top: 0; z-index: 2; background: var(--eld-bg); padding-bottom: 4px; }
+.eld-bag-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.eld-bag-chip {
+  padding: 6px 10px; min-height: 36px; font-size: var(--mv-label, 15px);
+  border: 1px solid var(--eld-border); border-radius: var(--eld-radius);
+  background: transparent; color: var(--eld-muted); cursor: pointer; font-family: inherit;
+}
+.eld-bag-chip.is-on { color: var(--eld-gold); border-color: var(--eld-gold); }
+.eld-bag-list { display: flex; flex-direction: column; gap: 6px; }
+.eld-bag-empty { padding: 16px 0; font-style: italic; color: var(--eld-muted); font-size: var(--mv-text, 18px); }
+.eld-bag-bulk { display: flex; gap: 8px; align-items: center; }
+.eld-bag-bulk .eld-btn { flex: 1; }
+
+/* ---------- character sheet slots (§6) ---------- */
+.eld-slot-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.eld-slot {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 8px 4px; min-height: 96px;
+  background: var(--eld-card);
+  border: 1px solid var(--eld-border);
+  border-top: 3px solid var(--rarity, var(--eld-border));
+  border-radius: var(--eld-radius);
+  color: var(--eld-text); font-family: inherit; cursor: pointer;
+}
+.eld-slot.is-empty { opacity: 0.55; border-top-color: var(--eld-border); }
+.eld-slot.is-locked { opacity: 0.45; cursor: not-allowed; }
+.eld-slot-icon { width: 40px; height: 40px; }
+.eld-slot-icon .eld-art { width: 40px; height: 40px; background: transparent; }
+.eld-slot-label { font-size: var(--mv-label, 15px); font-family: var(--eld-font-display); letter-spacing: 0.04em; color: var(--eld-muted); }
+.eld-slot-rating { font-size: var(--mv-label, 15px); font-weight: 700; font-variant-numeric: tabular-nums; color: var(--rarity, var(--eld-text)); }
+.eld-slot-empty-note { font-size: 12px; color: var(--eld-muted); text-align: center; line-height: 1.2; }

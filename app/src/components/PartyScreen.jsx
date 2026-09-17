@@ -1,8 +1,10 @@
 import { useState } from 'react';
-import { newCharId, ARCHETYPES, STATS, STAT_LABELS, ARCHETYPE_SEEDS, TIER_COLOR } from '../data.js';
+import { newCharId, ARCHETYPES, STATS, STAT_LABELS, ARCHETYPE_SEEDS } from '../data.js';
 import { starterWeapon, validName, NAME_MAX, equippedIds as equippedOf } from '../progression/progression.js';
-import { MAT_QUALITY } from '../theme/tokens.js';
-import GearPaperdoll from './GearPaperdoll.jsx';
+import { EQUIP_SLOTS, SLOT_LABEL } from '../progression/items.js';
+import SlotGrid from './items/SlotGrid.jsx';
+import ItemSheet from './items/ItemSheet.jsx';
+import BagScreen from './BagScreen.jsx';
 import { deriveDisplay, equip } from '../combat/derive.js';
 import { INNATES } from '../combat/simulate.js';
 
@@ -19,7 +21,7 @@ const CLASS_GLYPH = {
  * Top: party-of-3 list. Below: extra roster + Create character.
  * Tap member → detail (stats top, purchasable upgrades below) — same shape as Player.
  */
-export default function PartyScreen({ party, setParty, roster, setRoster, locked = false, stash = [], setStash, armor = [], equipped }) {
+export default function PartyScreen({ party, setParty, roster, setRoster, locked = false, bag = [], setBag, setWorldvein, equipped, onEmpower }) {
   const taken = equipped || equippedOf(party, roster);
   const [detail, setDetail] = useState(null); // { source: 'party'|'roster', index }
   const [creating, setCreating] = useState(false);
@@ -31,8 +33,8 @@ export default function PartyScreen({ party, setParty, roster, setRoster, locked
         onCreate={(n) => {
           // M1b: a recruit starts with an equipped Common weapon of their class default (DESIGN-OPEN: recruit gear)
           const w = starterWeapon(n.weapon);
-          if (setStash) setStash((st) => [...st, w]);
-          setRoster((r) => [...r, { ...n, id: newCharId(), xp: 0, weaponId: w.id }]);
+          if (setBag) setBag((b) => [...b, w]);
+          setRoster((r) => [...r, { ...n, id: newCharId(), xp: 0, equipped: { weapon: w.id } }]);
           setCreating(false);
         }}
       />
@@ -49,8 +51,10 @@ export default function PartyScreen({ party, setParty, roster, setRoster, locked
       <MemberDetail
         key={member.id}
         member={member}
-        stash={stash}
-        armor={armor}
+        bag={bag}
+        setBag={setBag}
+        setWorldvein={setWorldvein}
+        onEmpower={onEmpower}
         taken={taken}
         locked={locked}
         onBack={() => setDetail(null)}
@@ -233,15 +237,24 @@ function MemberRow({ m, badge, onClick }) {
   );
 }
 
-function MemberDetail({ member, stash, armor, taken, locked, onBack, onChange, onPromoteToParty }) {
+/**
+ * The character sheet — docs/Eldrathor_Item_Model_Lock.md §6: header with the nine derived stats, then
+ * the six premade slots. Tap a filled slot → that item's sheet; tap an empty one → the bag filtered to
+ * the slot for this Adventurer, with Compare on every row.
+ */
+function MemberDetail({ member, bag, setBag, setWorldvein, onEmpower, taken, locked, onBack, onChange, onPromoteToParty }) {
   const a = ARCHETYPES[member.archetype];
-  const geared = equip(member, stash, armor);
+  const geared = equip(member, bag);
   const d = deriveDisplay(geared);
   const inn = INNATES[member.archetype];
   const [nameDraft, setNameDraft] = useState(member.name);
   const nameOk = validName(nameDraft);
-  const weaponItem = geared.weaponItem;
-  const armorItem = geared.armorItem;
+  const [openSlot, setOpenSlot] = useState(null); // a filled slot's item sheet
+  const [picking, setPicking] = useState(null);   // the bag, filtered to one slot
+  const eq = member.equipped || {};
+  const byId = (id) => (id ? bag.find((i) => i.id === id) || null : null);
+  const slotItems = Object.fromEntries(EQUIP_SLOTS.map((k) => [k, byId(eq[k])]));
+  const weaponItem = slotItems.weapon;
 
   // Derived combat values (combat v2 §2) — seeds × level × weapon item × armor; gems multiply later.
   const stats = [
@@ -263,20 +276,12 @@ function MemberDetail({ member, stash, armor, taken, locked, onBack, onChange, o
     { id: 'armorgem', tree: 'Gems', name: 'Armor Gems', blurb: 'Passive armor gems.' },
   ];
 
-  // Swap diff: what equipping `item` would change, versus what is equipped now.
-  const diffFor = (patch) => {
-    const n = deriveDisplay(equip({ ...member, ...patch }, stash, armor));
-    const parts = [];
-    if (n.hitDamage !== d.hitDamage) parts.push(`Hit ${d.hitDamage} → ${n.hitDamage}`);
-    if (n.maxHp !== d.maxHp) parts.push(`HP ${d.maxHp} → ${n.maxHp}`);
-    if (n.mitigation !== d.mitigation) parts.push(`Mit ${d.mitigation}% → ${n.mitigation}%`);
-    if (n.swingInterval !== d.swingInterval) parts.push(`Swing ${d.swingInterval}s → ${n.swingInterval}s`);
-    return parts.length ? parts.join(' · ') : 'No change';
-  };
-  const weaponChoices = stash.filter((w) => w.id !== member.weaponId && !taken.has(w.id));
-  const armorChoices = armor.filter((x) => x.id !== member.armorId && !taken.has(x.id));
-  const equipWeapon = (w) => onChange({ ...member, weaponId: w.id, weapon: w.weaponType });
-  const equipArmor = (x) => onChange({ ...member, armorId: x ? x.id : undefined });
+  /** Equip an item into its own slot; passing null clears the slot. Weapons also set the display type. */
+  function setSlot(slot, item) {
+    const next = { ...(member.equipped || {}) };
+    if (item) next[slot] = item.id; else delete next[slot];
+    onChange({ ...member, equipped: next, ...(slot === 'weapon' && item ? { weapon: item.type } : {}) });
+  }
 
   return (
     <div style={S.wrap}>
@@ -310,12 +315,15 @@ function MemberDetail({ member, stash, armor, taken, locked, onBack, onChange, o
         })}
       </div>
 
-      <GearPaperdoll
-        accent={a.color}
-        classGlyph={CLASS_GLYPH[member.archetype] || '♟'}
-        classLabel={member.archetype}
-        weaponLabel={weaponItem ? weaponItem.name : 'Unarmed'}
+      <div style={S.secHead}>Equipment</div>
+      <SlotGrid
+        items={slotItems}
+        locked={locked}
+        onOpen={(item, slot) => setOpenSlot({ item, slot })}
+        onPick={(slot) => setPicking(slot)}
       />
+      {locked && <div style={S.note}>Your bond is on the mountain — gear changes at Rally.</div>}
+      {!weaponItem && <div style={S.note}>Unarmed — hits at ×0.8. Tap the Weapon slot to equip one.</div>}
 
       <div style={S.editBlock}>
         <label style={S.editLbl} htmlFor="eld-member-name">Name</label>
@@ -334,58 +342,31 @@ function MemberDetail({ member, stash, armor, taken, locked, onBack, onChange, o
         {!nameOk && <div style={S.err}>A name is 1–{NAME_MAX} characters.</div>}
       </div>
 
-      <div style={S.secHead}>Weapon</div>
-      <div className="eld-card" style={{ ...S.upRow, borderColor: TIER_COLOR[weaponItem?.tier] || undefined }}>
-        {weaponItem ? (
-          <>
-            <div style={{ ...S.upName, color: TIER_COLOR[weaponItem.tier] }}>{weaponItem.name}</div>
-            <div style={S.upBlurb}>{weaponItem.tier} · rating {weaponItem.baseRating}/100 · empower +{weaponItem.empower || 0} · ×{d.weaponMult} hit</div>
-          </>
-        ) : (
-          <div style={S.upBlurb}>Unarmed — hits at ×0.8. Equip a weapon from the stash.</div>
-        )}
-      </div>
-      {locked && <div style={S.note}>Your bond is on the mountain — gear changes at Rally.</div>}
-      {!locked && (
-        <div style={S.rosterList}>
-          {weaponChoices.length === 0 && <div style={S.note}>No other weapons in the stash. Weapons drop on the Mountain.</div>}
-          {weaponChoices.map((w) => (
-            <button key={w.id} type="button" className="eld-card" style={{ ...S.pick, borderColor: TIER_COLOR[w.tier] || undefined }} onClick={() => equipWeapon(w)}>
-              <div style={S.rowTop}>
-                <span style={{ ...S.upName, color: TIER_COLOR[w.tier] }}>{w.name}</span>
-                <span style={S.cost}>{w.baseRating}/100{w.empower ? ` +${w.empower}` : ''}</span>
-              </div>
-              <div style={S.upBlurb}>{diffFor({ weaponId: w.id })}</div>
-              <div style={S.pickCta}>Equip</div>
-            </button>
-          ))}
-        </div>
+      {openSlot && (
+        <ItemSheet
+          item={openSlot.item}
+          equippedBy={member.name}
+          onClose={() => setOpenSlot(null)}
+          onEmpower={openSlot.item.kind === 'weapon' && onEmpower ? (i) => { setOpenSlot(null); onEmpower(i); } : undefined}
+          onEquip={locked ? undefined : () => { setSlot(openSlot.slot, null); setOpenSlot(null); }}
+        />
       )}
 
-      <div style={S.secHead}>Armor · body</div>
-      <div className="eld-card" style={{ ...S.upRow, borderColor: MAT_QUALITY[armorItem?.quality]?.color || undefined }}>
-        {armorItem ? (
-          <>
-            <div style={{ ...S.upName, color: MAT_QUALITY[armorItem.quality]?.color }}>{armorItem.name}</div>
-            <div style={S.upBlurb}>{armorItem.quality} · rating {armorItem.rating}/100 · +{d.armorHp} HP · +{d.armorMit}% mitigation</div>
-            {!locked && <button type="button" className="eld-btn eld-btn-ghost" style={S.buyBtn} onClick={() => equipArmor(null)}>Unequip</button>}
-          </>
-        ) : (
-          <div style={S.upBlurb}>No armor. Armor is crafted at the Crafter in Veinharbor.</div>
-        )}
-      </div>
-      {!locked && (
-        <div style={S.rosterList}>
-          {armorChoices.map((x) => (
-            <button key={x.id} type="button" className="eld-card" style={{ ...S.pick, borderColor: MAT_QUALITY[x.quality]?.color || undefined }} onClick={() => equipArmor(x)}>
-              <div style={S.rowTop}>
-                <span style={{ ...S.upName, color: MAT_QUALITY[x.quality]?.color }}>{x.name}</span>
-                <span style={S.cost}>{x.rating}/100</span>
-              </div>
-              <div style={S.upBlurb}>{diffFor({ armorId: x.id })}</div>
-              <div style={S.pickCta}>Equip</div>
-            </button>
-          ))}
+      {picking && (
+        <div style={S.pickerOverlay}>
+          <BagScreen
+            bag={bag}
+            setBag={setBag}
+            equipped={taken}
+            setWorldvein={setWorldvein}
+            slotFilter={picking}
+            compareTo={slotItems[picking]}
+            compareWith={member.name}
+            title={`${SLOT_LABEL[picking]} for ${member.name}`}
+            emptyNote={picking === 'weapon' ? 'No spare weapons. Weapons drop on the Mountain.' : 'No spare armor. Armor is crafted at the Crafter.'}
+            onBack={() => setPicking(null)}
+            onEquip={(item) => { setSlot(picking, item); setPicking(null); }}
+          />
         </div>
       )}
 
@@ -414,6 +395,8 @@ function MemberDetail({ member, stash, armor, taken, locked, onBack, onChange, o
 }
 
 const S = {
+  // the slot picker covers the sheet while it is open (§6: "the bag filtered to that slot")
+  pickerOverlay: { position: 'absolute', inset: 0, zIndex: 30, display: 'flex', flexDirection: 'column', background: 'var(--eld-bg)' },
   wrap: {
     flex: 1,
     minHeight: 0,

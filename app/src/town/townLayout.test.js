@@ -32,10 +32,9 @@ test('art slots: hero 1560×500 and four 240×184 rows from the manifest, all wi
   }
 });
 
-test('four stacked destinations in order — Party opens the Party tab, the rest open existing Town sections', () => {
-  assert.deepEqual(TOWN_DESTINATIONS.map((d) => d.title), ['Party', 'Crafter', 'Smith', 'Market']);
-  assert.deepEqual(TOWN_DESTINATIONS.map((d) => d.subtitle), ['Prepare your companions', 'Work with infused materials', 'Merge and empower weapons', 'Trade your finds']);
-  assert.deepEqual(TOWN_DESTINATIONS[0].opens, { tab: 'party' });
-  assert.deepEqual(TOWN_DESTINATIONS.slice(1).map((d) => d.opens.section), ['crafter', 'upgrade', 'market']);
+test('the stacked destinations, in order — Bag first (Item Model §5, replacing the stash list), Party opens the Party tab, the rest open Town sections', () => {
+  assert.deepEqual(TOWN_DESTINATIONS.map((d) => d.title), ['Bag', 'Party', 'Roster', 'Crafter', 'Smith', 'Market']);
+  assert.deepEqual(TOWN_DESTINATIONS.find((d) => d.id === 'party').opens, { tab: 'party' });
+  assert.deepEqual(TOWN_DESTINATIONS.filter((d) => d.opens.section).map((d) => d.opens.section), ['bag', 'roster', 'crafter', 'upgrade', 'market']);
   for (const d of TOWN_DESTINATIONS) assert.ok(TOWN_ART[d.art], `${d.id} has an art slot`);
 });

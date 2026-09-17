@@ -11,8 +11,9 @@
 import { mulberry32 } from '../combat/simulate.js';
 import { newId } from '../data.js';
 import { withStarterWeapons } from '../progression/progression.js';
+import { makeItem, RARITIES } from '../progression/items.js';
 
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 export const SAVE_KEY = 'eldrathor.save.v1';
 export const QUARANTINE_PREFIX = 'eldrathor.save.quarantine.';
 export const SAVE_DEBOUNCE_MS = 1000;
@@ -27,6 +28,7 @@ export function ensureIds(state) {
   s.party = idList(s.party, 'c');
   s.roster = idList(s.roster, 'c');
   s.stash = idList(s.stash, 'w');
+  s.bag = idList(s.bag, 'i');
   if (isObj(s.inventory)) s.inventory = { ...s.inventory, armor: idList(s.inventory.armor, 'a') };
   if (isObj(s.run)) {
     s.run = { ...s.run, runParty: idList(s.run.runParty, 'c') };
@@ -53,20 +55,99 @@ export function migrateV1toV2(state) {
     if (Array.isArray(s.inventory.infused)) s.inventory.infused = s.inventory.infused.map((m) => (isObj(m) ? { ...m, quality: legendary(m.quality) } : m));
   }
   const party = (s.party || []).map(memberV2); const roster = (s.roster || []).map(memberV2);
+  // `withStarterWeapons` speaks the v3 shape (one bag, a six-slot `equipped` map); v2→v3 merges the
+  // stash into the bag and folds `weaponId` in, so writing the starters back to `stash` is correct here.
   const geared = withStarterWeapons([...party, ...roster], s.stash);
-  s.party = geared.members.slice(0, party.length); s.roster = geared.members.slice(party.length); s.stash = geared.stash;
+  s.party = geared.members.slice(0, party.length); s.roster = geared.members.slice(party.length); s.stash = geared.bag;
   if (isObj(s.run)) {
-    const rp = Array.isArray(s.run.runParty) ? s.run.runParty.map((m) => { const live = geared.members.find((x) => x.id === m?.id); return live ? { ...memberV2(m), weaponId: live.weaponId, armorId: live.armorId } : memberV2(m); }) : s.run.runParty;
+    const rp = Array.isArray(s.run.runParty) ? s.run.runParty.map((m) => { const live = geared.members.find((x) => x.id === m?.id); return live ? { ...memberV2(m), equipped: { ...(m?.equipped || {}), ...(live.equipped || {}) } } : memberV2(m); }) : s.run.runParty;
     s.run = { ...s.run, runParty: rp };
     if (isObj(s.run.fight) && Array.isArray(s.run.fight.rewards?.gears)) s.run.fight = { ...s.run.fight, rewards: { ...s.run.fight.rewards, gears: s.run.fight.rewards.gears.map(weaponV2) } };
   }
   return JSON.parse(JSON.stringify(s)); // drop the `rating: undefined` keys
 }
 
+/**
+ * v2 → v3 (M2 lock 1, docs/Eldrathor_Item_Model_Lock.md). The five-rung ladder becomes seven
+ * (`Fine` → `Uncommon`), every item takes the one shape `{id, kind, type, tier, rarity, rating,
+ * empower, name}`, and the separate stash / armor / infused lists collapse into ONE `bag` (§5).
+ * Adventurers carry the six-slot `equipped` map (§6) instead of `weaponId` / `armorId`.
+ *
+ * TIER on migrated items: every legacy item lands at **T1**. Old items carried no tier, and T1's
+ * multiplier is 1.0, so a migrated item keeps exactly the power it had — the tier axis starts earning
+ * from the next drop rather than retroactively inflating a save. (Rarity now multiplies, so a legacy
+ * Legendary gains its ×1.45 rarity step; that is the ladder itself, not a tier grant.)
+ *
+ * `scrap` has no source now that the item sheet has no Scrap action (§3), so any left over is paid
+ * out at the market's old 2 ❖ per unit and the field is dropped.
+ */
+export const LEGACY_RARITY = { Fine: 'Uncommon' };
+export const rarityV3 = (q) => { const r = LEGACY_RARITY[q] || q; return RARITIES.includes(r) ? r : 'Common'; };
+export const LEGACY_TIER = 1;
+export const SCRAP_PAYOUT = 2;
+
+const weaponV3 = (w) => (isObj(w) ? makeItem({
+  id: w.id, kind: 'weapon', type: w.type || w.weaponType || 'Sword + Shield', tier: w.tier && Number.isInteger(w.tier) ? w.tier : LEGACY_TIER,
+  rarity: rarityV3(typeof w.tier === 'string' ? w.tier : w.rarity), rating: w.rating ?? w.baseRating ?? 1, empower: w.empower || 0,
+  name: typeof w.name === 'string' && !/^(Common|Fine|Uncommon|Rare|Epic|Legendary) /.test(w.name) ? w.name : undefined,
+  ...(w.starter ? { starter: true } : {}),
+}) : w);
+const armorV3 = (a) => (isObj(a) ? makeItem({
+  id: a.id, kind: 'armor', type: a.type || 'Cuirass', tier: Number.isInteger(a.tier) ? a.tier : LEGACY_TIER,
+  rarity: rarityV3(a.rarity || a.quality || a.tier), rating: a.rating ?? 1,
+}) : a);
+const materialV3 = (m) => (isObj(m) ? makeItem({
+  kind: 'material', type: m.type || m.family || 'metal', tier: Number.isInteger(m.tier) ? m.tier : LEGACY_TIER,
+  rarity: rarityV3(m.rarity || m.quality), rating: 1, qty: Math.max(1, m.qty || 1),
+}) : m);
+
+/** `weaponId` / `armorId` → the six-slot `equipped` map; an existing map is kept. */
+const memberV3 = (m) => {
+  if (!isObj(m)) return m;
+  const { weaponId, armorId, ...rest } = m;
+  const equipped = { ...(m.equipped || {}) };
+  if (weaponId && !equipped.weapon) equipped.weapon = weaponId;
+  if (armorId && !equipped.body) equipped.body = armorId;
+  return { ...rest, equipped };
+};
+
+export function migrateV2toV3(state) {
+  if (!isObj(state) || !Array.isArray(state.party) || !Array.isArray(state.roster)) return state;
+  const s = { ...state };
+  const inv = isObj(s.inventory) ? s.inventory : {};
+  const bag = [
+    ...(Array.isArray(s.stash) ? s.stash : []).map(weaponV3),
+    ...(Array.isArray(inv.armor) ? inv.armor : []).map(armorV3),
+    ...(Array.isArray(inv.infused) ? inv.infused : []).map(materialV3),
+    ...(Array.isArray(s.bag) ? s.bag : []),
+  ];
+  s.bag = bag;
+  delete s.stash;
+  const scrap = Math.max(0, inv.scrap || 0);
+  if (scrap) s.worldvein = (s.worldvein || 0) + scrap * SCRAP_PAYOUT;
+  s.inventory = { raw: isObj(inv.raw) ? { ...inv.raw } : { wood: 0, metal: 0, hunt: 0 } };
+
+  const party = (s.party || []).map(memberV3); const roster = (s.roster || []).map(memberV3);
+  const geared = withStarterWeapons([...party, ...roster], s.bag);
+  s.party = geared.members.slice(0, party.length); s.roster = geared.members.slice(party.length); s.bag = geared.bag;
+  if (isObj(s.run)) {
+    const rp = Array.isArray(s.run.runParty) ? s.run.runParty.map((m) => {
+      const mm = memberV3(m); const live = geared.members.find((x) => x.id === mm?.id);
+      return live ? { ...mm, equipped: { ...live.equipped } } : mm;
+    }) : s.run.runParty;
+    s.run = { ...s.run, runParty: rp };
+    if (isObj(s.run.fight) && Array.isArray(s.run.fight.rewards?.gears)) {
+      s.run.fight = { ...s.run.fight, rewards: { ...s.run.fight.rewards, gears: s.run.fight.rewards.gears.map(weaponV3) } };
+    }
+  }
+  return JSON.parse(JSON.stringify(s));
+}
+
 /** Migrations, keyed by the version they upgrade FROM. 0 = unversioned (pre-M1a positional data). */
 export const MIGRATIONS = {
   0: (s) => ensureIds(s),
   1: (s) => migrateV1toV2(s),
+  2: (s) => migrateV2toV3(s),
 };
 
 /** Minimal shape check so a truncated or foreign JSON object can't be loaded as a game. */
