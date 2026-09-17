@@ -8,12 +8,12 @@ Active coding tasks for **Claude Code**. The **Claude Design Chat** writes these
 - Filename: `YYYY-MM-DD_short-slug.md`
 - When a brief is done, mark **DONE** at the top, move it to `_archive/`, and note it in `docs/SESSION_LOG.md`.
 
-## Queue (2026-09-16)
-- `2026-09-16_mode-tokens-fix.md` — **READY (first)**
-- `2026-09-16_m2-1-item-model.md` — **READY**
-- _(empty — `sheets-inherit-mode` #55 and `tuning-pass-2` #56 are done and archived; waiting on the Design Chat's next brief)_
+## Queue (2026-09-17)
+- `2026-09-16_m2-1-item-model.md` — **READY (first)**
+- _(nothing behind it — waiting on the Design Chat's next brief)_
 
 ## Archive (`_archive/`, newest first — all DONE or superseded)
+- `2026-09-16_mode-tokens-fix.md` — DONE (#59)
 - `2026-09-15_tab-retap-resets-root.md` — DONE (#58)
 - `2026-09-14_tuning-pass-2.md` — DONE (#56)
 - `2026-09-14_sheets-inherit-mode.md` — DONE (#55)
