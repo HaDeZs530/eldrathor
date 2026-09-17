@@ -18,6 +18,7 @@
 - PR #63 / #64 — Host mode: this PC hosts the phone dev server; the scheduled task "Eldrathor dev keep-alive" (every 2 min) fast-forwards a clean `main` and restarts the server if down, so any merged PR is live on the phone in ~2 min. `npm run dev:phone:bg` / `host:register`. Rule: this Claude Code session pushes the PRs; the remote session is the backup. Return the checkout to `main` after every PR or the host stops pulling.
 - PR #61 — M2 lock 1, the item model: seven rungs + the two-axis power formula in `progression/items.js`, six equip slots, Artifact-from-any-area drops, area-gated crafting with the Smith's Core upgrade bench, the §7 Train cap, save v3 (one bag), and the Bag / item sheet / character-slot / Roster UI. 101 tests; the §8 balance gates pass with no enemy retune.
 - PR #59 — per-mode token sets, no Town fallback: `MODE_TOKENS` in `theme/styleBible.js` is the full 38-token set per column and the one source for the mode stylesheets and the §D scopes; new `theme/explore.css` (Exploration out of `hub.css`, which now defines no mode token); every `--eld-*` read with NO fallback, so a missing token fails loudly instead of going Town brown; `.eld-dest-sub`, `.eld-btn.is-active` and the island's locked pins de-browned; Island / Rally / route map pinned to `.eld-mode-explore` (the map stays Exploration under a Mind View fight overlay); `modeTokens.test.js` resolves the real cascade and asserts three distinct panel fills + three distinct Menu panels.
+- PR #59 — per-mode tokens · PR #61 — item model (M2 lock 1)
 - PR #58 — tab re-tap pops to root: Town → Harbor, Party → roster, Player / Hearth → root, Mountain → island from Rally, stays on the route map during a run.
 - PR #57 — cleaning pass (Anthony, phone): one "N art pending" pill per screen with a tap-to-list sheet instead of chip lists; quiet fight-stage placeholder; island pin labels as cream Cinzel with a halo (no boxes); enemy slug fix (Hollow Warden).
 - PR #56 — Tuning pass 2: Renewal 1 %/3 s, Mend 30 / 7 s, Guardian 8 %; boss dmg ×7 with hp raised to ×62 (fresh 0/10, L5 10/10 in ~57 s; cap test: no boss hit > 40 % of a Bulwark's HP); Seam → Hearth everywhere; `town/recipes.js` Wardplate / Veinweave with rolled ratings + floor 1 ❖ × rarity; `AFK_TUNING` table.
@@ -30,6 +31,7 @@
 - PR #49 — Veinharbor artwork live in all five Town slots (originals in `app/art-src/town/`)
 - PR #48 — Veinharbor visual pass rev 1 (ChatGPT visual spec): viewport fit (no document overflow), harbor hero + four illustrated destination rows, Back to Veinharbor, Town-scoped Cinzel/gold treatment, art slots pending (`app/public/town/`). Lock note: Town typography/chrome now diverges from the micro-pixel kit in the Dual-Mode Art Lock — Design Chat to amend.
 - PR #47 — gold ring party marker (§18): 44 px ring + bobbing pennant around the occupied node, node icon stays visible; §19 seal remnants removed for good (`isSealed`, `sealBroken`, `is-unsealed`, comments, test names)
+- PR #59 — per-mode tokens · PR #61 — item model (M2 lock 1)
 - PR #58 — tab re-tap pops to root
 - PRs #50–#54 — Milestone 1 (save/ids, progression chain, style bible chrome, true-idle AFK, CI/hygiene)
 - PR #46 — bug-fix pass 1: depth/named modifiers on normal enemies, single extraction credit, pointercancel + pointerId gestures, controls excluded from map gestures, owned theme timers, feed scroll by last event, run-party freeze (Party tab locked during a run, HP by character id), AFK one-job-per-id, one camera owner, pure updaters
@@ -46,6 +48,7 @@
 - PR #21 — route map v2
 - PR #22 — UI shell
 - PRs #23–#45 — route map v3 series (travel, states, camera, no respawns, no seal, run log)
+- PR #59 — per-mode tokens · PR #61 — item model (M2 lock 1)
 - PR #58 — tab re-tap pops to root
 - PRs #50–#54 — Milestone 1 (save/ids, progression chain, style bible chrome, true-idle AFK, CI/hygiene)
 - PR #46 — bug-fix pass 1 · #47 — ring marker + seal cleanup · #48 — Veinharbor visual pass rev 1

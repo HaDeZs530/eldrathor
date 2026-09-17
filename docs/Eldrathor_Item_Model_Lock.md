@@ -27,14 +27,19 @@
 
 **Drop weights (rares/bosses, tune):** Common 30 · Uncommon 28 · Rare 20 · Epic 12 · Legendary 7 · Artifact 3; bosses shift one step up with rating floor 40; Attune Vein doubles the top-two chances.
 
-**Power formula (both axes):** item stat = base(type) × tierMult(T) × rarityMult(R) × (0.8 + 0.4 × rating/100) × (1 + empower/100 for weapons). tierMult T1..T7 = 1.0 · 1.45 · 2.1 · 3.0 · 4.4 · 6.4 · 9.2 (tracks enemy scaling 1.45^(T−1), tune). rarityMult = Common 1.00 · Uncommon 1.08 · Rare 1.18 · Epic 1.30 · Legendary 1.45 · Artifact 1.62 · Mythic 1.82 (tune). Tier dominates, rarity refines — a T5 Common beats a T1 Artifact.
+**Three avenues of improvement (RULED 2026-09-17):** *Tier* = massive step; *Rarity* scales within a tier such that **Artifact T1 = Uncommon T2 at equal rating**; *Rating* = minor polish, 0–15%.
+- **tierMult** = 1.8^(T−1): T1 1.00 · T2 1.80 · T3 3.24 · T4 5.83 · T5 10.5 · T6 18.9 · T7 34.0.
+- **rarityMult** = 1.158^(rung): Common 1.00 · Uncommon 1.16 · Rare 1.34 · Epic 1.55 · Legendary 1.80 · Artifact 2.08 · Mythic 2.41. Four rungs = one tier, so a Legendary T1 equals a Common T2.
+- **ratingScale** = `1 + 0.15 × (rating − 1) / 99` (rating 1 = base, 100 = +15%).
+- **empowerScale** (weapons) = `1 + empower / 400` (max +25%) — empowerment lives inside the polish band; it is never a way to jump a tier. Tests: no T1 item at any rarity/rating/empower beats a T3 Common at rating 1.
+- item stat = base(type) × tierMult × rarityMult × ratingScale × empowerScale.
 
 **Materials** carry tier and rarity too; a recipe consumes the piece's tier band materials at the target rarity.
 
 ## 2. What an item is
 `{ id, kind (weapon|armor|core|material), type, tier 1–7, rarity, rating 1–100, empower 0–100, name }`
 - **Types are fixed and span every rarity.** Weapons: the 8 types. Armor: **Cuirass** (body) · **Helm** · **Gauntlets** · **Greaves**. Head/Hands/Feet give ½ the body values.
-- **Names:** armor and cores use the type name ("Rare Helm"). **Weapons carry a special name** generated at drop from a name table **per type per tier** (RULED 2026-09-16): a T1 Greatsword draws from the T1 Greatsword pool ("Gullwatch Cleaver"), a T7 from the T7 pool ("Kingsfall"), so the name signals the tier. Four names per type per tier = 224 names; Design Chat writes `data/weaponNames.js`. The special name shows **only in the bag list and the item sheet header**; everywhere else (results feed, equip slots, compare) the item is "Rare Greatsword".
+- **Names (RULED 2026-09-17):** **armor is named by tier** with one island prefix per tier — T1 **Gullwatch** · T2 **Saltcliff** · T3 **Quay** · T4 **Serpent** · T5 **Forge** · T6 **Bastion** · T7 **Worldforge** → "Saltcliff Helm". Cores use the type name. **Boss weapon drops draw from a boss-named pool** (3 per boss, e.g. "Brinewarden's Maul", "Skarra's Talon"; Design Chat writes them) instead of the tier pool. **Weapons carry a special name** generated at drop from a name table **per type per tier** (RULED 2026-09-16): a T1 Greatsword draws from the T1 Greatsword pool ("Gullwatch Cleaver"), a T7 from the T7 pool ("Kingsfall"), so the name signals the tier. Four names per type per tier = 224 names; Design Chat writes `data/weaponNames.js`. The special name shows **only in the bag list and the item sheet header**; everywhere else (results feed, equip slots, compare) the item is "Rare Greatsword".
 - **Rating is the item's gear score, 1–100.** No composite number. Empower shows as **+N**.
 
 ## 3. Presentation — the row and the sheet
@@ -57,3 +62,6 @@ One list, filter chips **All · Weapons · Armor · Cores · Materials**, sort *
 
 ## 8. Roster (unchanged scope, small)
 Recruit row in Town (three candidates, refreshed daily, first three free then a Worldvein cost — number DESIGN-OPEN), bench rows show current Hearth job, rename (1–16), dismiss with confirm (gear returns to bag). Archetype never editable.
+
+## 9. Save policy while building (RULED 2026-09-17)
+**Every brief that adds or changes a system wipes saves.** Bump `SAVE_VERSION`; on load, an older version is discarded (not migrated) and a fresh game starts, with a one-line notice "Save reset for a game update." No migrations are written during Milestones 2–3. Export/Import stays for deliberate carry-over. Migrations return when we approach TestFlight.

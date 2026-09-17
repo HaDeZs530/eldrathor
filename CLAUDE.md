@@ -52,6 +52,9 @@ Eldrathor: a UI-based iOS RPG (Vite + React now; Capacitor iOS wrap later). The 
 - Mobile-portrait-first (390×844). No new deps without a reason.
 - Theme: `app/src/theme/`. Map: `app/src/map/`.
 
+## Saves are wiped on every system change (M2–M3)
+Any brief that adds or changes a system bumps `SAVE_VERSION`; older saves are discarded on load with the notice "Save reset for a game update." No migrations until TestFlight prep. (Item Model lock §9.)
+
 ## Tests are the spec
 Every brief that sets a number or a rule ships with a unit test asserting it. A TODO test is not a test. Balance targets are enforced gates.
 
