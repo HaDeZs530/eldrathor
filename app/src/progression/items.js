@@ -5,7 +5,11 @@
  * TWO AXES on every item. **Tier** (1–7) is power and comes from the area the item dropped in;
  * **rarity** (7 rungs) is quality and refines it. Tier dominates: a T5 Common beats a T1 Artifact.
  *
- *   item stat = base(type) × tierMult(T) × rarityMult(R) × (0.8 + 0.4·rating/100) × (1 + empower/100)
+ * THREE AVENUES (RULED 2026-09-17): tier = massive step; rarity scales within a tier so that
+ * Artifact T1 = Uncommon T2 at equal rating (four rungs = one tier); rating = minor polish 0–15 %;
+ * empowerment (weapons) lives inside the polish band (+25 % max) and can never jump a tier.
+ *
+ *   item stat = base(type) × 1.8^(T−1) × 1.158^rung × (1 + 0.15·(rating−1)/99) × (1 + empower/400)
  *
  * Pure; every number here is asserted by items.test.js ("tests are the spec").
  */
@@ -29,20 +33,24 @@ export const tierForArea = (area) => TIER_FOR_AREA[Math.max(1, Math.min(10, area
 /** Areas that map to a tier — the inverse of TIER_FOR_AREA, used by the craft gate and the bag. */
 export const areasForTier = (T) => Object.keys(TIER_FOR_AREA).map(Number).filter((a) => TIER_FOR_AREA[a] === T);
 
-/** tierMult T1..T7 — tracks enemy scaling 1.45^(T−1) (lock §1, "tune"). */
-export const TIER_MULT = [1.0, 1.45, 2.1, 3.0, 4.4, 6.4, 9.2];
+/** tierMult = 1.8^(T−1): T1 1.00 · T2 1.80 · T3 3.24 · T4 5.83 · T5 10.5 · T6 18.9 · T7 34.0 (lock §1). */
+export const TIER_BASE = 1.8;
+export const TIER_MULT = [1, 2, 3, 4, 5, 6, 7].map((T) => Math.pow(TIER_BASE, T - 1));
 export const tierMult = (T) => TIER_MULT[Math.max(TIER_MIN, Math.min(TIER_MAX, T | 0)) - 1];
-/** rarityMult by rung (lock §1, "tune"). */
-export const RARITY_MULT = { Common: 1.0, Uncommon: 1.08, Rare: 1.18, Epic: 1.3, Legendary: 1.45, Artifact: 1.62, Mythic: 1.82 };
+/** rarityMult = 1.158^rung (Common rung 0): four rungs = one tier, so a Legendary T1 equals a Common T2 (lock §1). */
+export const RARITY_BASE = 1.158;
+export const RARITY_MULT = Object.fromEntries(RARITIES.map((r, i) => [r, Math.pow(RARITY_BASE, i)]));
 export const rarityMult = (r) => RARITY_MULT[r] ?? RARITY_MULT.Common;
 
 export const clampRating = (n) => Math.max(1, Math.min(100, Math.round(Number(n) || 1)));
 export const clampEmpower = (n) => Math.max(0, Math.min(EMPOWER_MAX, Math.round(Number(n) || 0)));
 export const EMPOWER_MAX = 100;
-/** The rating half of the formula: 0.8 at rating 1 → 1.2 at rating 100. */
-export const ratingScale = (rating) => 0.8 + 0.4 * clampRating(rating) / 100;
-/** Weapons only: +1 % hit per empower point. */
-export const empowerScale = (empower) => 1 + clampEmpower(empower) / 100;
+/** Rating is minor polish: 1 + 0.15 × (rating − 1) / 99 — rating 1 = base, rating 100 = +15 % (lock §1). */
+export const RATING_POLISH = 0.15;
+export const ratingScale = (rating) => 1 + RATING_POLISH * (clampRating(rating) - 1) / 99;
+/** Weapons only: empowerment lives inside the polish band — 1 + empower / 400, +25 % at +100 (lock §1). */
+export const EMPOWER_DIVISOR = 400;
+export const empowerScale = (empower) => 1 + clampEmpower(empower) / EMPOWER_DIVISOR;
 
 /**
  * The two-axis multiplier applied to an item's `base(type)` value.
@@ -94,15 +102,18 @@ const ID_PREFIX = { weapon: 'w', armor: 'a', core: 'k', material: 'm' };
 
 /** Plain name — what the item is called everywhere except the bag list and the item-sheet header (§2). */
 export const plainName = (item) => (item ? `${item.rarity} ${item.type}` : '');
-/** Display name: weapons show their special name in the bag and the sheet header; everything else is plain. */
-export const displayName = (item) => (item?.kind === 'weapon' ? item.name || plainName(item) : plainName(item));
+/** §2 (RULED 2026-09-17): armor is named by TIER — one island prefix per tier → "Saltcliff Helm". */
+export const TIER_PREFIX = { 1: 'Gullwatch', 2: 'Saltcliff', 3: 'Quay', 4: 'Serpent', 5: 'Forge', 6: 'Bastion', 7: 'Worldforge' };
+export const armorName = (tier, type) => `${TIER_PREFIX[Math.max(TIER_MIN, Math.min(TIER_MAX, tier | 0))]} ${type}`;
+/** Display name: weapons show their special name and armor its tier name in the bag and the sheet header; cores / materials are plain. */
+export const displayName = (item) => (item?.kind === 'weapon' || item?.kind === 'armor' ? item.name || plainName(item) : plainName(item));
 
 /** A weapon drop: the special name is drawn from the per-type per-tier table at roll time (§2). */
 export const makeWeapon = ({ tier, rarity, type, weaponType, rating, empower = 0, rng = Math.random, starter = false }) => {
   const t = type || weaponType || 'Sword + Shield';
   return makeItem({ kind: 'weapon', type: t, tier, rarity, rating, empower, name: weaponSpecialName(t, tier, rng), ...(starter ? { starter: true } : {}) });
 };
-export const makeArmor = ({ tier, rarity, type = 'Cuirass', rating }) => makeItem({ kind: 'armor', type, tier, rarity, rating });
+export const makeArmor = ({ tier, rarity, type = 'Cuirass', rating }) => makeItem({ kind: 'armor', type, tier, rarity, rating, name: armorName(tier, type) });
 export const makeCore = ({ tier, rarity, type }) => makeItem({ kind: 'core', type, tier, rarity, rating: 100 });
 export const makeMaterial = ({ tier, rarity, type, qty = 1 }) => makeItem({ kind: 'material', type, tier, rarity, rating: 1, qty });
 
@@ -160,7 +171,7 @@ export const upgradeStepFor = (item) => (item ? UPGRADE_STEP[item.rarity] || nul
 export function upgradeGrade(item, core) {
   const step = upgradeStepFor(item);
   if (!step || !core || core.kind !== 'core' || core.type !== step.core) return null;
-  return { ...item, rarity: step.to, name: item.kind === 'weapon' ? item.name : `${step.to} ${item.type}` };
+  return { ...item, rarity: step.to, name: item.kind === 'weapon' || item.kind === 'armor' ? item.name : `${step.to} ${item.type}` };
 }
 // DESIGN-OPEN: upgrade cost and the zone-material inputs are not in the lock — placeholder numbers.
 export const UPGRADE_COST = { Artifact: 250, Mythic: 1000 };

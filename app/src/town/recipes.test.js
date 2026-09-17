@@ -12,11 +12,11 @@ import { RARITIES, makeItem, makeCore, CORE_TYPES, upgradeGrade, ARMOR_TYPES } f
 
 const mat = (family, rarity, tier, qty) => makeItem({ kind: 'material', type: family, rarity, tier, rating: 1, qty });
 
-test('§2 four armor types span every rarity; head / hands / feet cost half the body inputs and the names are just the type', () => {
+test('§2 four armor types span every rarity; head / hands / feet cost half the body inputs and pieces are named by TIER', () => {
   assert.deepEqual(Object.keys(ARMOR_TYPES), ['Cuirass', 'Helm', 'Gauntlets', 'Greaves']);
   for (const r of RARITIES) {
     const body = armorRecipe('Cuirass', r, 3);
-    assert.equal(body.name, `${r} Cuirass`, 'armor is named by its type, not a recipe name');
+    assert.equal(body.name, 'Quay Cuirass', 'a T3 recipe makes tier-named armor (RULED 2026-09-17)');
     const [metal, fabric] = BODY_INPUTS[r];
     assert.deepEqual(body.inputs.map((i) => i.qty), [metal, fabric]);
     for (const type of ['Helm', 'Gauntlets', 'Greaves']) {
@@ -70,7 +70,7 @@ test('the rating rolls 1–100 at the bench and the craft produces a real item o
   assert.equal(piece.tier, 4);
   assert.equal(piece.rarity, 'Rare');
   assert.equal(piece.rating, 51);
-  assert.equal(piece.name, 'Rare Greaves');
+  assert.equal(piece.name, 'Serpent Greaves', 'T4 → Serpent');
 });
 
 test('§1 upgrade grade: Legendary + Artifact Core → Artifact and Artifact + Mythic Core → Mythic, carrying rating AND empower', () => {

@@ -38,3 +38,21 @@ test('enemyFirst: a failed flee gives enemies a 1.5 s free window before any par
   const normal = simulateFight({ party: LEVEL1_PARTY, enemies, seed: 21 });
   assert.ok(normal.events.find((e) => e.type === 'swing').t < 1500, 'without the flag the party swings before 1.5 s');
 });
+
+test('brief §4: every enemy hit is an event with raw + mit, and each Adventurer\'s "damage taken" equals the sum of the enemy hits on them', () => {
+  const enemies = spawnEnemies(1, 'boss', false, { rng: mulberry32(11), bossName: 'Boss' });
+  const { events, stats } = simulateFight({ party: LEVEL1_PARTY, enemies, seed: 5 });
+  const hits = events.filter((e) => e.enemy && (e.type === 'hit' || e.type === 'crit'));
+  assert.ok(hits.length > 3);
+  for (const h of hits) {
+    assert.ok(typeof h.raw === 'number' && h.raw >= h.amount, 'raw is the pre-mitigation number');
+    assert.ok(h.mit >= 0 && h.mit < 1, 'mit is the effective fraction removed');
+    assert.ok(Math.abs(Math.round(h.raw * (1 - h.mit)) - h.amount) <= 1, `${h.amount} ≈ ${h.raw} − ${Math.round(h.mit * 100)}%`);
+  }
+  for (const p of stats.party) {
+    const sum = hits.filter((h) => h.target === p.id).reduce((n, h) => n + h.amount, 0);
+    assert.equal(p.taken, sum, `${p.name} taken ${p.taken} = feed sum ${sum}`);
+  }
+  const dealt = events.filter((e) => !e.enemy && (e.type === 'hit' || e.type === 'crit'));
+  assert.ok(dealt.every((h) => typeof h.raw === 'number' && typeof h.mit === 'number'), 'party hits carry raw + mit too');
+});

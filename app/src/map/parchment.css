@@ -659,3 +659,13 @@
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-2px); }
 }
+
+/* test-numbers mode (item-numbers brief §5): a monospace stat block under a card's body */
+.eld-test-numbers {
+  margin-top: 6px;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--eld-muted, #6f5d48);
+  opacity: 0.9;
+}

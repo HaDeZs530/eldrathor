@@ -1,5 +1,7 @@
 import { useRef } from 'react';
 import { RARITY_COLOR, displayName, plainName, gearScore } from '../../progression/items.js';
+import { useTestNumbers } from '../../debug/useTestNumbers.js';
+import { itemPowerLine } from './itemNumbers.js';
 import './items.css';
 
 /**
@@ -15,6 +17,7 @@ export const LONG_PRESS_MS = 450;
 export default function ItemRow({ item, equippedBy, onClick, onLongPress, selected = false, right, note, disabled = false }) {
   const timer = useRef(null);
   const fired = useRef(false);
+  const testNumbers = useTestNumbers();
   const clear = () => { if (timer.current) { clearTimeout(timer.current); timer.current = null; } };
   const down = onLongPress ? () => {
     fired.current = false;
@@ -49,6 +52,7 @@ export default function ItemRow({ item, equippedBy, onClick, onLongPress, select
           {isMaterial && <span className="eld-item-qty">×{item.qty || 1}</span>}
         </span>
         {note && <span className="eld-item-note">{note}</span>}
+        {testNumbers && <span className="eld-item-note eld-test-numbers">{itemPowerLine(item)}</span>}
       </span>
       {equippedBy && <span className="eld-item-equipped">Equipped · {equippedBy}</span>}
       {right}

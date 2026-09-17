@@ -13,6 +13,7 @@
 import {
   RARITIES, rarityIndex, tierForArea, makeWeapon, makeCore, CORE_TYPES, WEAPON_TYPES,
 } from '../progression/items.js';
+import { bossWeaponName } from '../data/bossWeaponNames.js';
 
 export const LOOT_TIERS = RARITIES;
 export const BOSS_RATING_FLOOR = 40;
@@ -76,9 +77,10 @@ export const CORE_DROP_CHANCE = { rare: 0.15, boss: 0.5 };
  *   tier/area — the AREA number 1–10 (item tier is derived from it); `worldTier` kept as an alias.
  *   named     — named variant: +1 extra loot roll one rung up (RouteMap §5)
  *   mapClear  — boss killed with every node cleared: +50 % Worldvein + one guaranteed Rare-or-better roll (§6)
+ *   bossName  — the area boss (boss nodes): its weapon drops take a boss-named special name (Item Model §2)
  * @returns {{worldvein:number, attuneBonus:number, mapClearBonus:number, gears:object[], gear:object|null}}
  */
-export function rollRewards({ tier, area, worldTier, nodeType, attuneVein = false, rng = Math.random, named = false, mapClear = false }) {
+export function rollRewards({ tier, area, worldTier, nodeType, attuneVein = false, rng = Math.random, named = false, mapClear = false, bossName = null }) {
   const A = Math.max(1, area || tier || worldTier || 1);
   const T = tierForArea(A);
   const base = VEIN_BASE[nodeType] || 1;
@@ -96,7 +98,10 @@ export function rollRewards({ tier, area, worldTier, nodeType, attuneVein = fals
     if (minRarity && rarityIndex(rarity) < rarityIndex(minRarity)) rarity = minRarity;
     const type = WEAPON_TYPES[Math.floor(rng() * WEAPON_TYPES.length)];
     const rating = ratingFloor + Math.floor(rng() * (101 - ratingFloor));
-    return makeWeapon({ tier: T, rarity, type, rating, rng });
+    const w = makeWeapon({ tier: T, rarity, type, rating, rng });
+    // §2 (RULED 2026-09-17): a boss's weapon drops draw from the boss-named pool instead of the tier pool
+    if (nodeType === 'boss' && bossName) { const n = bossWeaponName(bossName, type, rng); if (n) w.name = n; }
+    return w;
   };
   const gears = [];
   if (rng() < (GEAR_CHANCE[nodeType] ?? 0.12)) gears.push(rollGear());

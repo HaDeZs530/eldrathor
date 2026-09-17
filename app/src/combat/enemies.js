@@ -41,7 +41,7 @@ function finish(units, { depthMult, named, rng }) {
     let { hp, dmg, name } = u;
     if (!u.isBoss && !u.isRare && depthMult !== 1) { hp *= depthMult; dmg *= depthMult; }
     if (named) { hp *= 1.3; dmg *= 1.3; name = `${NAMED_ADJECTIVES[Math.floor(rng() * NAMED_ADJECTIVES.length)]} ${name}`; }
-    return { ...u, hp, maxHp: hp, dmg, name, named };
+    return { ...u, hp, maxHp: hp, dmg, name, named, depthMult: !u.isBoss && !u.isRare ? depthMult : 1 };
   });
 }
 

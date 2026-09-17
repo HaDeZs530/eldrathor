@@ -3,7 +3,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { serialize, deserialize, createStore, createSaver, countedRng, ensureIds, SAVE_VERSION, SAVE_KEY, QUARANTINE_PREFIX } from './save.js';
+import { serialize, deserialize, createStore, createSaver, countedRng, ensureIds, SAVE_VERSION, SAVE_KEY, QUARANTINE_PREFIX, RESET_NOTICE } from './save.js';
 import { mulberry32 } from '../combat/simulate.js';
 
 const memStorage = () => { const m = new Map(); return { getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)), removeItem: (k) => m.delete(k), keys: () => [...m.keys()] }; };
@@ -30,7 +30,7 @@ test('round-trips a mid-run state exactly (versioned, with savedAt)', () => {
   const parsed = JSON.parse(json);
   assert.equal(parsed.v, SAVE_VERSION); assert.equal(parsed.savedAt, 1000);
   const d = deserialize(json);
-  assert.ok(d.ok); assert.equal(d.migratedFrom, null);
+  assert.ok(d.ok);
   assert.deepEqual(d.state, s);
 });
 
@@ -42,24 +42,11 @@ test('corrupt save → quarantined under a timestamped key, main key removed, fr
   assert.equal(st.getItem(SAVE_KEY), null);
   assert.equal(st.getItem(QUARANTINE_PREFIX + '777'), '{"v":1,"party":[');
   // a valid-JSON but foreign object is also refused
-  st.setItem(SAVE_KEY, JSON.stringify({ v: 1, hello: 'world' }));
+  st.setItem(SAVE_KEY, JSON.stringify({ v: SAVE_VERSION, hello: 'world' }));
   const r2 = store.load(); assert.equal(r2.quarantined, true); assert.match(r2.error, /party/);
-  // a save from a NEWER build is refused, not migrated
+  // a save from a NEWER build is refused (quarantined), never read
   st.setItem(SAVE_KEY, JSON.stringify({ v: SAVE_VERSION + 5, party: [], roster: [], worldvein: 1 }));
   const r3 = store.load(); assert.equal(r3.quarantined, true); assert.match(r3.error, /newer/);
-});
-
-test('unversioned (positional, id-less) save migrates all the way: ids at v1, then the one bag at v3', () => {
-  const old = JSON.stringify({ party: [{ name: 'Kessa' }], roster: [{ name: 'Nyra' }], worldvein: 80, stash: [{ name: 'Common Sword', rating: 20 }], inventory: { armor: [{ name: 'Vest' }] }, run: null });
-  const d = deserialize(old);
-  assert.ok(d.ok, d.error); assert.equal(d.migratedFrom, 0);
-  for (const m of [...d.state.party, ...d.state.roster]) assert.match(m.id, /^c-/);
-  assert.equal(d.state.stash, undefined, 'the stash is folded into the bag');
-  assert.ok(d.state.bag.some((i) => i.kind === 'weapon'));
-  assert.ok(d.state.bag.some((i) => i.kind === 'armor'));
-  // ensureIds never overwrites an existing id
-  const kept = ensureIds({ party: [{ id: 'c-keep' }], roster: [], stash: [] });
-  assert.equal(kept.party[0].id, 'c-keep');
 });
 
 test('countedRng resumes the exact sequence after fast-forwarding the saved draw count', () => {
@@ -104,53 +91,19 @@ test('export / import: importText validates and installs the save; reset clears 
   const back = store.load(); assert.equal(back.fresh, false); assert.equal(back.state.run.currentId, 'n4');
 });
 
-test('v1 → v3: the M1b weapon split still happens, then every item takes the one shape and lands in the bag', () => {
-  const v1 = JSON.stringify({ v: 1, party: [{ id: 'c-1', name: 'Kessa', archetype: 'Bulwark', weapon: 'Sword + Shield', level: 3 }], roster: [{ id: 'c-2', name: 'Nyra', archetype: 'Adept', weapon: 'Staff', level: 1 }], worldvein: 10,
-    stash: [{ id: 'w-1', name: 'Fine Bow', tier: 'Fine', weaponType: 'Bow', rating: 61 }], inventory: { raw: {}, infused: [{ family: 'wood', quality: 'Mythic', qty: 1 }], scrap: 0, armor: [{ id: 'a-1', name: 'Court-Bound Carapace', quality: 'Mythic', rating: 82 }] }, run: null });
-  const d = deserialize(v1);
-  assert.ok(d.ok, d.error); assert.equal(d.migratedFrom, 1);
-  const bow = d.state.bag.find((i) => i.id === 'w-1');
-  assert.equal(bow.kind, 'weapon'); assert.equal(bow.type, 'Bow'); assert.equal(bow.rating, 61); assert.equal(bow.empower, 0);
-  assert.equal(bow.rarity, 'Uncommon', 'Fine → Uncommon on the seven-rung ladder');
-  assert.equal(bow.tier, 1, 'legacy items land at T1 — tierMult 1.0, so no power is granted retroactively');
-  // v1→v2 folded Mythic down to Legendary; v2→v3 keeps it there (Mythic is upgrade-only now)
-  assert.equal(d.state.bag.find((i) => i.id === 'a-1').rarity, 'Legendary');
-  assert.equal(d.state.bag.find((i) => i.kind === 'material').rarity, 'Legendary');
-  for (const m of [...d.state.party, ...d.state.roster]) {
-    assert.equal(m.xp, 0);
-    assert.equal(m.weaponId, undefined, 'weaponId is replaced by the six-slot map');
-    const w = d.state.bag.find((x) => x.id === m.equipped.weapon);
-    assert.ok(w, `${m.name} has an equipped weapon`); assert.equal(w.rarity, 'Common'); assert.equal(w.type, m.weapon);
-  }
-  assert.equal(d.state.bag.filter((i) => i.kind === 'weapon').length, 3);
-});
-
-test('v2 → v3 (M2 lock 1): stash + armor + infused collapse into one bag, Fine → Uncommon, six-slot equip map, scrap paid out', () => {
-  const v2 = JSON.stringify({ v: 2,
-    party: [{ id: 'c-1', name: 'Kessa', archetype: 'Bulwark', weapon: 'Sword + Shield', level: 3, xp: 0, weaponId: 'w-1', armorId: 'a-1' }],
-    roster: [], worldvein: 100,
-    stash: [{ id: 'w-1', name: 'Fine Greatsword', tier: 'Fine', weaponType: 'Greatsword', baseRating: 55, empower: 12 }],
-    inventory: { raw: { wood: 2 }, infused: [{ family: 'metal', quality: 'Fine', qty: 7 }], armor: [{ id: 'a-1', name: 'Boundweave Mail', quality: 'Fine', rating: 44 }], scrap: 3 },
-    run: null });
-  const d = deserialize(v2);
-  assert.ok(d.ok, d.error); assert.equal(d.migratedFrom, 2);
-  assert.equal(d.state.stash, undefined);
-  assert.equal(d.state.inventory.armor, undefined);
-  assert.equal(d.state.inventory.infused, undefined);
-  assert.deepEqual(d.state.inventory.raw, { wood: 2 }, 'raw gather mats stay put');
-  assert.equal(d.state.worldvein, 106, 'leftover scrap pays out at 2 ❖ each — there is no Scrap action now');
-
-  const w = d.state.bag.find((i) => i.id === 'w-1');
-  assert.deepEqual(
-    { kind: w.kind, type: w.type, tier: w.tier, rarity: w.rarity, rating: w.rating, empower: w.empower },
-    { kind: 'weapon', type: 'Greatsword', tier: 1, rarity: 'Uncommon', rating: 55, empower: 12 },
-  );
-  const a = d.state.bag.find((i) => i.id === 'a-1');
-  assert.deepEqual({ kind: a.kind, type: a.type, rarity: a.rarity, rating: a.rating }, { kind: 'armor', type: 'Cuirass', rarity: 'Uncommon', rating: 44 });
-  const m = d.state.bag.find((i) => i.kind === 'material');
-  assert.deepEqual({ type: m.type, rarity: m.rarity, qty: m.qty }, { type: 'metal', rarity: 'Uncommon', qty: 7 });
-
-  assert.deepEqual(d.state.party[0].equipped, { weapon: 'w-1', body: 'a-1' });
-  assert.equal(d.state.party[0].weaponId, undefined);
-  assert.equal(d.state.party[0].armorId, undefined);
+test('§9 save policy (Item Model lock): an OLDER save is discarded on load — fresh game, "Save reset for a game update", copy kept; import refuses it too', () => {
+  const st = memStorage(); const store = createStore(st, () => 4242);
+  const old = JSON.stringify({ v: SAVE_VERSION - 1, party: [{ id: 'c-1', name: 'Kessa' }], roster: [], worldvein: 500, bag: [], run: null });
+  st.setItem(SAVE_KEY, old);
+  const r = store.load();
+  assert.equal(r.fresh, true); assert.equal(r.reset, true); assert.equal(r.quarantined, false); assert.equal(r.state, null);
+  assert.match(r.error, new RegExp(RESET_NOTICE));
+  assert.equal(st.getItem(SAVE_KEY), null, 'the old save is gone');
+  assert.equal(st.getItem(QUARANTINE_PREFIX + '4242'), old, 'a copy is kept for deliberate carry-over');
+  assert.equal(store.importText(old).ok, false, 'no migration path — import refuses an older version');
+  // the current version still round-trips, and the unversioned prototype format is simply refused
+  assert.ok(deserialize(serialize(midRun(), () => 1)).ok);
+  assert.equal(deserialize(JSON.stringify({ party: [], roster: [], worldvein: 1 })).outdated, true);
+  // ensureIds is still a plain helper (used at boot for default data), never overwriting an existing id
+  assert.equal(ensureIds({ party: [{ id: 'c-keep' }], roster: [], stash: [] }).party[0].id, 'c-keep');
 });

@@ -8,7 +8,7 @@ import assert from 'node:assert/strict';
 import {
   RARITIES, RARITY_COLOR, rarityIndex, TIER_FOR_AREA, tierForArea, TIER_MULT, RARITY_MULT, tierMult,
   rarityMult, ratingScale, empowerScale, itemMult, makeItem, makeWeapon, makeArmor, makeCore,
-  makeMaterial, plainName, displayName, weaponAttackPower, armorBonus, armorTotals, ARMOR_TYPES,
+  makeMaterial, plainName, displayName, armorName, weaponAttackPower, armorBonus, armorTotals, ARMOR_TYPES,
   EQUIP_SLOTS, craftCapForArea, canCraftRarity, craftableRarities, CORE_TYPES, upgradeGrade,
   upgradeStepFor, sellValue, SELL_BASE, gearScore, UNARMED_MULT, WEAPON_TYPES,
 } from './items.js';
@@ -17,6 +17,8 @@ import { upgradeFor, itemValue } from './upgrade.js';
 import { recruitCost, candidatesForDay, FREE_RECRUITS, RECRUIT_COST, CANDIDATES_PER_DAY } from './roster.js';
 import { WEAPON_NAMES, NAMES_PER_POOL, weaponSpecialName, poolIsNamed, TIERS } from '../data/weaponNames.js';
 import { rollRarity, rollRewards, RARE_DROP_WEIGHTS, DROP_CAP, BOSS_RATING_FLOOR, dropWeights, applyAttune, stepUp } from '../combat/rewards.js';
+import { BOSS_WEAPON_NAMES, bossWeaponName, bossPoolIsNamed, NAMES_PER_BOSS, bossShortName } from '../data/bossWeaponNames.js';
+import { AREAS } from '../data.js';
 import { WEAPONS } from '../data.js';
 
 const close = (a, b, msg) => assert.ok(Math.abs(a - b) < 1e-9, `${msg}: ${a} vs ${b}`);
@@ -35,22 +37,33 @@ test('§1 the seven-rung ladder, its colours and its tier table', () => {
   assert.equal(Object.keys(TIER_FOR_AREA).length, 10);
 });
 
-test('§1 the multiplier tables are the lock’s', () => {
-  assert.deepEqual(TIER_MULT, [1.0, 1.45, 2.1, 3.0, 4.4, 6.4, 9.2]);
-  assert.deepEqual(RARITY_MULT, { Common: 1.0, Uncommon: 1.08, Rare: 1.18, Epic: 1.3, Legendary: 1.45, Artifact: 1.62, Mythic: 1.82 });
-  assert.deepEqual([1, 7].map(tierMult), [1.0, 9.2]);
-  assert.equal(tierMult(99), 9.2, 'clamped at T7');
+test('§1 three avenues (RULED 2026-09-17): tierMult 1.8^(T−1), rarityMult 1.158^rung, rating 1 = base → 100 = +15 %, empower 100 = +25 %', () => {
+  const near = (a, b, tol, msg) => assert.ok(Math.abs(a - b) <= tol, `${msg}: ${a} vs ${b}`);
+  [1.0, 1.8, 3.24, 5.83, 10.5, 18.9, 34.0].forEach((v, i) => near(TIER_MULT[i], v, 0.05, `T${i + 1}`));
+  [['Common', 1.0], ['Uncommon', 1.16], ['Rare', 1.34], ['Epic', 1.55], ['Legendary', 1.8], ['Artifact', 2.08], ['Mythic', 2.41]].forEach(([r, v]) => near(RARITY_MULT[r], v, 0.01, r));
+  assert.equal(tierMult(99), TIER_MULT[6], 'clamped at T7');
   assert.equal(rarityMult('nonsense'), 1.0);
-  assert.equal(ratingScale(1), 0.804);
-  assert.ok(Math.abs(ratingScale(100) - 1.2) < 1e-9);
+  assert.equal(ratingScale(1), 1, 'rating 1 = base');
+  near(ratingScale(100), 1.15, 1e-9, 'rating 100 = +15 %');
   assert.equal(empowerScale(0), 1);
-  assert.equal(empowerScale(100), 2);
+  near(empowerScale(100), 1.25, 1e-9, 'empower 100 = +25 %');
   assert.equal(UNARMED_MULT, 0.8);
+  // the brief's equivalences, at equal rating
+  const p = (tier, rarity, rating = 50, empower = 0) => weaponAttackPower(makeWeapon({ tier, rarity, type: 'Greatsword', rating, empower, rng: () => 0 }));
+  assert.ok(Math.abs(p(1, 'Artifact') / p(2, 'Uncommon') - 1) < 0.01, 'Artifact T1 == Uncommon T2 (within 1 %)');
+  assert.ok(Math.abs(p(1, 'Legendary') / p(2, 'Common') - 1) < 0.01, 'Legendary T1 == Common T2 (within 1 %)');
+  // no T1 item that can DROP (≤ Artifact) at any rating / empower beats a T3 Common at rating 1
+  const t3floor = p(3, 'Common', 1, 0);
+  for (const r of ['Common', 'Uncommon', 'Rare', 'Epic', 'Legendary', 'Artifact']) assert.ok(p(1, r, 100, 100) < t3floor, `T1 ${r} +100 @100 (${p(1, r, 100, 100).toFixed(2)}) < T3 Common @1 (${t3floor.toFixed(2)})`);
+  // LOCK CONFLICT for the Design Chat: a T1 MYTHIC (an Artifact upgraded with a Mythic Core keeps its tier) at
+  // rating 100 / +100 is 2.41 × 1.15 × 1.25 = 3.46 vs the T3 Common floor 3.24 — the only T1 item that passes it.
+  assert.ok(p(1, 'Mythic', 100, 100) > t3floor, 'documented exception: Mythic T1 fully polished edges past a T3 Common');
+  assert.ok(p(1, 'Mythic', 100, 0) < t3floor, 'without empower even Mythic T1 stays below');
 });
 
 test('§1 two-axis power: base(type) × tierMult × rarityMult × ratingScale × empowerScale, and TIER DOMINATES', () => {
   const w = makeWeapon({ tier: 3, rarity: 'Rare', type: 'Greatsword', rating: 100, empower: 50, rng: () => 0 });
-  const expected = WEAPONS.Greatsword.dmg * 2.1 * 1.18 * 1.2 * 1.5;
+  const expected = WEAPONS.Greatsword.dmg * Math.pow(1.8, 2) * Math.pow(1.158, 2) * 1.15 * 1.125;
   assert.ok(Math.abs(weaponAttackPower(w) - expected) < 1e-9, `${weaponAttackPower(w)} vs ${expected}`);
   // the lock's headline example — tier dominates rarity at every rating, from both ends of the scale
   const t5common = (rating) => makeWeapon({ tier: 5, rarity: 'Common', type: 'Greatsword', rating, rng: () => 0 });
@@ -59,21 +72,20 @@ test('§1 two-axis power: base(type) × tierMult × rarityMult × ratingScale ×
     assert.ok(weaponAttackPower(t5common(rating)) > weaponAttackPower(t1artifact(rating)), `T5 Common beats T1 Artifact at rating ${rating}`);
   }
   assert.ok(weaponAttackPower(t5common(1)) > weaponAttackPower(t1artifact(100)), 'and the worst T5 Common still beats the best unempowered T1 Artifact');
-  // NOTE for the Design Chat: empowerment is a THIRD axis on top of tier × rarity, so a T1 Artifact
-  // taken to +100 (×2) does pass a rating-1 T5 Common. The lock's "tier dominates, rarity refines" is
-  // about the two item axes; empowerment is earned separately at the Smith.
-  assert.ok(weaponAttackPower({ ...t1artifact(100), empower: 100 }) > weaponAttackPower(t5common(1)));
+  // RULED 2026-09-17: empowerment lives inside the polish band (+25 % max) — a fully empowered T1 Artifact
+  // still cannot reach a rating-1 T5 Common; empower is never a way to jump a tier
+  assert.ok(weaponAttackPower({ ...t1artifact(100), empower: 100 }) < weaponAttackPower(t5common(1)));
   // empower only applies to weapons
   const armor = makeArmor({ tier: 3, rarity: 'Rare', rating: 100 });
   assert.equal(armor.empower, 0);
-  close(itemMult({ ...armor, empower: 100 }), 2.1 * 1.18 * 1.2, 'armor ignores empower');
+  close(itemMult({ ...armor, empower: 100 }), Math.pow(1.8, 2) * Math.pow(1.158, 2) * 1.15, 'armor ignores empower');
 });
 
 test('§2 armor types: four fixed types spanning every rarity; head / hands / feet give HALF the body values', () => {
   assert.deepEqual(Object.keys(ARMOR_TYPES), ['Cuirass', 'Helm', 'Gauntlets', 'Greaves']);
   assert.deepEqual(Object.values(ARMOR_TYPES).map((a) => a.slot), ['body', 'head', 'hands', 'feet']);
   const at = (type) => armorBonus(makeArmor({ tier: 1, rarity: 'Common', type, rating: 100 }));
-  close(at('Cuirass').hp, 25 * 1.2, 'body HP');
+  close(at('Cuirass').hp, 25 * 1.15, 'body HP');
   close(at('Cuirass').mit, 0.02, 'body mitigation');
   for (const type of ['Helm', 'Gauntlets', 'Greaves']) {
     close(at(type).hp, at('Cuirass').hp / 2, `${type} HP`);
@@ -81,7 +93,7 @@ test('§2 armor types: four fixed types spanning every rarity; head / hands / fe
   }
   assert.deepEqual(armorBonus(null), { hp: 0, mit: 0 });
   const set = ['Cuirass', 'Helm', 'Gauntlets', 'Greaves'].map((type) => makeArmor({ tier: 1, rarity: 'Common', type, rating: 100 }));
-  close(armorTotals(set).hp, 25 * 1.2 * 2.5, 'a full set is 2.5 × the body piece');
+  close(armorTotals(set).hp, 25 * 1.15 * 2.5, 'a full set is 2.5 × the body piece');
   assert.deepEqual(EQUIP_SLOTS, ['weapon', 'body', 'head', 'hands', 'feet', 'gem']);
 });
 
@@ -92,10 +104,13 @@ test('§2 the item shape, and the special-name rule: weapons show theirs in the 
   assert.equal(plainName(w), 'Epic Bow', 'everywhere except the bag list and the sheet header');
   assert.equal(displayName(w), w.name, 'the bag list and the sheet header show the special name');
   assert.notEqual(displayName(w), plainName(w));
-  // armor, cores and materials use their type name in both places
+  // armor is named by TIER (RULED 2026-09-17): one island prefix per tier; plain everywhere else
   const a = makeArmor({ tier: 1, rarity: 'Rare', type: 'Helm', rating: 10 });
-  assert.equal(displayName(a), 'Rare Helm');
+  assert.equal(displayName(a), 'Gullwatch Helm');
   assert.equal(plainName(a), 'Rare Helm');
+  assert.deepEqual([1, 2, 3, 4, 5, 6, 7].map((t) => armorName(t, 'Cuirass')), ['Gullwatch Cuirass', 'Saltcliff Cuirass', 'Quay Cuirass', 'Serpent Cuirass', 'Forge Cuirass', 'Bastion Cuirass', 'Worldforge Cuirass']);
+  assert.equal(makeArmor({ tier: 2, rarity: 'Epic', type: 'Helm', rating: 1 }).name, 'Saltcliff Helm');
+  // cores and materials use their type name in both places
   assert.match(makeCore({ tier: 6, rarity: 'Artifact', type: CORE_TYPES.Artifact }).id, /^k-/);
   assert.equal(makeMaterial({ tier: 1, rarity: 'Common', type: 'metal', qty: 14 }).qty, 14);
   // rating is the gear score, 1–100, never a composite
@@ -168,6 +183,24 @@ test('§1 drops: bosses step one rung up with a rating floor of 40, and Attune V
       assert.equal(g.tier, tierForArea(3));
     }
   }
+});
+
+test('§2 boss weapon drops draw from a boss-named pool (3 per boss) — DESIGN-OPEN placeholders "<Boss>\'s <Type>" until the Design Chat pushes them', () => {
+  assert.deepEqual(Object.keys(BOSS_WEAPON_NAMES), AREAS.map((a) => a.boss));
+  assert.equal(NAMES_PER_BOSS, 3);
+  assert.equal(bossShortName('The Brinewarden'), 'Brinewarden');
+  assert.equal(bossWeaponName('The Brinewarden', 'Greatsword', () => 0), "Brinewarden's Greatsword");
+  assert.equal(bossWeaponName('Nobody', 'Bow'), null, 'unknown boss → tier pool');
+  assert.equal(bossPoolIsNamed('The Brinewarden'), false, 'DESIGN-OPEN: the pools are pending');
+  // a boss drop carries the boss name; a rare's drop carries the tier-pool name
+  let bossDrop = null; let rareDrop = null;
+  for (let i = 0; i < 200 && !(bossDrop && rareDrop); i++) {
+    bossDrop = bossDrop || rollRewards({ area: 1, nodeType: 'boss', rng: rngOf(i + 1), bossName: 'The Brinewarden' }).gears.find((g) => g.kind === 'weapon');
+    rareDrop = rareDrop || rollRewards({ area: 1, nodeType: 'rare', rng: rngOf(i + 1) }).gears.find((g) => g.kind === 'weapon');
+  }
+  assert.match(bossDrop.name, /^Brinewarden's /);
+  assert.equal(bossDrop.name, `Brinewarden's ${bossDrop.type}`);
+  assert.match(rareDrop.name, / of T1$/);
 });
 
 // ---------------------------------------------------------------- §1 gating and cores
