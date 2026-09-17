@@ -61,6 +61,14 @@ function traceReceiver() {
     apply: 'serve',
     configureServer(server) {
       const dir = resolve(server.config.root, 'playtest-traces')
+      // live build stamp (git short hash @ commit time) — the `define` below is frozen at server start, and
+      // the keep-alive task pulls new commits under a running server
+      server.middlewares.use('/__eld/build', (req, res) => {
+        let hash = 'nogit'; let when = ''
+        try { hash = execSync('git rev-parse --short HEAD', { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim(); when = execSync('git log -1 --format=%cd --date=format:%Y-%m-%dT%H:%M', { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim() } catch { /* no git */ }
+        res.setHeader('Content-Type', 'application/json'); res.setHeader('Cache-Control', 'no-store')
+        res.end(JSON.stringify({ build: `${hash}@${when}` }))
+      })
       server.middlewares.use('/__eld/trace', (req, res) => {
         if (req.method !== 'POST') { res.statusCode = 405; res.end('POST only'); return }
         if (!isLanAddress(req.socket?.remoteAddress)) { res.statusCode = 403; res.end('LAN only'); return }

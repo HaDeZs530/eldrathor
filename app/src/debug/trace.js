@@ -17,7 +17,7 @@ const UPLOAD_EVERY_MS = 3000;
 const AUTOSAVE = typeof import.meta !== 'undefined' && !!import.meta.env?.DEV;
 export const TRACE_MAX = 1500; // M1d: a whole run's opening (start snapshot, first pans, first fight) must survive
 /** Build identity (git short hash @ build time), baked in by vite.config.js `define`. */
-export const BUILD = typeof __ELD_BUILD__ !== 'undefined' ? __ELD_BUILD__ : 'dev';
+export let BUILD = typeof __ELD_BUILD__ !== 'undefined' ? __ELD_BUILD__ : 'dev';
 const LONG_FRAME_MS = 50;
 
 let on = false;
@@ -44,6 +44,8 @@ export function initTrace() {
   session = safeGet(KEY_SESSION) || null;
   if (!session) { session = `${new Date().toISOString().slice(0, 10)}-${Math.random().toString(36).slice(2, 8)}`; safeSet(KEY_SESSION, session); }
   if (AUTOSAVE) {
+    // the dev server pulls new commits under itself (keep-alive task): ask it for the live build stamp
+    fetch('/__eld/build', { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)).then((j) => { if (j?.build) { BUILD = j.build; notify(); } }).catch(() => {});
     // flush what we have when the app goes to the background / the page is torn down (sendBeacon survives both)
     const flushNow = () => { if (on && uploadDirty) beacon(); };
     document.addEventListener('visibilitychange', () => { if (document.hidden) flushNow(); });
