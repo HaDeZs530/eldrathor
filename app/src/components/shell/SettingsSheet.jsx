@@ -1,6 +1,8 @@
 import { useRef, useState } from 'react';
 import './shell.css';
 import { Sheet } from '../ui/index.jsx';
+import { useTestNumbers } from '../../debug/useTestNumbers.js';
+import { setTestNumbers } from '../../debug/testNumbers.js';
 
 /**
  * ☰ Menu → Settings (Progression Loop Lock §1): Export save (JSON to clipboard, with a selectable box
@@ -12,6 +14,7 @@ export default function SettingsSheet({ store, onClose }) {
   const [text, setText] = useState('');
   const [note, setNote] = useState(null);
   const taRef = useRef(null);
+  const testNumbers = useTestNumbers();
 
   async function doExport() {
     const t = store.exportText();
@@ -38,6 +41,7 @@ export default function SettingsSheet({ store, onClose }) {
             <button type="button" className="eld-card eld-menu-item" onClick={doExport}><span className="eld-menu-glyph">⇪</span><span>Export save</span><span className="eld-menu-note">JSON to clipboard</span></button>
             <button type="button" className="eld-card eld-menu-item" onClick={() => { setText(''); setNote(null); setMode('import'); }}><span className="eld-menu-glyph">⇩</span><span>Import save</span><span className="eld-menu-note">paste JSON</span></button>
             <button type="button" className="eld-card eld-menu-item" onClick={() => setMode('reset')}><span className="eld-menu-glyph">⟲</span><span>Reset save</span><span className="eld-menu-note">start over</span></button>
+            <button type="button" className={`eld-card eld-menu-item${testNumbers ? ' is-current' : ''}`} onClick={() => setTestNumbers(!testNumbers)} aria-pressed={testNumbers}><span className="eld-menu-glyph">Σ</span><span>Show test numbers</span><span className="eld-menu-note">{testNumbers ? 'on' : 'off'} · item power, stat sources, enemy blocks, raw → mitigated</span></button>
           </div>
         )}
         {(mode === 'export' || mode === 'import') && (

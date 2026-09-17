@@ -14,7 +14,7 @@
  */
 import {
   RARITIES, rarityIndex, craftableRarities, canCraftRarity, ARMOR_TYPES, upgradeStepFor,
-  makeArmor, makeMaterial, CORE_TYPES,
+  makeArmor, makeMaterial, CORE_TYPES, armorName,
 } from '../progression/items.js';
 
 /** DESIGN-OPEN: the lock says "metal + fabric"; the gather families are wood / metal / hunt, so fabric maps to hunt. */
@@ -41,7 +41,7 @@ export function armorRecipe(type, rarity, tier) {
   const scale = a.share === 1 ? (n) => n : half;
   return {
     id: `${type.toLowerCase()}_${rarity.toLowerCase()}_t${tier}`,
-    type, rarity, tier, slot: a.slot, name: `${rarity} ${type}`,
+    type, rarity, tier, slot: a.slot, name: armorName(tier, type), // tier-named (Item Model §2, RULED 2026-09-17)
     inputs: [
       { family: METAL_FAMILY, rarity, tier, qty: scale(metal) },
       { family: FABRIC_FAMILY, rarity, tier, qty: scale(fabric) },

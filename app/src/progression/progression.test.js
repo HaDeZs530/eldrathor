@@ -49,11 +49,11 @@ test('§7 (Item Model): Train raises an Adventurer only to the highest roster le
   assert.equal(TRAIN_CAP_MESSAGE, 'At roster cap — climb the mountain');
 });
 
-test('§4 weapon: hit × (0.8 + 0.4·rating/100) × (1 + empower/100); empower gain / cost / preview; armor +HP and +mit', () => {
-  // at T1 Common both new axes are ×1, so the rating / empower halves read exactly as they always did
-  assert.equal(weaponDamageMult(weapon({ rating: 1 })), 0.804);
-  assert.ok(Math.abs(weaponDamageMult(weapon({ rating: 100 })) - 1.2) < 1e-9);
-  assert.ok(Math.abs(weaponDamageMult(weapon({ rating: 50, empower: 50 })) - 1.5) < 1e-9);
+test('§4 weapon: hit × ratingScale × empowerScale (Item Model three avenues: rating +15 % max, empower +25 % max); empower gain / cost / preview; armor +HP and +mit', () => {
+  // at T1 Common both item axes are ×1, so only the polish band shows
+  assert.equal(weaponDamageMult(weapon({ rating: 1 })), 1);
+  assert.ok(Math.abs(weaponDamageMult(weapon({ rating: 100 })) - 1.15) < 1e-9);
+  assert.ok(Math.abs(weaponDamageMult(weapon({ rating: 50, empower: 50 })) - (1 + 0.15 * 49 / 99) * 1.125) < 1e-9);
   const sword = weapon({ id: 'w1', rarity: 'Uncommon', rating: 60 });
   assert.equal(empowerGain(sword, weapon({ id: 'w2', rarity: 'Uncommon', rating: 100 })), 6); // 2×2×1×1.5
   assert.equal(empowerGain(sword, weapon({ id: 'w3', type: 'Bow', rarity: 'Common', rating: 1 })), 1); // 2×1×0.5×1 = 1
@@ -64,10 +64,10 @@ test('§4 weapon: hit × (0.8 + 0.4·rating/100) × (1 + empower/100); empower g
   assert.equal(p.gain, 3); assert.equal(p.next, EMPOWER_MAX); assert.equal(p.cost, 112); assert.equal(p.useful, true);
   assert.equal(previewEmpower({ ...sword, empower: 100 }, weapon({ id: 'w2', rarity: 'Uncommon', rating: 100 }), 999).useful, false);
   assert.equal(previewEmpower(sword, sword, 999), null); // a weapon cannot feed itself
-  // armor: a T1 Uncommon Cuirass at rating 50 is 25 × 1.08 × 1.0 HP and 0.02 × 1.08 mitigation
+  // armor: a T1 Uncommon Cuirass at rating 50 is 25 × 1.158 × ratingScale(50) HP and 0.02 × 1.158 mitigation
   const cuirass = makeItem({ kind: 'armor', type: 'Cuirass', tier: 1, rarity: 'Uncommon', rating: 50 });
-  assert.equal(Math.round(armorBonus(cuirass).hp), 27);
-  assert.ok(Math.abs(armorBonus(cuirass).mit - 0.0216) < 1e-9);
+  assert.ok(Math.abs(armorBonus(cuirass).hp - 25 * 1.158 * (1 + 0.15 * 49 / 99)) < 1e-9);
+  assert.ok(Math.abs(armorBonus(cuirass).mit - 0.02 * 1.158) < 1e-9);
   assert.deepEqual(armorBonus(null), { hp: 0, mit: 0 });
 });
 

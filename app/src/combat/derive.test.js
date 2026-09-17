@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { deriveStats, equip } from './derive.js';
+import { deriveStats, deriveBreakdown, equip } from './derive.js';
 import { makeItem } from '../progression/items.js';
 
 const kessa = { id: 'c1', archetype: 'Bulwark', weapon: 'Sword + Shield', level: 1 };
@@ -15,22 +15,24 @@ test('§4 equipment applies through the six-slot map: the weapon scales hit dama
   const gs = makeItem({ id: 'w1', kind: 'weapon', type: 'Greatsword', tier: 1, rarity: 'Common', rating: 50, empower: 50 });
   const armed = deriveStats(equip({ ...kessa, equipped: { weapon: 'w1' } }, [gs]));
   assert.equal(armed.weaponType, 'Greatsword');
-  assert.ok(Math.abs(armed.weaponMult - 1.5) < 1e-9); // T1 Common: (0.8 + 0.2) × 1.5
-  // Greatsword dmg 22 vs Sword+Shield 12; Bulwark power 10 → 22 × 1.5 vs 12 × 0.8
-  assert.ok(Math.abs(armed.hitDamage - 22 * 1.5) < 1e-9);
+  const R50 = 1 + 0.15 * 49 / 99; // three-avenue polish: rating 50
+  const M = R50 * 1.125; // × empower 50 (+12.5 %)
+  assert.ok(Math.abs(armed.weaponMult - M) < 1e-9); // T1 Common: polish only
+  // Greatsword dmg 22 vs Sword+Shield 12; Bulwark power 10 → 22 × M vs 12 × 0.8
+  assert.ok(Math.abs(armed.hitDamage - 22 * M) < 1e-9);
   assert.ok(Math.abs(bare.hitDamage - 12 * 0.8) < 1e-9);
 
   const cuirass = makeItem({ id: 'a1', kind: 'armor', type: 'Cuirass', tier: 1, rarity: 'Common', rating: 50 });
   const armored = deriveStats(equip({ ...kessa, equipped: { body: 'a1' } }, [cuirass]));
-  assert.equal(armored.maxHp, bare.maxHp + 25); // 25 × 1.0 × 1.0 × (0.8 + 0.2)
+  assert.ok(Math.abs(armored.maxHp - (bare.maxHp + 25 * R50)) < 1e-9); // 25 × 1.0 × 1.0 × ratingScale(50)
   assert.ok(Math.abs(armored.mitigation - (bare.mitigation + 0.02)) < 1e-9);
 
   // §2: head / hands / feet give HALF the body values, and every worn piece stacks
   const helm = makeItem({ id: 'a2', kind: 'armor', type: 'Helm', tier: 1, rarity: 'Common', rating: 50 });
   const half = deriveStats(equip({ ...kessa, equipped: { head: 'a2' } }, [helm]));
-  assert.equal(half.maxHp, bare.maxHp + 12.5);
+  assert.ok(Math.abs(half.maxHp - (bare.maxHp + 12.5 * R50)) < 1e-9);
   const full = deriveStats(equip({ ...kessa, equipped: { body: 'a1', head: 'a2' } }, [cuirass, helm]));
-  assert.equal(full.maxHp, bare.maxHp + 37.5);
+  assert.ok(Math.abs(full.maxHp - (bare.maxHp + 37.5 * R50)) < 1e-9);
 
   // the mitigation cap still holds with a full Mythic set at T7
   const set = ['Cuirass', 'Helm', 'Gauntlets', 'Greaves'].map((type, i) => makeItem({ id: `m${i}`, kind: 'armor', type, tier: 7, rarity: 'Mythic', rating: 100 }));
@@ -48,4 +50,18 @@ test('Item Model §1: tier dominates rarity — a T5 Common weapon beats a T1 Ar
   const hi = deriveStats(equip({ ...kessa, equipped: { weapon: 'a' } }, [t5]));
   const lo = deriveStats(equip({ ...kessa, equipped: { weapon: 'b' } }, [t1]));
   assert.ok(hi.hitDamage > lo.hitDamage, `T5 Common ${hi.hitDamage} should beat T1 Artifact ${lo.hitDamage}`);
+});
+
+test('test-numbers breakdown: each of the nine derived stats equals the product / sum of its listed sources (seed, level, gear)', () => {
+  const gs = makeItem({ id: 'w1', kind: 'weapon', type: 'Greatsword', tier: 2, rarity: 'Rare', rating: 70, empower: 40 });
+  const cuirass = makeItem({ id: 'a1', kind: 'armor', type: 'Cuirass', tier: 1, rarity: 'Uncommon', rating: 50 });
+  const m = equip({ ...kessa, level: 6, equipped: { weapon: 'w1', body: 'a1' } }, [gs, cuirass]);
+  const rows = deriveBreakdown(m);
+  assert.equal(rows.length, 9);
+  for (const r of rows) {
+    const calc = r.op === 'sum' ? r.parts.reduce((a, [, v]) => a + v, 0) : r.parts.reduce((a, [, v]) => a * v, 1);
+    const expect = r.cap != null ? Math.min(r.cap, calc) : calc;
+    assert.ok(Math.abs(expect - r.v) < 1e-9, `${r.k}: parts give ${expect}, stat is ${r.v}`);
+    assert.ok(r.parts.every(([label]) => typeof label === 'string' && label.length), `${r.k} labels`);
+  }
 });

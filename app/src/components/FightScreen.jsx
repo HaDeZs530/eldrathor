@@ -7,6 +7,8 @@ import { enemySlug, slug } from '../art/manifest.js';
 import Art from '../art/Art.jsx';
 import { useArtStatuses } from '../art/useArt.js';
 import PendingArt from '../art/PendingArt.jsx';
+import { useTestNumbers } from '../debug/useTestNumbers.js';
+import { rawToMitigated } from '../debug/testNumbers.js';
 import { Bar, PartyCard } from './ui/index.jsx';
 import '../combat/fight.css';
 
@@ -26,8 +28,10 @@ export default function FightScreen({ area, node, party, fight, elapsedMs, speed
   const meta = nodeTypeMeta[node?.type] || nodeTypeMeta.normal;
   const auras = useMemo(() => partyAuras(party), [party]);
   const snaps = useMemo(() => events.filter((e) => e.type === 'snap'), [events]);
+  const testNumbers = useTestNumbers();
+  // brief §4: every ENEMY hit on a party member is a feed line (party hits stay crit-only to keep the feed short)
   const feedAll = useMemo(
-    () => events.filter((e) => FEED_TYPES.has(e.type) || (e.type === 'heal' && !e.aura)),
+    () => events.filter((e) => FEED_TYPES.has(e.type) || (e.type === 'heal' && !e.aura) || (e.type === 'hit' && e.enemy)),
     [events],
   );
 
@@ -141,7 +145,7 @@ export default function FightScreen({ area, node, party, fight, elapsedMs, speed
       <div className="eld-panel" style={S.feedBox} ref={feedRef}>
         {feed.length === 0 && <div className="eld-feed-line">The bond tightens. Blades find rhythm…</div>}
         {feed.map((e, i) => (
-          <div key={`${e.t}-${i}`} className={`eld-feed-line ${feedClass(e)}`}>{feedText(e)}</div>
+          <div key={`${e.t}-${i}`} className={`eld-feed-line ${feedClass(e)}`}>{feedText(e)}{testNumbers && (e.type === 'hit' || e.type === 'crit') ? rawToMitigated(e) : ''}</div>
         ))}
       </div>
     </div>
@@ -153,6 +157,7 @@ function hpColor(f) {
 }
 
 function feedClass(e) {
+  if (e.type === 'hit') return e.enemy ? 'is-taken' : '';
   if (e.type === 'crit') return e.enemy ? 'is-bad' : 'is-crit';
   if (e.type === 'innate') return 'is-innate';
   if (e.type === 'heal') return 'is-heal';
@@ -166,6 +171,7 @@ function feedClass(e) {
 
 function feedText(e) {
   switch (e.type) {
+    case 'hit': return e.enemy ? `${e.sourceName} hits ${e.targetName} for ${e.amount}` : `${e.sourceName} hits ${e.targetName} for ${e.amount}`;
     case 'crit': return e.enemy ? `${e.sourceName} ENRAGED hit ▸ ${e.targetName} for ${e.amount}` : `${e.sourceName} crits ${e.targetName} for ${e.amount}`;
     case 'kill': return `${e.sourceName} fells ${e.targetName}`;
     case 'innate': return e.text || `${e.name} ▸ ${e.sourceName}`;

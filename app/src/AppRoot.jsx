@@ -171,8 +171,8 @@ export default function Eldrathor() {
     SAVER.schedule({ tab, party, roster, worldvein, bag, inventory, unlocked, afk, afkSavedAt: Date.now(), run });
   }, [tab, party, roster, worldvein, bag, inventory, unlocked, afk, runStage, area, territory, currentId, prevId, runParty, runHp, runMods, runVein, partyHP, log, logSeen, fight, fightNode, camera.pan]);
   useEffect(() => {
-    if (BOOT.quarantined) doFlash('Save was unreadable — started fresh (copy kept)', colors.mindDanger);
-    else if (BOOT.migratedFrom != null) doFlash('Save updated to the current version', colors.mythros);
+    if (BOOT.reset) doFlash('Save reset for a game update', colors.mythros); // Item Model §9: older saves are discarded while M2–M3 build
+    else if (BOOT.quarantined) doFlash('Save was unreadable — started fresh (copy kept)', colors.mindDanger);
     if (R0 && ['loot', 'sanctuary', 'fight'].includes(R0.runStage)) enterMindView();
     return () => SAVER.flush();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -336,7 +336,7 @@ export default function Eldrathor() {
     if (eff === 'sanctuary') {
       return { kind: 'reveal', nodeId: n.id, onNode, type: eff, glyph: TYPE_GLYPH[eff], title, body, yieldText, threat: null, enemies, actions: [{ id: 'leave', label: 'Leave', ghost: true }, { id: 'use', label: 'Use' }] };
     }
-    return { kind: 'reveal', nodeId: n.id, onNode, type: eff, glyph: TYPE_GLYPH[eff], title, body, yieldText, threat, enemies, actions: [{ id: 'flee', label: 'Flee', ghost: true }, { id: 'fight', label: 'Fight' }] };
+    return { kind: 'reveal', nodeId: n.id, onNode, type: eff, glyph: TYPE_GLYPH[eff], title, body, yieldText, threat, enemies, tier: area.tier, actions: [{ id: 'flee', label: 'Flee', ghost: true }, { id: 'fight', label: 'Fight' }] };
   }
   /** §15 explore card: rune, "Unexplored", hops away — Explore / Cancel. Nothing moves until Explore. */
   function buildExplore(n, hops) {
@@ -569,7 +569,7 @@ export default function Eldrathor() {
     const bossKill = sim.result.win && eff === 'boss';
     const mapClear = bossKill && allCleared({ ...t, nodes: t.nodes.map((x) => (x.id === n.id ? { ...x, cleared: true } : x)) });
     const rewards = sim.result.win
-      ? rollRewards({ area: area.id, nodeType: eff, attuneVein: sim.result.attuneVein, rng, named: !!n.namedRare, mapClear })
+      ? rollRewards({ area: area.id, nodeType: eff, attuneVein: sim.result.attuneVein, rng, named: !!n.namedRare, mapClear, bossName: eff === 'boss' ? area.boss : null })
       : null;
     const derived = fielded.map((m) => deriveStats(m));
     // Progression Loop Lock §3: fight XP on a win, split evenly, the fallen at half; applied at Continue

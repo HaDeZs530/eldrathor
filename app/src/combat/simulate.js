@@ -212,11 +212,12 @@ export function simulateFight({ party, enemies, seed = 1, startHpFrac, runMods, 
       ev({ t, type: 'swing', source: p.id, sourceName: p.name, target: primary.id, targetName: primary.name });
       for (const e of alive) {
         const share = e === primary ? 1 : AOE_SPLASH;
-        const amt = round(base * share * (1 - e.mit));
+        const raw = base * share;
+        const amt = round(raw * (1 - e.mit));
         if (amt <= 0) continue;
         e.hp -= amt;
         p.dealt += amt;
-        ev({ t, type: crit ? 'crit' : 'hit', source: p.id, sourceName: p.name, target: e.id, targetName: e.name, amount: amt, hp: Math.max(0, e.hp), splash: e !== primary });
+        ev({ t, type: crit ? 'crit' : 'hit', source: p.id, sourceName: p.name, target: e.id, targetName: e.name, amount: amt, hp: Math.max(0, e.hp), splash: e !== primary, raw: round(raw), mit: e.mit });
         if (e.hp <= 0 && e.alive) {
           e.alive = false;
           p.kills += 1;
@@ -254,7 +255,8 @@ export function simulateFight({ party, enemies, seed = 1, startHpFrac, runMods, 
       amt = round(amt);
       target.hp -= amt;
       target.taken += amt;
-      ev({ t, type: enraged ? 'crit' : 'hit', source: e.id, sourceName: e.name, target: target.id, targetName: target.name, amount: amt, hp: Math.max(0, target.hp), enemy: true, enraged });
+      // brief §4/§5: every enemy hit is a feed event; `raw` and the effective `mit` let the feed show "14 (22 − 36%)"
+      ev({ t, type: enraged ? 'crit' : 'hit', source: e.id, sourceName: e.name, target: target.id, targetName: target.name, amount: amt, hp: Math.max(0, target.hp), enemy: true, enraged, raw: round(dmg), mit: dmg > 0 ? Math.max(0, 1 - amt / dmg) : 0 });
       if (target.hp <= 0 && target.alive) {
         target.alive = false;
         target.hp = 0;

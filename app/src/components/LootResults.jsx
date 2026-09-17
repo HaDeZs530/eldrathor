@@ -1,4 +1,5 @@
 import { ARCHETYPES } from '../data.js';
+import { useTestNumbers } from '../debug/useTestNumbers.js';
 import { upgradeFor } from '../progression/upgrade.js';
 import ItemRow from './items/ItemRow.jsx';
 
@@ -13,6 +14,9 @@ import ItemRow from './items/ItemRow.jsx';
  */
 export default function LootResults({ area, nodeLabel, fight, party = [], onContinue }) {
   const { result, stats, rewards } = fight;
+  const testNumbers = useTestNumbers();
+  const totals = stats.party.reduce((a, p) => ({ dealt: a.dealt + p.dealt, taken: a.taken + p.taken }), { dealt: 0, taken: 0 });
+  const secs = Math.max(0.1, result.durationSec || result.durationMs / 1000 || 0.1);
   const win = result.win;
   const accent = win ? 'var(--eld-accent)' : 'var(--eld-danger)';
 
@@ -51,6 +55,12 @@ export default function LootResults({ area, nodeLabel, fight, party = [], onCont
           ))}
         </div>
 
+        {testNumbers && (
+          <div className="eld-test-numbers" aria-label="Fight numbers (test numbers)">
+            <div>party DPS {(totals.dealt / secs).toFixed(1)} · enemy DPS taken {(totals.taken / secs).toFixed(1)} · {secs.toFixed(1)}s</div>
+            <div>seed {fight.seed ?? '—'} · events {fight.events?.length ?? '—'}</div>
+          </div>
+        )}
         {win ? (
           <>
             <div style={S.row}>

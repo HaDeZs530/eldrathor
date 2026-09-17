@@ -3,6 +3,8 @@ import {
   armorBonus, sellValue, upgradeStepFor,
 } from '../../progression/items.js';
 import { Sheet, PrimaryButton, SecondaryButton } from '../ui/index.jsx';
+import { useTestNumbers } from '../../debug/useTestNumbers.js';
+import { itemPowerLine, itemMultLine } from './itemNumbers.js';
 import './items.css';
 
 /**
@@ -41,6 +43,7 @@ export default function ItemSheet({
   item, current = null, equippedBy, compareWith,
   onClose, onEquip, onEmpower, onSell, onUpgrade,
 }) {
+  const testNumbers = useTestNumbers();
   if (!item) return null;
   const color = RARITY_COLOR[item.rarity] || 'var(--eld-text)';
   const rows = itemStats(item);
@@ -73,6 +76,12 @@ export default function ItemSheet({
           <span className="eld-item-empty">none until gems</span>
         </div>
         {compareWith && <div className="eld-item-note">Compared with {compareWith}</div>}
+        {testNumbers && (
+          <div className="eld-test-numbers" aria-label="Item numbers (test numbers)">
+            <div>{itemPowerLine(item)}</div>
+            <div>{itemMultLine(item)}</div>
+          </div>
+        )}
       </div>
 
       <div className="eld-item-actions">

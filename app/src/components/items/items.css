@@ -121,3 +121,12 @@
 .eld-slot-label { font-size: var(--mv-label, 15px); font-family: var(--eld-font-display); letter-spacing: 0.04em; color: var(--eld-muted); }
 .eld-slot-rating { font-size: var(--mv-label, 15px); font-weight: 700; font-variant-numeric: tabular-nums; color: var(--rarity, var(--eld-text)); }
 .eld-slot-empty-note { font-size: 12px; color: var(--eld-muted); text-align: center; line-height: 1.2; }
+
+/* test-numbers mode: one monospace line under the row / in the sheet */
+.eld-test-numbers {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--eld-muted);
+  opacity: 0.9;
+}

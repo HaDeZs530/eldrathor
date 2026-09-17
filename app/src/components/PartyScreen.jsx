@@ -5,7 +5,8 @@ import { EQUIP_SLOTS, SLOT_LABEL } from '../progression/items.js';
 import SlotGrid from './items/SlotGrid.jsx';
 import ItemSheet from './items/ItemSheet.jsx';
 import BagScreen from './BagScreen.jsx';
-import { deriveDisplay, equip } from '../combat/derive.js';
+import { deriveDisplay, deriveBreakdown, equip } from '../combat/derive.js';
+import { useTestNumbers } from '../debug/useTestNumbers.js';
 import { INNATES } from '../combat/simulate.js';
 
 const CLASS_GLYPH = {
@@ -247,6 +248,7 @@ function MemberDetail({ member, bag, setBag, setWorldvein, onEmpower, taken, loc
   const geared = equip(member, bag);
   const d = deriveDisplay(geared);
   const inn = INNATES[member.archetype];
+  const testNumbers = useTestNumbers();
   const [nameDraft, setNameDraft] = useState(member.name);
   const nameOk = validName(nameDraft);
   const [openSlot, setOpenSlot] = useState(null); // a filled slot's item sheet
@@ -300,6 +302,13 @@ function MemberDetail({ member, bag, setBag, setWorldvein, onEmpower, taken, loc
           </div>
         ))}
       </div>
+      {testNumbers && (
+        <div className="eld-panel eld-test-numbers" style={{ padding: '8px 10px', marginTop: 6 }} aria-label="Stat sources (test numbers)">
+          {deriveBreakdown(geared).map((r) => (
+            <div key={r.k}>{r.k} = {r.parts.map(([label, v]) => `${label} [${Number(v).toFixed(3)}]`).join(r.op === 'sum' ? ' + ' : ' × ')}{r.cap != null ? ` (cap ${r.cap})` : ''} → {Number(r.v).toFixed(3)}</div>
+          ))}
+        </div>
+      )}
 
       <div style={S.secHead}>Base seeds</div>
       <div style={S.note}>Base seeds — gems multiply these.</div>

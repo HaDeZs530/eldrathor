@@ -202,6 +202,7 @@
 .eld-feed-line.is-heal { color: #20a95e; }
 .eld-feed-line.is-kill { color: #dfe9f5; }
 .eld-feed-line.is-bad { color: #e5484d; }
+.eld-feed-line.is-taken { color: #d98a8e; } /* enemy hit on a party member (brief §4) — damage, one shade softer than a crit */
 .eld-feed-line.is-enrage { color: #ff7a6e; font-weight: 700; }
 .eld-feed-line.is-end { color: #dfe9f5; font-weight: 700; }
 

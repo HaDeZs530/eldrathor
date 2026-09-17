@@ -7,6 +7,7 @@ import { trace, isTraceOn } from '../debug/trace.js';
 import Art from '../art/Art.jsx';
 import { useArtStatuses } from '../art/useArt.js';
 import PendingArt from '../art/PendingArt.jsx';
+import { useTestNumbers } from '../debug/useTestNumbers.js';
 import { artSrc, areaSlug, NODE_KINDS } from '../art/manifest.js';
 import './parchment.css';
 
@@ -99,6 +100,7 @@ export default function RouteMapScreen({
 
   const byId = useMemo(() => Object.fromEntries(territory.nodes.map((n) => [n.id, n])), [territory.nodes]);
   const biome = biomeForArea(area);
+  const testNumbers = useTestNumbers();
   // Style Bible §B art for this map: tiles, the area's biome, the ring, the node icons — placeholders until they land
   const biomeName = `biome-${areaSlug(area)}`;
   const mapArtNames = useMemo(() => ['parchment-tile', 'fog-tile', biomeName, 'party-ring', ...NODE_KINDS.map((k) => `node-${k}`)], [biomeName]);
@@ -512,6 +514,14 @@ export default function RouteMapScreen({
             </div>
             <div className="eld-scout-body">{card.body}</div>
             {card.yieldText && <div className="eld-scout-yield">{card.yieldText}</div>}
+            {testNumbers && card.enemies?.length > 0 && (
+              <div className="eld-test-numbers" aria-label="Enemy stat block (test numbers)">
+                <div>T{card.tier ?? area.tier} · {card.enemies.length} unit{card.enemies.length === 1 ? '' : 's'}</div>
+                {card.enemies.map((e) => (
+                  <div key={e.id}>{e.name}: hp {Math.round(e.hp)} · dmg {e.dmg.toFixed(1)} · {e.interval}s · mit {Math.round(e.mit * 100)}%{e.depthMult && e.depthMult !== 1 ? ` · depth ×${e.depthMult.toFixed(2)}` : ''}{e.named ? ' · named ×1.3' : ''}</div>
+                ))}
+              </div>
+            )}
             <div className="eld-scout-actions">
               {card.actions.map((a) => (
                 <button key={a.id} type="button" className={`eld-btn${a.ghost ? ' eld-btn-ghost' : ''}`} onClick={() => onCardAction(a.id)} disabled={a.disabled || (busy && !a.ghost)}>

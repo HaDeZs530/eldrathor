@@ -58,6 +58,30 @@ export function deriveStats(adventurer) {
   };
 }
 
+/**
+ * Test-numbers mode (item-numbers brief §5): every derived stat with its sources — seed, level, gear.
+ * Each entry is `{ k, v, parts }` where `parts` is an ordered list of `[label, value]` factors / terms
+ * whose product / sum is `v` (asserted by derive.test.js).
+ */
+export function deriveBreakdown(adventurer) {
+  const d = deriveStats(adventurer);
+  const s = d.seeds; const g = { ...NO_GEMS, ...(adventurer.gems || {}) };
+  const lvl = 1 + 0.05 * (d.level - 1);
+  const w = d.weapon;
+  const x = (label, v) => [label, v];
+  return [
+    { k: 'Max HP', v: d.maxHp, op: 'sum', parts: [x(`seed ${s.hp} × 20`, s.hp * 20), x(`level ×${lvl.toFixed(2)}`, s.hp * 20 * (1 + g.hp) * (lvl - 1)), x('gear (armor)', d.armor.hp)] },
+    { k: 'Hit', v: d.hitDamage, op: 'product', parts: [x(`weapon ${d.weaponType} ${w.dmg}`, w.dmg), x(`power seed ${s.power}/10`, s.power / 10 * (1 + g.power)), x(`level ×${lvl.toFixed(2)}`, lvl), x('gear (weapon item)', d.weaponMult)] },
+    { k: 'Swing', v: d.swingInterval, op: 'product', parts: [x(`tempo ${w.tempo}s`, w.tempo), x(`÷ speed seed ${s.attackSpeed}/10`, 1 / ((s.attackSpeed / 10) * (1 + g.attackSpeed)))] },
+    { k: 'Crit chance', v: d.critChance, op: 'product', parts: [x(`seed ${s.critChance} × 1%`, s.critChance * 0.01), x('gems', 1 + g.critChance)] },
+    { k: 'Crit mult', v: d.critMult, op: 'sum', parts: [x('base 1.5', 1.5), x(`seed (${s.critDamage} − 10) × 0.05`, (s.critDamage - 10) * 0.05), x('gem', g.critDamage)] },
+    { k: 'Mitigation', v: d.mitigation, op: 'sum', parts: [x(`seed ${s.mitigation} × 2%`, s.mitigation * 0.02 * (1 + g.mitigation)), x(`weapon ${d.weaponType}`, w.mit * (1 + g.mitigation)), x('gear (armor)', d.armor.mit)], cap: MITIGATION_CAP },
+    { k: 'Max mana', v: d.maxMana, op: 'product', parts: [x(`seed ${s.mana} × 10`, s.mana * 10), x('gems', 1 + g.mana)] },
+    { k: 'Mana regen', v: d.manaRegen, op: 'product', parts: [x(`seed ${s.manaRegen} × 0.5`, s.manaRegen * 0.5), x('gems', 1 + g.manaRegen)] },
+    { k: 'Heal scale', v: d.healScale, op: 'product', parts: [x(`seed ${s.healingPower}/10`, s.healingPower / 10), x('gems', 1 + g.healingPower)] },
+  ];
+}
+
 /** Rounded, display-friendly copy for stat sheets. */
 export function deriveDisplay(adventurer) {
   const d = deriveStats(adventurer);
