@@ -8,8 +8,6 @@ import '../components/ui/ui.css';
 import './world.css';
 import './explore.css';
 import './mind.css';
-import './bond.css';
-import './veinbinder.css';
 import './hearth.css';
 import './hub.css';
 
@@ -65,12 +63,13 @@ export function ThemeProvider({ children }) {
 
   const modeClass = `mode-${currentMode.toLowerCase()}`;
   const hubClass = `hub-${hubSkin}`;
+  const colClass = `eld-col-${modeColumn(currentMode, hubSkin)}`; // the Style Bible column in force (mind.css keys on eld-col-mind)
   const transitionClass = transitioning ? ' mode-transitioning' : '';
 
   return (
     <ThemeContext.Provider value={value}>
       <div
-        className={`eld-root ${modeClass} ${hubClass}${transitionClass}`}
+        className={`eld-root ${modeClass} ${hubClass} ${colClass}${transitionClass}`}
         data-mode={currentMode}
         data-hub-skin={hubSkin}
       >

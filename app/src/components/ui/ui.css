@@ -292,6 +292,29 @@
   flex-shrink: 0;
 }
 
+/* Party root (UI Brackets lock, revised): the fight PartyCard wrapped in a tap target — Party and Fight read as one place */
+.eld-party-tap {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  margin: 0;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  text-align: inherit;
+  cursor: pointer;
+}
+.eld-party-tap .eld-party-card { height: 100%; }
+.eld-party-slot {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--eld-muted);
+  margin-top: 2px;
+}
+
 .eld-party-card {
   min-height: 120px;
   padding: 6px 6px 8px;
@@ -429,14 +452,15 @@
    Style Bible §D — mode scopes. A screen root, sheet, card or overlay carries `.eld-mode-<column>` for
    its own column: screens pin theirs (the route map stays Exploration under a Mind View fight overlay),
    and a Sheet freezes the column of the screen it opened over at open time. The repeated class gives the
-   scope more weight than the mode rules in theme/*.css (which describe the screen underneath), so a
+   scope more weight than the mode rules in theme/*.css (which describe the screen underneath — four repeats
+   out-weigh world.css's :not() chain for panel / button chrome, shadow included), so a
    frozen sheet keeps its look even while the theme transitions beneath it.
    Each block below carries the FULL token set (theme/styleBible.js MODE_TOKENS) — same rule as the mode
    stylesheets: a pinned subtree supplies every token itself and inherits nothing from the column outside.
    ========================================================================================== */
 
 /* --- Veinharbor: #141210 panel, 1 px #5a4a22 + #292823 inner, Cinzel #f0e2bd, gold primary, no glow --- */
-.eld-root .eld-mode-veinharbor.eld-mode-veinharbor.eld-mode-veinharbor {
+.eld-root .eld-mode-veinharbor.eld-mode-veinharbor.eld-mode-veinharbor.eld-mode-veinharbor {
   --eld-bg: #080807;
   --eld-bg-mid: #0e0d0b;
   --eld-panel: #141210;
@@ -476,21 +500,21 @@
   --eld-art-ph-text: #a89c88;
   color: #c9bfae;
 }
-.eld-root .eld-mode-veinharbor.eld-mode-veinharbor.eld-mode-veinharbor .eld-panel,
-.eld-root .eld-mode-veinharbor.eld-mode-veinharbor.eld-mode-veinharbor .eld-card,
-.eld-root .eld-mode-veinharbor.eld-mode-veinharbor.eld-mode-veinharbor.eld-panel {
+.eld-root .eld-mode-veinharbor.eld-mode-veinharbor.eld-mode-veinharbor.eld-mode-veinharbor .eld-panel,
+.eld-root .eld-mode-veinharbor.eld-mode-veinharbor.eld-mode-veinharbor.eld-mode-veinharbor .eld-card,
+.eld-root .eld-mode-veinharbor.eld-mode-veinharbor.eld-mode-veinharbor.eld-mode-veinharbor.eld-panel {
   background: #141210; border: 1px solid #5a4a22; border-radius: 10px; box-shadow: inset 0 0 0 1px #292823; color: #c9bfae;
 }
-.eld-root .eld-mode-veinharbor.eld-mode-veinharbor.eld-mode-veinharbor .eld-card { background: #191613; }
-.eld-root .eld-mode-veinharbor.eld-mode-veinharbor.eld-mode-veinharbor .eld-btn {
+.eld-root .eld-mode-veinharbor.eld-mode-veinharbor.eld-mode-veinharbor.eld-mode-veinharbor .eld-card { background: #191613; }
+.eld-root .eld-mode-veinharbor.eld-mode-veinharbor.eld-mode-veinharbor.eld-mode-veinharbor .eld-btn {
   background: #141210; color: #e8c46a; border: 1px solid #5a4a22; border-radius: 10px; box-shadow: none;
 }
-.eld-root .eld-mode-veinharbor.eld-mode-veinharbor.eld-mode-veinharbor .eld-btn.eld-btn-primary { background: #e8c46a; color: #1a1206; border-color: #e8c46a; }
-.eld-root .eld-mode-veinharbor.eld-mode-veinharbor.eld-mode-veinharbor .eld-btn-ghost { background: transparent; color: #c9bfae; border-color: #5a4a22; }
-.eld-root .eld-mode-veinharbor.eld-mode-veinharbor.eld-mode-veinharbor .eld-sheet-title { color: #f0e2bd; }
+.eld-root .eld-mode-veinharbor.eld-mode-veinharbor.eld-mode-veinharbor.eld-mode-veinharbor .eld-btn.eld-btn-primary { background: #e8c46a; color: #1a1206; border-color: #e8c46a; }
+.eld-root .eld-mode-veinharbor.eld-mode-veinharbor.eld-mode-veinharbor.eld-mode-veinharbor .eld-btn-ghost { background: transparent; color: #c9bfae; border-color: #5a4a22; }
+.eld-root .eld-mode-veinharbor.eld-mode-veinharbor.eld-mode-veinharbor.eld-mode-veinharbor .eld-sheet-title { color: #f0e2bd; }
 
 /* --- Exploration: parchment #f1e6cf card, 1 px #8a7350 (6 px), ink text, gold-filled primary / parchment-outline secondary, paper grain --- */
-.eld-root .eld-mode-explore.eld-mode-explore.eld-mode-explore {
+.eld-root .eld-mode-explore.eld-mode-explore.eld-mode-explore.eld-mode-explore {
   --eld-bg: #e8d5b7;
   --eld-bg-mid: #e8d5b7;
   --eld-panel: #f1e6cf;
@@ -530,24 +554,24 @@
   --eld-art-ph-text: #6f5d48;
   color: #3a2e22;
 }
-.eld-root .eld-mode-explore.eld-mode-explore.eld-mode-explore .eld-panel,
-.eld-root .eld-mode-explore.eld-mode-explore.eld-mode-explore .eld-card,
-.eld-root .eld-mode-explore.eld-mode-explore.eld-mode-explore.eld-panel {
+.eld-root .eld-mode-explore.eld-mode-explore.eld-mode-explore.eld-mode-explore .eld-panel,
+.eld-root .eld-mode-explore.eld-mode-explore.eld-mode-explore.eld-mode-explore .eld-card,
+.eld-root .eld-mode-explore.eld-mode-explore.eld-mode-explore.eld-mode-explore.eld-panel {
   background:
     repeating-linear-gradient(0deg, rgba(90, 60, 30, 0.06) 0 1px, transparent 1px 4px),
     #f1e6cf;
   border: 1px solid #8a7350; border-radius: 6px; box-shadow: none; color: #3a2e22;
 }
-.eld-root .eld-mode-explore.eld-mode-explore.eld-mode-explore .eld-btn {
+.eld-root .eld-mode-explore.eld-mode-explore.eld-mode-explore.eld-mode-explore .eld-btn {
   background: #c9962e; color: #2b2118; border: 1px solid #a77a20; border-radius: 6px; box-shadow: none;
 }
-.eld-root .eld-mode-explore.eld-mode-explore.eld-mode-explore .eld-btn-ghost,
-.eld-root .eld-mode-explore.eld-mode-explore.eld-mode-explore .eld-btn.eld-btn-secondary { background: #f1e6cf; color: #3a2e22; border-color: #8a7350; }
-.eld-root .eld-mode-explore.eld-mode-explore.eld-mode-explore .eld-sheet-title { color: #2b2118; }
-.eld-root .eld-mode-explore.eld-mode-explore.eld-mode-explore .eld-sheet-grip { background: #8a7350; }
+.eld-root .eld-mode-explore.eld-mode-explore.eld-mode-explore.eld-mode-explore .eld-btn-ghost,
+.eld-root .eld-mode-explore.eld-mode-explore.eld-mode-explore.eld-mode-explore .eld-btn.eld-btn-secondary { background: #f1e6cf; color: #3a2e22; border-color: #8a7350; }
+.eld-root .eld-mode-explore.eld-mode-explore.eld-mode-explore.eld-mode-explore .eld-sheet-title { color: #2b2118; }
+.eld-root .eld-mode-explore.eld-mode-explore.eld-mode-explore.eld-mode-explore .eld-sheet-grip { background: #8a7350; }
 
 /* --- Mind View: #1a2b3b panel (cards #23353f), 1 px #3d6fa8 + 6 px #2cabf8 glow @ 25 %, #dfe9f5 title, outline buttons --- */
-.eld-root .eld-mode-mind.eld-mode-mind.eld-mode-mind {
+.eld-root .eld-mode-mind.eld-mode-mind.eld-mode-mind.eld-mode-mind {
   --eld-bg: #0c1a2b;
   --eld-bg-mid: #152a41;
   --eld-panel: #1a2b3b;
@@ -588,175 +612,70 @@
   --eld-crit: #f2c14e;
   color: #b7c6d8;
 }
-.eld-root .eld-mode-mind.eld-mode-mind.eld-mode-mind .eld-panel,
-.eld-root .eld-mode-mind.eld-mode-mind.eld-mode-mind .eld-card,
-.eld-root .eld-mode-mind.eld-mode-mind.eld-mode-mind.eld-panel {
+.eld-root .eld-mode-mind.eld-mode-mind.eld-mode-mind.eld-mode-mind .eld-panel,
+.eld-root .eld-mode-mind.eld-mode-mind.eld-mode-mind.eld-mode-mind .eld-card,
+.eld-root .eld-mode-mind.eld-mode-mind.eld-mode-mind.eld-mode-mind.eld-panel {
   background: #1a2b3b; border: 1px solid #3d6fa8; border-radius: 8px; box-shadow: 0 0 6px rgba(44, 171, 248, 0.25); color: #b7c6d8;
 }
-.eld-root .eld-mode-mind.eld-mode-mind.eld-mode-mind .eld-card { background: #23353f; }
-.eld-root .eld-mode-mind.eld-mode-mind.eld-mode-mind .eld-btn {
+.eld-root .eld-mode-mind.eld-mode-mind.eld-mode-mind.eld-mode-mind .eld-card { background: #23353f; }
+.eld-root .eld-mode-mind.eld-mode-mind.eld-mode-mind.eld-mode-mind .eld-btn {
   background: #1a2b3b; color: #dfe9f5; border: 1px solid #3d6fa8; border-radius: 8px; box-shadow: 0 0 6px rgba(44, 171, 248, 0.25);
 }
-.eld-root .eld-mode-mind.eld-mode-mind.eld-mode-mind .eld-btn-ghost { background: transparent; color: #b7c6d8; border-color: #3d6fa8; }
-.eld-root .eld-mode-mind.eld-mode-mind.eld-mode-mind .eld-btn.is-active,
-.eld-root .eld-mode-mind.eld-mode-mind.eld-mode-mind .eld-btn:active:not(:disabled) { border-color: #e8c46a; box-shadow: 0 0 0 1px #e8c46a, 0 0 8px rgba(232, 196, 106, 0.35); }
-.eld-root .eld-mode-mind.eld-mode-mind.eld-mode-mind .eld-sheet-title { color: #dfe9f5; }
+.eld-root .eld-mode-mind.eld-mode-mind.eld-mode-mind.eld-mode-mind .eld-btn-ghost { background: transparent; color: #b7c6d8; border-color: #3d6fa8; }
+.eld-root .eld-mode-mind.eld-mode-mind.eld-mode-mind.eld-mode-mind .eld-btn.is-active,
+.eld-root .eld-mode-mind.eld-mode-mind.eld-mode-mind.eld-mode-mind .eld-btn:active:not(:disabled) { border-color: #e8c46a; box-shadow: 0 0 0 1px #e8c46a, 0 0 8px rgba(232, 196, 106, 0.35); }
+.eld-root .eld-mode-mind.eld-mode-mind.eld-mode-mind.eld-mode-mind .eld-sheet-title { color: #dfe9f5; }
 
-/* --- Bond (UI Brackets lock): #1c1410 panel, 1 px #8a5a2b + #3a2a1c inner, Cinzel #f2d9b8, accent #e0782f --- */
-.eld-root .eld-mode-bond.eld-mode-bond.eld-mode-bond {
-  --eld-bg: #0e0a08;
-  --eld-bg-mid: #140e0a;
-  --eld-panel: #1c1410;
-  --eld-card: #231a14;
-  --eld-border: #8a5a2b;
-  --eld-border-inner: #3a2a1c;
-  --eld-panel-shadow: 0 8px 18px -8px rgba(224, 120, 47, 0.45);
-  --eld-text: #d9c4a8;
-  --eld-display: #f2d9b8;
-  --eld-muted: #a88a6c;
-  --eld-accent: #e0782f;
-  --eld-accent-glow: rgba(224, 120, 47, 0.35);
+/* --- Hearth (the one blend): Veinharbor exactly, with the accent turned Mythros #2cabf8 — the Offline summary pins this --- */
+.eld-root .eld-mode-hearth.eld-mode-hearth.eld-mode-hearth.eld-mode-hearth {
+  --eld-bg: #080807;
+  --eld-bg-mid: #0e0d0b;
+  --eld-panel: #141210;
+  --eld-card: #191613;
+  --eld-border: #5a4a22;
+  --eld-border-inner: #292823;
+  --eld-panel-shadow: inset 0 0 0 1px #292823;
+  --eld-text: #c9bfae;
+  --eld-display: #f0e2bd;
+  --eld-muted: #a89c88;
+  --eld-accent: #2cabf8;
+  --eld-accent-glow: rgba(44, 171, 248, 0.25);
   --eld-gold: #e8c46a;
   --eld-mythros: #2cabf8;
   --eld-good: #20a95e;
   --eld-danger: #e5484d;
   --eld-header-bg: transparent;
-  --eld-btn-bg: #1c1410;
-  --eld-btn-text: #e0782f;
-  --eld-btn-border: #8a5a2b;
+  --eld-btn-bg: #141210;
+  --eld-btn-text: #e8c46a;
+  --eld-btn-border: #5a4a22;
   --eld-btn-shadow: none;
-  --eld-btn-primary-bg: #c9642a;
-  --eld-btn-primary-text: #1a0f08;
-  --eld-btn-ghost-border: #8a5a2b;
-  --eld-btn-ghost-text: #d9c4a8;
+  --eld-btn-primary-bg: #e8c46a;
+  --eld-btn-primary-text: #1a1206;
+  --eld-btn-ghost-border: #5a4a22;
+  --eld-btn-ghost-text: #c9bfae;
   --eld-bar-track: rgba(0, 0, 0, 0.45);
   --eld-bar-border: rgba(255, 255, 255, 0.12);
   --eld-tabbar-bg: #0f151d;
   --eld-tab-active: #e8c46a;
-  --eld-tab-inactive: #a88a6c;
-  --eld-font-display: Cinzel, 'Palatino Linotype', Georgia, serif;
-  --eld-font-body: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --eld-radius: 10px;
-  --eld-shadow: 0 8px 18px -8px rgba(224, 120, 47, 0.45);
-  --eld-art-ph-bg: #1c1410;
-  --eld-art-ph-line: #8a5a2b;
-  --eld-art-ph-text: #a88a6c;
-  color: #d9c4a8;
-}
-.eld-root .eld-mode-bond.eld-mode-bond.eld-mode-bond .eld-panel,
-.eld-root .eld-mode-bond.eld-mode-bond.eld-mode-bond .eld-card,
-.eld-root .eld-mode-bond.eld-mode-bond.eld-mode-bond.eld-panel {
-  background: #1c1410; border: 1px solid #8a5a2b; border-radius: 10px; box-shadow: 0 8px 18px -8px rgba(224, 120, 47, 0.45); color: #d9c4a8;
-}
-.eld-root .eld-mode-bond.eld-mode-bond.eld-mode-bond .eld-card { background: #231a14; }
-.eld-root .eld-mode-bond.eld-mode-bond.eld-mode-bond .eld-btn { background: #1c1410; color: #e0782f; border: 1px solid #8a5a2b; border-radius: 10px; box-shadow: none; }
-.eld-root .eld-mode-bond.eld-mode-bond.eld-mode-bond .eld-btn.eld-btn-primary { background: #c9642a; color: #1a0f08; border-color: #c9642a; }
-.eld-root .eld-mode-bond.eld-mode-bond.eld-mode-bond .eld-btn-ghost { background: transparent; color: #d9c4a8; border-color: #8a5a2b; }
-.eld-root .eld-mode-bond.eld-mode-bond.eld-mode-bond .eld-sheet-title { color: #f2d9b8; }
-.eld-root .eld-mode-bond.eld-mode-bond.eld-mode-bond .eld-sheet-grip { background: #8a5a2b; }
-
-/* --- Veinbinder (UI Brackets lock): #1b1220 panel, 1 px #6b4fa0 + #3b3746 inner, Cinzel #e6d8f5, accent #a678f0 --- */
-.eld-root .eld-mode-veinbinder.eld-mode-veinbinder.eld-mode-veinbinder {
-  --eld-bg: #0f0a14;
-  --eld-bg-mid: #150e1c;
-  --eld-panel: #1b1220;
-  --eld-card: #221828;
-  --eld-border: #6b4fa0;
-  --eld-border-inner: #3b3746;
-  --eld-panel-shadow: inset 0 0 0 1px #3b3746;
-  --eld-text: #cfc4dc;
-  --eld-display: #e6d8f5;
-  --eld-muted: #9a8fae;
-  --eld-accent: #a678f0;
-  --eld-accent-glow: rgba(166, 120, 240, 0.35);
-  --eld-gold: #e8c46a;
-  --eld-mythros: #c9a6ff;
-  --eld-good: #20a95e;
-  --eld-danger: #e5484d;
-  --eld-header-bg: transparent;
-  --eld-btn-bg: #1b1220;
-  --eld-btn-text: #a678f0;
-  --eld-btn-border: #6b4fa0;
-  --eld-btn-shadow: none;
-  --eld-btn-primary-bg: #7a55c9;
-  --eld-btn-primary-text: #f4eefc;
-  --eld-btn-ghost-border: #6b4fa0;
-  --eld-btn-ghost-text: #cfc4dc;
-  --eld-bar-track: rgba(0, 0, 0, 0.45);
-  --eld-bar-border: rgba(255, 255, 255, 0.12);
-  --eld-tabbar-bg: #0f151d;
-  --eld-tab-active: #e8c46a;
-  --eld-tab-inactive: #9a8fae;
+  --eld-tab-inactive: #a89c88;
   --eld-font-display: Cinzel, 'Palatino Linotype', Georgia, serif;
   --eld-font-body: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --eld-radius: 10px;
   --eld-shadow: none;
-  --eld-art-ph-bg: #1b1220;
-  --eld-art-ph-line: #6b4fa0;
-  --eld-art-ph-text: #9a8fae;
-  color: #cfc4dc;
+  --eld-art-ph-bg: #141210;
+  --eld-art-ph-line: #5a4a22;
+  --eld-art-ph-text: #a89c88;
+  color: #c9bfae;
 }
-.eld-root .eld-mode-veinbinder.eld-mode-veinbinder.eld-mode-veinbinder .eld-panel,
-.eld-root .eld-mode-veinbinder.eld-mode-veinbinder.eld-mode-veinbinder .eld-card,
-.eld-root .eld-mode-veinbinder.eld-mode-veinbinder.eld-mode-veinbinder.eld-panel {
-  background: #1b1220; border: 1px solid #6b4fa0; border-radius: 10px; box-shadow: inset 0 0 0 1px #3b3746; color: #cfc4dc;
+.eld-root .eld-mode-hearth.eld-mode-hearth.eld-mode-hearth.eld-mode-hearth .eld-panel,
+.eld-root .eld-mode-hearth.eld-mode-hearth.eld-mode-hearth.eld-mode-hearth .eld-card,
+.eld-root .eld-mode-hearth.eld-mode-hearth.eld-mode-hearth.eld-mode-hearth.eld-panel {
+  background: #141210; border: 1px solid #5a4a22; border-radius: 10px; box-shadow: inset 0 0 0 1px #292823; color: #c9bfae;
 }
-.eld-root .eld-mode-veinbinder.eld-mode-veinbinder.eld-mode-veinbinder .eld-card { background: #221828; }
-.eld-root .eld-mode-veinbinder.eld-mode-veinbinder.eld-mode-veinbinder .eld-btn { background: #1b1220; color: #a678f0; border: 1px solid #6b4fa0; border-radius: 10px; box-shadow: none; }
-.eld-root .eld-mode-veinbinder.eld-mode-veinbinder.eld-mode-veinbinder .eld-btn.eld-btn-primary { background: #7a55c9; color: #f4eefc; border-color: #7a55c9; }
-.eld-root .eld-mode-veinbinder.eld-mode-veinbinder.eld-mode-veinbinder .eld-btn-ghost { background: transparent; color: #cfc4dc; border-color: #6b4fa0; }
-.eld-root .eld-mode-veinbinder.eld-mode-veinbinder.eld-mode-veinbinder .eld-sheet-title { color: #e6d8f5; }
-.eld-root .eld-mode-veinbinder.eld-mode-veinbinder.eld-mode-veinbinder .eld-sheet-grip { background: #6b4fa0; }
-
-/* --- Hearth (UI Brackets lock): #121a1a panel, 1 px #3f8f7a + #5a4a2b inner, Cinzel #d9ede6, accent #4fb39a --- */
-.eld-root .eld-mode-hearth.eld-mode-hearth.eld-mode-hearth {
-  --eld-bg: #0a1010;
-  --eld-bg-mid: #0e1616;
-  --eld-panel: #121a1a;
-  --eld-card: #172020;
-  --eld-border: #3f8f7a;
-  --eld-border-inner: #5a4a2b;
-  --eld-panel-shadow: inset 0 0 0 1px #5a4a2b;
-  --eld-text: #c4d6d0;
-  --eld-display: #d9ede6;
-  --eld-muted: #8aa39c;
-  --eld-accent: #4fb39a;
-  --eld-accent-glow: rgba(79, 179, 154, 0.3);
-  --eld-gold: #e8c46a;
-  --eld-mythros: #2cabf8;
-  --eld-good: #20a95e;
-  --eld-danger: #e5484d;
-  --eld-header-bg: transparent;
-  --eld-btn-bg: #121a1a;
-  --eld-btn-text: #4fb39a;
-  --eld-btn-border: #3f8f7a;
-  --eld-btn-shadow: none;
-  --eld-btn-primary-bg: #2f8a72;
-  --eld-btn-primary-text: #eafaf5;
-  --eld-btn-ghost-border: #3f8f7a;
-  --eld-btn-ghost-text: #c4d6d0;
-  --eld-bar-track: rgba(0, 0, 0, 0.45);
-  --eld-bar-border: rgba(255, 255, 255, 0.12);
-  --eld-tabbar-bg: #0f151d;
-  --eld-tab-active: #e8c46a;
-  --eld-tab-inactive: #8aa39c;
-  --eld-font-display: Cinzel, 'Palatino Linotype', Georgia, serif;
-  --eld-font-body: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --eld-radius: 10px;
-  --eld-shadow: none;
-  --eld-art-ph-bg: #121a1a;
-  --eld-art-ph-line: #3f8f7a;
-  --eld-art-ph-text: #8aa39c;
-  color: #c4d6d0;
+.eld-root .eld-mode-hearth.eld-mode-hearth.eld-mode-hearth.eld-mode-hearth .eld-card { background: #191613; }
+.eld-root .eld-mode-hearth.eld-mode-hearth.eld-mode-hearth.eld-mode-hearth .eld-btn {
+  background: #141210; color: #e8c46a; border: 1px solid #5a4a22; border-radius: 10px; box-shadow: none;
 }
-.eld-root .eld-mode-hearth.eld-mode-hearth.eld-mode-hearth .eld-panel,
-.eld-root .eld-mode-hearth.eld-mode-hearth.eld-mode-hearth .eld-card,
-.eld-root .eld-mode-hearth.eld-mode-hearth.eld-mode-hearth.eld-panel {
-  background: #121a1a; border: 1px solid #3f8f7a; border-radius: 10px; box-shadow: inset 0 0 0 1px #5a4a2b; color: #c4d6d0;
-}
-.eld-root .eld-mode-hearth.eld-mode-hearth.eld-mode-hearth .eld-card { background: #172020; }
-.eld-root .eld-mode-hearth.eld-mode-hearth.eld-mode-hearth .eld-btn { background: #121a1a; color: #4fb39a; border: 1px solid #3f8f7a; border-radius: 10px; box-shadow: none; }
-.eld-root .eld-mode-hearth.eld-mode-hearth.eld-mode-hearth .eld-btn.eld-btn-primary { background: #2f8a72; color: #eafaf5; border-color: #2f8a72; }
-.eld-root .eld-mode-hearth.eld-mode-hearth.eld-mode-hearth .eld-btn-ghost { background: transparent; color: #c4d6d0; border-color: #3f8f7a; }
-.eld-root .eld-mode-hearth.eld-mode-hearth.eld-mode-hearth .eld-sheet-title { color: #d9ede6; }
-.eld-root .eld-mode-hearth.eld-mode-hearth.eld-mode-hearth .eld-sheet-grip { background: #3f8f7a; }
+.eld-root .eld-mode-hearth.eld-mode-hearth.eld-mode-hearth.eld-mode-hearth .eld-btn.eld-btn-primary { background: #e8c46a; color: #1a1206; border-color: #e8c46a; }
+.eld-root .eld-mode-hearth.eld-mode-hearth.eld-mode-hearth.eld-mode-hearth .eld-btn-ghost { background: transparent; color: #c9bfae; border-color: #5a4a22; }
+.eld-root .eld-mode-hearth.eld-mode-hearth.eld-mode-hearth.eld-mode-hearth .eld-sheet-title { color: #f0e2bd; }

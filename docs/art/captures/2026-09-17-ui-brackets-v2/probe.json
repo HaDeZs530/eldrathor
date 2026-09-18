@@ -1,0 +1,104 @@
+{
+  "town": {
+    "root": "eld-root mode-world hub-rpg eld-col-veinharbor",
+    "accent": "#e8c46a",
+    "frameBg": "repeating-linear-gradient(90deg, rgba(90, 74, 34, 0.05) 0px,",
+    "panelBg": null,
+    "panelBorder": null,
+    "panelShadow": null,
+    "vein": "rgb(240, 226, 189)"
+  },
+  "party": {
+    "root": "eld-root mode-world hub-mind eld-col-mind",
+    "accent": "#2cabf8",
+    "frameBg": "radial-gradient(1px 1px at 20% 30%, rgba(44, 171, 248, 0.18)",
+    "panelBg": "rgb(26, 43, 59)",
+    "panelBorder": "rgb(61, 111, 168)",
+    "panelShadow": "rgba(44, 171, 248, 0.25) 0px 0px 6px 0px",
+    "vein": "rgb(223, 233, 245)"
+  },
+  "menuOverParty": {
+    "column": "mind",
+    "bg": "rgb(26, 43, 59)",
+    "border": "rgb(61, 111, 168)",
+    "shadow": "rgba(44, 171, 248, 0.25) 0px 0px 6px 0px",
+    "title": "rgb(223, 233, 245)"
+  },
+  "adventurer": {
+    "root": "eld-root mode-world hub-mind eld-col-mind",
+    "accent": "#2cabf8",
+    "frameBg": "radial-gradient(1px 1px at 20% 30%, rgba(44, 171, 248, 0.18)",
+    "panelBg": "rgb(26, 43, 59)",
+    "panelBorder": "rgb(61, 111, 168)",
+    "panelShadow": "rgba(44, 171, 248, 0.25) 0px 0px 6px 0px",
+    "vein": "rgb(223, 233, 245)"
+  },
+  "player": {
+    "root": "eld-root mode-world hub-mind eld-col-mind",
+    "accent": "#2cabf8",
+    "frameBg": "radial-gradient(1px 1px at 20% 30%, rgba(44, 171, 248, 0.18)",
+    "panelBg": "rgb(26, 43, 59)",
+    "panelBorder": "rgb(61, 111, 168)",
+    "panelShadow": "rgba(44, 171, 248, 0.25) 0px 0px 6px 0px",
+    "vein": "rgb(223, 233, 245)"
+  },
+  "settings": {
+    "column": "mind",
+    "bg": "rgb(26, 43, 59)",
+    "border": "rgb(61, 111, 168)",
+    "shadow": "rgba(44, 171, 248, 0.25) 0px 0px 6px 0px",
+    "title": "rgb(223, 233, 245)"
+  },
+  "settingsOverTown": {
+    "column": "mind",
+    "bg": "rgb(26, 43, 59)",
+    "border": "rgb(61, 111, 168)",
+    "shadow": "rgba(44, 171, 248, 0.25) 0px 0px 6px 0px",
+    "title": "rgb(223, 233, 245)"
+  },
+  "hearth": {
+    "root": "eld-root mode-world hub-hearth eld-col-hearth",
+    "accent": "#2cabf8",
+    "frameBg": "repeating-linear-gradient(90deg, rgba(90, 74, 34, 0.05) 0px,",
+    "panelBg": "rgb(20, 18, 16)",
+    "panelBorder": "rgb(90, 74, 34)",
+    "panelShadow": "rgb(41, 40, 35) 0px 0px 0px 1px inset",
+    "vein": "rgb(44, 171, 248)"
+  },
+  "gather": {
+    "running": true,
+    "cardShadow": "rgb(41, 40, 35) 0px 0px 0px 1px inset, rgba(44, 171, 248, 0.25) 0px 0px 12px 0px",
+    "barBg": "rgb(44, 171, 248)",
+    "timer": "rgb(44, 171, 248)",
+    "seg": "rgb(44, 171, 248)",
+    "xp": "rgb(232, 196, 106)"
+  },
+  "menuOverHearth": {
+    "column": "hearth",
+    "bg": "rgb(20, 18, 16)",
+    "border": "rgb(90, 74, 34)",
+    "shadow": "rgb(41, 40, 35) 0px 0px 0px 1px inset",
+    "title": "rgb(240, 226, 189)"
+  },
+  "offline": {
+    "column": "hearth",
+    "bg": "rgb(20, 18, 16)",
+    "border": "rgb(90, 74, 34)",
+    "title": "rgb(240, 226, 189)",
+    "root": "eld-root mode-world hub-hearth eld-col-hearth"
+  },
+  "fight": {
+    "root": "eld-root mode-mind hub-mountain eld-col-mind",
+    "column": "mind",
+    "panelBg": "rgb(26, 43, 59)",
+    "panelBorder": "rgb(61, 111, 168)",
+    "panelShadow": "rgba(44, 171, 248, 0.25) 0px 0px 6px 0px"
+  },
+  "menuOverFight": {
+    "column": "mind",
+    "bg": "rgb(26, 43, 59)",
+    "border": "rgb(61, 111, 168)",
+    "shadow": "rgba(44, 171, 248, 0.25) 0px 0px 6px 0px",
+    "title": "rgb(223, 233, 245)"
+  }
+}

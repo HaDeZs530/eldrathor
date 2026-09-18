@@ -1,5 +1,7 @@
 /*
- * MIND VIEW mode — fight / results / cards (docs/Eldrathor_Style_Bible_Lock.md §A, column 3).
+ * MIND VIEW — fight / results / cards AND, since the UI Brackets lock (revised 2026-09-17), the Party and
+ * Player tabs + Settings. Keyed on `.eld-col-mind`, which ThemeProvider sets whenever the column in force
+ * is Mind View (MIND expedition mode, or the mind hub skin). (docs/Eldrathor_Style_Bible_Lock.md §A, column 3.)
  * "Sapphire crystal — farther sees": deep navy #0c1a2b → #152a41 vertical gradient with faint crystal
  * noise, panel #1a2b3b (cards #23353f), 1 px #3d6fa8 border with a 6 px outer glow #2cabf8 at 25 %,
  * 8 px radius, Cinzel 20 #dfe9f5, system UI 16 #b7c6d8, Mythros #2cabf8, HP #20a95e, MP #2cabf8,
@@ -10,7 +12,7 @@
  * crit / HP / MP hues — ui.css reads every token with no fallback, so nothing is left to another column.
  */
 
-.eld-root.mode-mind {
+.eld-root.eld-col-mind {
   --eld-bg: #0c1a2b;
   --eld-bg-mid: #152a41;
   --eld-panel: #1a2b3b;
@@ -54,7 +56,7 @@
   image-rendering: auto;
 }
 
-.eld-root.mode-mind .eld-frame {
+.eld-root.eld-col-mind .eld-frame {
   background:
     radial-gradient(1px 1px at 20% 30%, rgba(44, 171, 248, 0.18), transparent 60%),
     radial-gradient(1px 1px at 70% 60%, rgba(44, 171, 248, 0.14), transparent 60%),
@@ -64,29 +66,29 @@
 }
 
 /* the expedition overlay (fight / results / sanctuary) carries the same ground */
-.eld-root.mode-mind .eld-overlay {
+.eld-root.eld-col-mind .eld-overlay {
   background: linear-gradient(180deg, #0c1a2b 0%, #152a41 100%);
 }
 
 
-.eld-root.mode-mind .eld-panel,
-.eld-root.mode-mind .eld-card {
+.eld-root.eld-col-mind .eld-panel,
+.eld-root.eld-col-mind .eld-card {
   border: 1px solid #3d6fa8;
   border-radius: 8px;
   box-shadow: 0 0 6px rgba(44, 171, 248, 0.25);
 }
 
-.eld-root.mode-mind .eld-btn {
+.eld-root.eld-col-mind .eld-btn {
   border-radius: 8px;
 }
 
-.eld-root.mode-mind .eld-btn.is-active,
-.eld-root.mode-mind .eld-btn:active:not(:disabled) {
+.eld-root.eld-col-mind .eld-btn.is-active,
+.eld-root.eld-col-mind .eld-btn:active:not(:disabled) {
   border-color: #e8c46a;
   box-shadow: 0 0 0 1px #e8c46a, 0 0 8px rgba(232, 196, 106, 0.35);
 }
 
-.eld-root.mode-mind .eld-aura-frame {
+.eld-root.eld-col-mind .eld-aura-frame {
   border: 1px solid #3d6fa8;
   border-radius: 8px;
   box-shadow: 0 0 6px rgba(44, 171, 248, 0.25), inset 0 0 24px rgba(44, 171, 248, 0.06);

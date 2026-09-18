@@ -55,16 +55,11 @@ test('Mind View: #0c1a2b → #152a41, panel #1a2b3b, cards #23353f, 1 px #3d6fa8
   assert.deepEqual(m.partyCard, { across: 3, minPx: 120, portraitPx: 64, portraitFrame: '#b8973f', namePx: 15, barPx: 14, iconPx: 28, icons: 2 });
 });
 
-test('UI Brackets lock: Bond #0e0a08 / #1c1410 / copper #8a5a2b + #3a2a1c / ember #e0782f / #c9642a / #f2d9b8; Veinbinder #0f0a14 / #1b1220 / amethyst #6b4fa0 + silver #3b3746 / #a678f0 / #7a55c9 / #e6d8f5 / Worldvein #c9a6ff; Hearth #0a1010 / #121a1a / verdigris #3f8f7a + bronze #5a4a2b / #4fb39a / #2f8a72 / #d9ede6; the owning table maps every skin', () => {
-  const b = MODES.bond;
-  assert.equal(b.bg, '#0e0a08'); assert.equal(b.panel, '#1c1410'); assert.equal(b.border, '#8a5a2b'); assert.equal(b.borderInner, '#3a2a1c');
-  assert.equal(b.accent, '#e0782f'); assert.equal(b.primary, '#c9642a'); assert.equal(b.display, '#f2d9b8'); assert.equal(b.radiusPx, 10);
-  const v = MODES.veinbinder;
-  assert.equal(v.bg, '#0f0a14'); assert.equal(v.panel, '#1b1220'); assert.equal(v.border, '#6b4fa0'); assert.equal(v.borderInner, '#3b3746');
-  assert.equal(v.accent, '#a678f0'); assert.equal(v.primary, '#7a55c9'); assert.equal(v.display, '#e6d8f5'); assert.equal(v.radiusPx, 10);
+test('UI Brackets lock (revised): four brackets — the Hearth is Veinharbor with a Mythros #2cabf8 accent; the owning table maps every skin; Bond / Veinbinder are gone', () => {
   const h = MODES.hearth;
-  assert.equal(h.bg, '#0a1010'); assert.equal(h.panel, '#121a1a'); assert.equal(h.border, '#3f8f7a'); assert.equal(h.borderInner, '#5a4a2b');
-  assert.equal(h.accent, '#4fb39a'); assert.equal(h.primary, '#2f8a72'); assert.equal(h.display, '#d9ede6'); assert.equal(h.radiusPx, 10);
-  // one table owns screen -> bracket (rule 1): Town/Bag/Recruit Veinharbor, Party Bond, Player + Settings Veinbinder, Hearth + Offline Hearth, Route map Exploration
-  assert.deepEqual(MODE_FOR_SKIN, { rpg: 'veinharbor', mind: 'veinharbor', mountain: 'explore', bond: 'bond', veinbinder: 'veinbinder', hearth: 'hearth' });
+  assert.equal(h.base, 'veinharbor'); assert.equal(h.accent, '#2cabf8'); assert.equal(h.accentGlow, 'rgba(44, 171, 248, 0.25)');
+  assert.deepEqual(h.blue, ['active segment', 'progress bars', 'job timers', 'Worldvein counter', 'running job card glow']);
+  assert.equal(MODES.bond, undefined); assert.equal(MODES.veinbinder, undefined);
+  // one table owns screen -> bracket (rule 1): Town/Bag/Recruit Veinharbor, Party + Player + Settings Mind View, Hearth + Offline the blend, Route map Exploration
+  assert.deepEqual(MODE_FOR_SKIN, { rpg: 'veinharbor', mind: 'mind', mountain: 'explore', hearth: 'hearth' });
 });

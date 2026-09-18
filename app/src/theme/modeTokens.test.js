@@ -17,7 +17,7 @@ import { MODE_TOKENS, MODE_TOKEN_NAMES, MODE_SELECTOR, MODE_COLUMNS, modeColumn 
 import { MODE, HUB_SKIN, TAB_HUB_SKIN } from './tokens.js';
 
 /* ---------- a minimal CSS cascade, over the sheets in ThemeProvider link order ---------- */
-const SHEETS = ['../components/ui/ui.css', './world.css', './explore.css', './mind.css', './bond.css', './veinbinder.css', './hearth.css', './hub.css'];
+const SHEETS = ['../components/ui/ui.css', './world.css', './explore.css', './mind.css', './hearth.css', './hub.css'];
 const read = (f) => readFileSync(new URL(f, import.meta.url), 'utf8');
 
 function parse(css, rules = []) {
@@ -118,15 +118,16 @@ function computed(chain, prop) {
 
 /* ---------- the screens, as the class sets ThemeProvider + the screen roots put on them ---------- */
 const set = (...c) => new Set(c);
-const root = (mode, skin) => set('eld-root', `mode-${mode.toLowerCase()}`, `hub-${skin}`);
+const root = (mode, skin) => set('eld-root', `mode-${mode.toLowerCase()}`, `hub-${skin}`, `eld-col-${modeColumn(mode, skin)}`); // exactly what ThemeProvider renders
 const SCREENS = [
   { name: 'Town', chain: [root(MODE.WORLD, TAB_HUB_SKIN.town)], column: 'veinharbor' },
-  // UI Brackets lock (2026-09-17): Party → Bond, Player → Veinbinder, Hearth → Hearth
-  { name: 'Party', chain: [root(MODE.WORLD, TAB_HUB_SKIN.party)], column: 'bond' },
-  { name: 'Player', chain: [root(MODE.WORLD, TAB_HUB_SKIN.player)], column: 'veinbinder' },
+  // UI Brackets lock (revised 2026-09-17): Party + Player → Mind View, Hearth → the blend, Settings pinned Mind View, Offline pinned Hearth
+  { name: 'Party', chain: [root(MODE.WORLD, TAB_HUB_SKIN.party)], column: 'mind' },
+  { name: 'Player', chain: [root(MODE.WORLD, TAB_HUB_SKIN.player)], column: 'mind' },
   { name: 'Hearth', chain: [root(MODE.WORLD, TAB_HUB_SKIN.afk)], column: 'hearth' },
   { name: 'Bag picker inside Party (a Town function)', chain: [root(MODE.WORLD, TAB_HUB_SKIN.party), set('eld-mode-veinharbor')], column: 'veinharbor' },
-  { name: 'Settings sheet (pinned Veinbinder, opened over Town)', chain: [root(MODE.WORLD, TAB_HUB_SKIN.town), set('eld-sheet-backdrop', 'eld-mode-veinbinder')], column: 'veinbinder' },
+  { name: 'Recruit inside Party (a Town function)', chain: [root(MODE.WORLD, TAB_HUB_SKIN.party), set('eld-mode-veinharbor')], column: 'veinharbor' },
+  { name: 'Settings sheet (pinned Mind View, opened over Town)', chain: [root(MODE.WORLD, TAB_HUB_SKIN.town), set('eld-sheet-backdrop', 'eld-mode-mind')], column: 'mind' },
   { name: 'Offline summary (pinned Hearth, opened over Town)', chain: [root(MODE.WORLD, TAB_HUB_SKIN.town), set('eld-sheet-backdrop', 'eld-mode-hearth')], column: 'hearth' },
   { name: 'Island', chain: [root(MODE.WORLD, HUB_SKIN.MOUNTAIN), set('eld-mode-explore')], column: 'explore' },
   { name: 'Rally', chain: [root(MODE.WORLD, HUB_SKIN.MOUNTAIN), set('eld-mode-explore')], column: 'explore' },
@@ -138,7 +139,7 @@ const SCREENS = [
   { name: 'Route map under a fight', chain: [root(MODE.MIND, HUB_SKIN.MOUNTAIN), set('eld-map-wrap', 'eld-mode-explore')], column: 'explore' },
 ];
 
-test('§A: every bracket stylesheet defines the FULL token set — all six agree on the list', () => {
+test('§A: every bracket stylesheet defines the FULL token set — all four agree on the list', () => {
   assert.deepEqual(MODE_COLUMNS, Object.keys(MODE_TOKENS));
   for (const col of MODE_COLUMNS) assert.deepEqual(Object.keys(MODE_TOKENS[col]), MODE_TOKEN_NAMES, col);
   for (const [col, selector] of Object.entries(MODE_SELECTOR)) {
@@ -168,7 +169,7 @@ test('§A: ui.css reads the mode tokens with NO fallback value (a missing token 
   assert.ok(!/#141210|#c9bfae|#a89c88|#f0e2bd|#191613|#292823/.test(shared), 'Veinharbor literals in the shared chrome');
 });
 
-test('§3: the panel background computes to six distinct values — one per bracket', () => {
+test('§3: panel fills — Mind View, Veinharbor and Exploration distinct; the Hearth shares Veinharbor\'s fill and differs only by its Mythros accent', () => {
   const panelOf = (screen) => computed([...screen.chain, set('eld-panel')], 'background');
   const byColumn = {};
   for (const screen of SCREENS) {
@@ -177,26 +178,40 @@ test('§3: the panel background computes to six distinct values — one per brac
     assert.ok(bg.includes(MODE_TOKENS[screen.column]['--eld-panel']), `${screen.name}: panel is ${bg}`);
     (byColumn[screen.column] ||= new Set()).add(bg);
   }
-  const distinct = new Set(MODE_COLUMNS.map((c) => [...byColumn[c]][0]));
-  assert.equal(distinct.size, MODE_COLUMNS.length, `expected ${MODE_COLUMNS.length} distinct panel fills, got ${[...distinct].join(' | ')}`);
+  const fill = (c) => [...byColumn[c]][0];
+  assert.equal(new Set(['veinharbor', 'explore', 'mind'].map(fill)).size, 3, 'three distinct panel fills');
+  assert.equal(fill('hearth'), fill('veinharbor'), 'the Hearth is the Veinharbor fill');
+  const hearth = SCREENS.find((s) => s.name === 'Hearth'), town = SCREENS.find((s) => s.name === 'Town');
+  assert.equal(token(hearth.chain, '--eld-accent'), '#2cabf8', 'Hearth accent is Mythros');
+  assert.notEqual(token(town.chain, '--eld-accent'), '#2cabf8', 'Town accent is not');
+  for (const name of MODE_TOKEN_NAMES) if (!/accent/.test(name)) assert.equal(token(hearth.chain, name), token(town.chain, name), `Hearth ${name} is Veinharbor's`);
+  assert.equal(new Set(MODE_COLUMNS.map((c) => `${fill(c)}|${MODE_TOKENS[c]['--eld-accent']}`)).size, 4, 'four brackets, each its own fill + accent pair');
 });
 
-test('§D: the ☰ Menu sheet over each bracket yields six distinct panels (the frozen bracket wins)', () => {
+test('§D: the ☰ Menu over Party === Menu over Fight; Menu over Hearth has the Veinharbor fill; three distinct panels overall (the frozen bracket wins)', () => {
   // Sheet freezes modeColumn(currentMode, hubSkin) at open time onto the backdrop; .eld-sheet is .eld-panel.
   const over = (mode, skin) => {
     const column = modeColumn(mode, skin);
     const chain = [root(mode, skin), set('eld-sheet-backdrop', `eld-mode-${column}`), set('eld-sheet', 'eld-panel')];
     return { column, background: computed(chain, 'background'), title: computed([...chain, set('eld-sheet-title')], 'color') };
   };
-  const menus = [over(MODE.WORLD, TAB_HUB_SKIN.town), over(MODE.WORLD, HUB_SKIN.MOUNTAIN), over(MODE.MIND, HUB_SKIN.MOUNTAIN), over(MODE.WORLD, TAB_HUB_SKIN.party), over(MODE.WORLD, TAB_HUB_SKIN.player), over(MODE.WORLD, TAB_HUB_SKIN.afk)];
+  const menus = [over(MODE.WORLD, TAB_HUB_SKIN.town), over(MODE.WORLD, HUB_SKIN.MOUNTAIN), over(MODE.MIND, HUB_SKIN.MOUNTAIN), over(MODE.WORLD, TAB_HUB_SKIN.afk)];
   assert.deepEqual(menus.map((m) => m.column), MODE_COLUMNS);
+  const party = over(MODE.WORLD, TAB_HUB_SKIN.party), player = over(MODE.WORLD, TAB_HUB_SKIN.player), fight = menus[2];
+  assert.deepEqual(party, fight, 'Menu over Party is Menu over Fight');
+  assert.deepEqual(player, fight, 'Menu over Player is Menu over Fight');
+  assert.equal(menus[3].background, menus[0].background, 'Menu over Hearth has the Veinharbor fill');
+  // a pinned sheet beats the screen's chrome on every property, not just the fill: Settings over Town carries the Mind View glow
+  const settingsOverTown = [root(MODE.WORLD, TAB_HUB_SKIN.town), set('eld-sheet-backdrop', 'eld-mode-mind'), set('eld-sheet', 'eld-panel')];
+  assert.equal(computed(settingsOverTown, 'background'), computed([root(MODE.MIND, HUB_SKIN.MOUNTAIN), set('eld-sheet-backdrop', 'eld-mode-mind'), set('eld-sheet', 'eld-panel')], 'background'));
+  assert.equal(computed(settingsOverTown, 'box-shadow'), '0 0 6px rgba(44, 171, 248, 0.25)', 'Settings over Town glows like Mind View');
   for (const m of menus) {
     assert.ok(m.background && !m.background.includes('UNSET'), `menu panel unresolved: ${m.background}`);
     assert.ok(m.background.includes(MODE_TOKENS[m.column]['--eld-panel']), `menu over ${m.column} is ${m.background}`);
     assert.equal(m.title, MODE_TOKENS[m.column]['--eld-display']);
   }
-  assert.equal(new Set(menus.map((m) => m.background)).size, 6, 'six distinct menu panels');
-  assert.equal(new Set(menus.map((m) => m.title)).size, 6, 'six distinct menu titles');
+  assert.equal(new Set(menus.map((m) => m.background)).size, 3, 'three distinct menu panels (Hearth shares Veinharbor)');
+  assert.equal(new Set(menus.map((m) => m.title)).size, 3, 'three distinct menu titles');
 });
 
 test('§D: each .eld-mode-<column> scope also carries the full set, so a pinned subtree inherits nothing', () => {
