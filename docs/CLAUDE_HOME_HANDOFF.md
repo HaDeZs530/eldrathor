@@ -10,9 +10,7 @@
 4. Open PRs; don't invent LOCKED design — use `// DESIGN-OPEN:` for gaps.
 
 ## Active briefs (priority)
-0. _(empty — every queued brief is done. Waiting on the Design Chat: M2 lock 2 (gems), the 224 weapon names + 27 boss weapon names, the Mythic-T1 exception ruling, the DESIGN-OPEN numbers from PR #61, and art for `icon-job-gather / process / train`.)_
-0. ~~`2026-09-17_ui-brackets.md`~~ (DONE #66 — The Bond / The Veinbinder / The Hearth brackets, six §D sheet fills, 250 ms tab crossfade, phone captures in `docs/art/captures/2026-09-17-ui-brackets/`; archived)
-0. ~~`2026-09-17_item-numbers-and-names.md`~~ (DONE #65 — three-avenue formula, tier-named armor, boss-named drops, enemy damage in feed, test-numbers mode, save v4; archived)
+0. **`docs/CLAUDE_BRIEFS/2026-09-17_ui-brackets-v2.md`** — Anthony's phone ruling: Party/Player/Settings → Mind View; Hearth = Veinharbor + Mythros accents; retire Bond/Veinbinder. Spec: `Eldrathor_UI_Brackets_Lock.md` (revised). Ship captures.
 
 ## Recently DONE (don't redo)
 - PR #66 — UI brackets (UI Brackets lock): Party → **The Bond** (copper / ember, firelight under-glow + three embers), Player + Settings → **The Veinbinder** (amethyst, rune-ring watermark, Worldvein `#c9a6ff`), Hearth + Offline summary → **The Hearth** (verdigris / bronze, smoke wisp, job tool glyphs). `MODE_TOKENS` / `MODE_COLUMNS` are six; `TAB_HUB_SKIN` party → bond, player → veinbinder, afk → hearth; `bond.css` / `veinbinder.css` / `hearth.css`; three new `.eld-mode-*` scopes → six distinct sheet fills + six Menu panels (tested); Settings and Offline pinned to their bracket wherever opened; Bag picker + Recruit inside Party stay Veinharbor; `.eld-tab-view` 250 ms crossfade. Captures in `docs/art/captures/2026-09-17-ui-brackets/` — **Anthony approves from those.** DESIGN-OPEN: `icon-job-*` art (glyph fallback shown).

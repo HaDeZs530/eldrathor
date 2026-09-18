@@ -84,6 +84,7 @@ Each tap drills one level deeper; each completion pops one level back.
 *Design/tone note: dark Mythros-blue glowing aesthetic throughout (a magical energy map, not paper); warm ambers only at the safe harbor. Aesthetic-as-altitude on the mountain (§3).*
 
 ## 3c. ART DIRECTION — The Worldvein Interface (LOCKED — core creative pillar)
+> **Amended 2026-09-17 (Anthony, from phone captures):** Party and Player screens are **Mind View**, not warm — see `docs/Eldrathor_UI_Brackets_Lock.md`. Warm = Town and its functions (+ Hearth as a blend); cold = Player, Party, map*, fight. (*map is parchment.)
 
 **The interface is DIEGETIC.** The player (the Veinbinder) is NOT physically on the mountain with the party — they **channel Worldvein power to remotely view** the expedition (map, locations, combat). So the cool, glowing, semi-technological look is NOT sci-fi — it's **arcane-tech**: raw magical energy refined until it reads like technology. The glowing precise interface literally IS the Worldvein scrying itself. True to lore (the People of the Vein were master crafters of this energy); gives a distinctive art identity most fantasy games never achieve.
 
