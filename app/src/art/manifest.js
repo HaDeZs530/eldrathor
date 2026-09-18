@@ -47,6 +47,7 @@ import { EQUIP_SLOTS } from '../progression/items.js';
 export { EQUIP_SLOTS };
 export const NODE_KINDS = ['unknown', 'fight', 'crystal', 'sanctuary', 'rare', 'boss', 'cleared', 'named'];
 export const TAB_IDS = ['player', 'party', 'mountain', 'town', 'hearth'];
+export const JOB_IDS = ['gather', 'process', 'train'];
 
 export const PORTRAITS_PER_ARCHETYPE = 3;
 
@@ -73,6 +74,8 @@ function build() {
     list.push(entry(`icon-aura-${slug(inn.aura.id)}`, 96, 96, { kind: 'icon', transparent: true, label: inn.aura.name }));
   }
   for (const t of TAB_IDS) list.push(entry(`icon-tab-${t}`, 96, 96, { kind: 'icon', transparent: true, label: `tab ${t}` }));
+  // UI Brackets lock: Hearth job cards carry a tool glyph — pick / crucible / training post
+  for (const j of JOB_IDS) list.push(entry(`icon-job-${j}`, 96, 96, { kind: 'icon', transparent: true, label: `job ${j}` }));
   // Item Model §6: six premade equip-slot icons, made once, greyed by CSS when the slot is empty
   for (const s of EQUIP_SLOTS) list.push(entry(`icon-slot-${s}`, 96, 96, { kind: 'icon', transparent: true, label: `slot ${s}` }));
   return list;

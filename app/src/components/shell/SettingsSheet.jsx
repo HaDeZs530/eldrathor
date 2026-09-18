@@ -35,7 +35,7 @@ export default function SettingsSheet({ store, onClose }) {
   }
 
   return (
-    <Sheet onClose={onClose} label="Settings" title={<>⚙ Settings</>} maxHeight="88%">
+    <Sheet onClose={onClose} label="Settings" title={<>⚙ Settings</>} maxHeight="88%" column="veinbinder">{/* UI Brackets lock: Settings is the Veinbinder's */}
         {mode === 'menu' && (
           <div className="eld-menu-list">
             <button type="button" className="eld-card eld-menu-item" onClick={doExport}><span className="eld-menu-glyph">⇪</span><span>Export save</span><span className="eld-menu-note">JSON to clipboard</span></button>

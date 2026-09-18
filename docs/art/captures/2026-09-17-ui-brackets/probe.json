@@ -1,0 +1,104 @@
+{
+  "party": {
+    "root": "eld-root mode-world hub-bond",
+    "frameBg": "rgb(14, 10, 8)",
+    "panelBg": "rgb(28, 20, 16)",
+    "panelBorder": "rgb(138, 90, 43)",
+    "panelShadow": "rgb(58, 42, 28) 0px 0px 0px 1px inset, rgba(224, 120, 47, 0.45) 0px 8px 18px -8px",
+    "headerBorder": "rgb(138, 90, 43)"
+  },
+  "menuOverParty": {
+    "column": "bond",
+    "bg": "rgb(28, 20, 16)",
+    "border": "rgb(138, 90, 43)",
+    "title": "rgb(242, 217, 184)"
+  },
+  "adventurer": {
+    "root": "eld-root mode-world hub-bond",
+    "frameBg": "rgb(14, 10, 8)",
+    "panelBg": "rgb(28, 20, 16)",
+    "panelBorder": "rgb(138, 90, 43)",
+    "panelShadow": "rgb(58, 42, 28) 0px 0px 0px 1px inset, rgba(224, 120, 47, 0.45) 0px 8px 18px -8px",
+    "headerBorder": "rgb(138, 90, 43)"
+  },
+  "menuOverAdventurer": {
+    "column": "bond",
+    "bg": "rgb(28, 20, 16)",
+    "border": "rgb(138, 90, 43)",
+    "title": "rgb(242, 217, 184)"
+  },
+  "player": {
+    "root": "eld-root mode-world hub-veinbinder",
+    "frameBg": "rgb(15, 10, 20)",
+    "panelBg": "rgb(27, 18, 32)",
+    "panelBorder": "rgb(107, 79, 160)",
+    "panelShadow": "rgb(59, 55, 70) 0px 0px 0px 1px inset",
+    "headerBorder": "rgb(107, 79, 160)"
+  },
+  "menuOverPlayer": {
+    "column": "veinbinder",
+    "bg": "rgb(27, 18, 32)",
+    "border": "rgb(107, 79, 160)",
+    "title": "rgb(230, 216, 245)"
+  },
+  "settings": {
+    "column": "veinbinder",
+    "bg": "rgb(27, 18, 32)",
+    "border": "rgb(107, 79, 160)",
+    "title": "rgb(230, 216, 245)"
+  },
+  "settingsOverTown": {
+    "column": "veinbinder",
+    "bg": "rgb(27, 18, 32)",
+    "border": "rgb(107, 79, 160)",
+    "title": "rgb(230, 216, 245)"
+  },
+  "hearth": {
+    "root": "eld-root mode-world hub-hearth",
+    "frameBg": "rgb(10, 16, 16)",
+    "panelBg": "rgb(18, 26, 26)",
+    "panelBorder": "rgb(63, 143, 122)",
+    "panelShadow": "rgb(90, 74, 43) 0px 0px 0px 1px inset",
+    "headerBorder": "rgb(63, 143, 122)"
+  },
+  "menuOverHearth": {
+    "column": "hearth",
+    "bg": "rgb(18, 26, 26)",
+    "border": "rgb(63, 143, 122)",
+    "title": "rgb(217, 237, 230)"
+  },
+  "gather": {
+    "running": 1
+  },
+  "offline": {
+    "column": "hearth",
+    "bg": "rgb(18, 26, 26)",
+    "border": "rgb(63, 143, 122)",
+    "title": "rgb(217, 237, 230)",
+    "text": "∞ While you were away3 h 0 min of Hearth work reconciled+2700 raw wood+374 ❖ Wor"
+  },
+  "offlineOverTown": {
+    "column": "hearth",
+    "bg": "rgb(18, 26, 26)",
+    "root": "eld-root mode-world hub-rpg"
+  },
+  "town": {
+    "root": "eld-root mode-world hub-rpg",
+    "frameBg": "rgba(0, 0, 0, 0)",
+    "panelBg": null,
+    "panelBorder": null,
+    "panelShadow": null,
+    "headerBorder": "rgb(90, 74, 34)"
+  },
+  "picker": {
+    "column": "veinharbor",
+    "bg": null,
+    "border": null
+  },
+  "motion": {
+    "tabAnim": "eld-tab-in",
+    "tabDur": "0.25s",
+    "before": "\"\"",
+    "after": "eld-ember-drift"
+  }
+}

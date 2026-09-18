@@ -1,5 +1,5 @@
 # BRIEF — UI brackets: The Bond (Party), The Veinbinder (Player), The Hearth — each tab its own place
-**Status:** READY · **Date:** 2026-09-17 · **Author:** Claude Design Chat · **Spec:** `docs/Eldrathor_UI_Brackets_Lock.md` (authoritative; the table is the only source of screen → bracket)
+**Status:** DONE (PR #66, 2026-09-17, Claude Code) · **Date:** 2026-09-17 · **Author:** Claude Design Chat · **Spec:** `docs/Eldrathor_UI_Brackets_Lock.md` (authoritative; the table is the only source of screen → bracket)
 **Before → after:** Party: Veinharbor → Bond · Player + Settings: Veinharbor → Veinbinder · Hearth: Veinharbor → Hearth. Town/Bag/Recruit, Exploration, Mind View unchanged.
 1. `MODE_TOKENS` gains three full token sets (bond, veinbinder, hearth) with every token defined (no fallbacks, per #59); `MODE_FOR_SKIN` / `TAB_HUB_SKIN` mirror the lock table; stylesheets `bond.css`, `veinbinder.css`, `hearth.css`.
 2. Bracket signatures: Bond firelight under-glow + 2–3 drifting ember particles (compositor-only, reduced-motion off); Veinbinder rune-ring watermark + node glow; Hearth smoke wisp + job tool glyphs (three icons added to the art manifest: `icon-job-gather/process/train.png`, placeholders until art).

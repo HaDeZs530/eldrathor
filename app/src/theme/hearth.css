@@ -1,0 +1,78 @@
+/*
+ * THE HEARTH — Hearth root, Gather / Process / Train slots, Offline summary (docs/Eldrathor_UI_Brackets_Lock.md).
+ * "A workshop and hearth while the party is away": bg #0a1010, panel #121a1a, 1 px verdigris #3f8f7a +
+ * bronze #5a4a2b inner, accent #4fb39a, primary filled #2f8a72, Cinzel #d9ede6. No glow; a slow smoke wisp
+ * behind the header. Job cards carry a tool glyph (icon-job-gather / process / train in the art manifest).
+ * Full token set (MODE_TOKENS.hearth).
+ */
+
+.eld-root.mode-world.hub-hearth {
+  --eld-bg: #0a1010;
+  --eld-bg-mid: #0e1616;
+  --eld-panel: #121a1a;
+  --eld-card: #172020;
+  --eld-border: #3f8f7a;
+  --eld-border-inner: #5a4a2b;
+  --eld-panel-shadow: inset 0 0 0 1px #5a4a2b;
+  --eld-text: #c4d6d0;
+  --eld-display: #d9ede6;
+  --eld-muted: #8aa39c;
+  --eld-accent: #4fb39a;
+  --eld-accent-glow: rgba(79, 179, 154, 0.3);
+  --eld-gold: #e8c46a;
+  --eld-mythros: #2cabf8;
+  --eld-good: #20a95e;
+  --eld-danger: #e5484d;
+  --eld-header-bg: transparent;
+  --eld-btn-bg: #121a1a;
+  --eld-btn-text: #4fb39a;
+  --eld-btn-border: #3f8f7a;
+  --eld-btn-shadow: none;
+  --eld-btn-primary-bg: #2f8a72;
+  --eld-btn-primary-text: #eafaf5;
+  --eld-btn-ghost-border: #3f8f7a;
+  --eld-btn-ghost-text: #c4d6d0;
+  --eld-bar-track: rgba(0, 0, 0, 0.45);
+  --eld-bar-border: rgba(255, 255, 255, 0.12);
+  --eld-tabbar-bg: #0f151d;
+  --eld-tab-active: #e8c46a;
+  --eld-tab-inactive: #8aa39c;
+  --eld-font-display: Cinzel, 'Palatino Linotype', Georgia, serif;
+  --eld-font-body: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --eld-radius: 10px;
+  --eld-shadow: none;
+  --eld-art-ph-bg: #121a1a;
+  --eld-art-ph-line: #3f8f7a;
+  --eld-art-ph-text: #8aa39c;
+  image-rendering: auto;
+}
+
+.eld-root.mode-world.hub-hearth .eld-frame { background: #0a1010; }
+.eld-root.mode-world.hub-hearth .eld-header { background: transparent; border-bottom: 1px solid #3f8f7a; }
+.eld-root.mode-world.hub-hearth .eld-panel,
+.eld-root.mode-world.hub-hearth .eld-card { background: #121a1a; border: 1px solid #3f8f7a; border-radius: 10px; box-shadow: inset 0 0 0 1px #5a4a2b; color: #c4d6d0; }
+.eld-root.mode-world.hub-hearth .eld-card { background: #172020; }
+.eld-root.mode-world.hub-hearth .eld-btn { background: #121a1a; color: #4fb39a; border: 1px solid #3f8f7a; border-radius: 10px; box-shadow: none; }
+.eld-root.mode-world.hub-hearth .eld-btn.eld-btn-primary { background: #2f8a72; color: #eafaf5; border-color: #2f8a72; }
+.eld-root.mode-world.hub-hearth .eld-btn-ghost { background: transparent; color: #c4d6d0; border-color: #3f8f7a; }
+.eld-root.mode-world.hub-hearth .eld-btn:hover:not(:disabled) { border-color: #4fb39a; filter: none; }
+
+/* job tool glyph on each job card header */
+.eld-job-glyph { width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; margin-right: 6px; font-size: 16px; color: #4fb39a; vertical-align: middle; --eld-art-ph-bg: transparent; --eld-art-ph-line: transparent; }
+.eld-job-glyph .eld-art { width: 22px; height: 22px; background: transparent; }
+
+/* signature: a slow smoke wisp behind the top of the content (transform/opacity only) */
+.eld-root.mode-world.hub-hearth .eld-tab-view { position: relative; isolation: isolate; }
+.eld-root.mode-world.hub-hearth .eld-tab-view::before {
+  content: ''; position: absolute; left: 12%; top: -20px; width: 240px; height: 120px; z-index: -1; pointer-events: none;
+  border-radius: 50%; background: radial-gradient(closest-side, rgba(196, 214, 208, 0.12), rgba(196, 214, 208, 0.04) 60%, transparent);
+  filter: blur(8px); animation: eld-smoke-wisp 14s ease-in-out infinite; will-change: transform, opacity;
+}
+@keyframes eld-smoke-wisp {
+  0% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.5; }
+  50% { transform: translate3d(60px, -18px, 0) scale(1.25); opacity: 0.85; }
+  100% { transform: translate3d(140px, -40px, 0) scale(1.5); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .eld-root.mode-world.hub-hearth .eld-tab-view::before { animation: none; opacity: 0.4; }
+}

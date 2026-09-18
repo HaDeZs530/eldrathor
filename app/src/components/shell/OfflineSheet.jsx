@@ -19,7 +19,7 @@ function fmt(ms) {
 export default function OfflineSheet({ summary, onClose }) {
   const lines = summaryLines(summary);
   return (
-    <Sheet onClose={onClose} label="While you were away" title={<>∞ While you were away</>}>
+    <Sheet onClose={onClose} label="While you were away" title={<>∞ While you were away</>} column="hearth">{/* UI Brackets lock: the Offline summary is the Hearth's */}
       <div className="eld-sheet-sub">{fmt(summary.elapsedMs)} of Hearth work reconciled</div>
       <ul className="eld-sheet-bullets">
         {lines.length === 0 && <li>Nothing changed.</li>}

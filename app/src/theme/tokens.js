@@ -8,9 +8,12 @@ export const MODE = {
 
 /** Hub navigation chrome skins (tab bar). Distinct from WORLD/MIND expedition dual-mode. */
 export const HUB_SKIN = {
-  MIND: 'mind',
+  MIND: 'mind', // legacy — no tab uses it since the UI Brackets lock; resolves to Veinharbor
   MOUNTAIN: 'mountain',
   RPG: 'rpg',
+  BOND: 'bond',
+  VEINBINDER: 'veinbinder',
+  HEARTH: 'hearth',
 };
 
 /**
@@ -19,11 +22,11 @@ export const HUB_SKIN = {
  * Market is no longer a root tab (under Town).
  */
 export const TAB_HUB_SKIN = {
-  player: HUB_SKIN.MIND,
-  party: HUB_SKIN.MIND,
+  player: HUB_SKIN.VEINBINDER, // UI Brackets lock: Player → The Veinbinder
+  party: HUB_SKIN.BOND, // Party → The Bond
   mountain: HUB_SKIN.MOUNTAIN,
   town: HUB_SKIN.RPG,
-  afk: HUB_SKIN.MIND,
+  afk: HUB_SKIN.HEARTH, // Hearth → The Hearth
 };
 
 export const colors = {

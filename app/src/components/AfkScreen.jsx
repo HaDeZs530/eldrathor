@@ -4,6 +4,7 @@ import { GATHER_FAMILIES } from '../theme/tokens.js';
 import { rosterCap, TRAIN_CAP_MESSAGE, xpToNext, LEVEL_CAP } from '../progression/progression.js';
 import { rarityIndex, RARITIES } from '../progression/items.js';
 import ItemRow from './items/ItemRow.jsx';
+import Art from '../art/Art.jsx';
 import {
   trainXpGain, maxUnlockedTier, processTier, processRarityCap, AFK_TUNING,
   GATHER_CYCLE_MS, PROCESS_CYCLE_MS, IDLE_CYCLE_MS, PROCESS_VEIN_COST,
@@ -31,7 +32,7 @@ export default function AfkScreen({
   ];
   return (
     <div style={S.wrap} className={sub === 'process' ? 'eld-afk-process' : ''}>
-      <div style={S.kick}>Veinharbor · Hearth</div>
+      <div style={S.kick}>The Hearth · Gather / Process / Train</div>
       <div className="eld-display eld-screen-title" style={S.title}>The Hearth</div>
       <div style={S.sub}>The bench works at the hearth while the party is away. Park Adventurers who aren't on the Mountain into a job. Jobs run on real time — while you're on other tabs, and while the app is closed; you'll get a summary when you come back. Each Adventurer can hold one job at a time; a job pauses while its Adventurer is on the Mountain.</div>
       <div className="eld-seg" role="tablist" aria-label="AFK jobs">
@@ -76,7 +77,7 @@ function GatherPanel({ slots, areas, bench, skillXp, inventory, onUpdate, onTogg
         const char = bench.find((b) => b.key === slot.charKey);
         return (
           <div key={i} className="eld-card" style={S.card}>
-            <div style={S.row}><span style={S.h}>Gather slot {i + 1}</span>
+            <div style={S.row}><span style={S.h}><JobGlyph job="gather" />Gather slot {i + 1}</span>
               <span style={slot.running && !slot.suspended ? S.live : S.dim}>{jobStatus(slot)}</span></div>
             <label style={S.lbl}>Adventurer</label>
             <select style={S.sel} value={slot.charKey || ''} disabled={slot.running}
@@ -147,7 +148,7 @@ function ProcessPanel({ process, bench, inventory, bag, unlocked, worldvein, ski
         <span>❖ {worldvein} Worldvein</span><span>Process XP {skillXp}</span><span>Raw {process.family}: {rawAvail}</span>
       </div>
       <div className="eld-card" style={{ ...S.card, borderColor: 'rgba(224,120,60,0.45)' }}>
-        <div style={S.row}><span style={S.h}>Infusion berth</span>
+        <div style={S.row}><span style={S.h}><JobGlyph job="process" />Infusion berth</span>
           <span style={process.running && !process.suspended ? S.live : S.dim}>{jobStatus(process, 'Infusing')}</span></div>
         <label style={S.lbl}>Processor</label>
         <select style={S.sel} value={process.charKey || ''} disabled={process.running}
@@ -206,7 +207,7 @@ function IdlePanel({ idle, bench, party, roster, unlocked, onUpdate, onToggle })
         <div>Assign one Adventurer. They earn a flat trickle of XP every cycle (~{Math.round(IDLE_CYCLE_MS / 1000)}s), scaled by your highest unlocked area — slower than fighting. Train only raises someone <em>up to your highest roster level</em> ({cap}); past that the Mountain is the only way up.</div>
       </div>
       <div className="eld-card" style={S.card}>
-        <div style={S.row}><span style={S.h}>Training berth</span>
+        <div style={S.row}><span style={S.h}><JobGlyph job="train" />Training berth</span>
           <span style={idle.running && !idle.suspended ? S.live : S.dim}>{jobStatus(idle, 'Training')}</span></div>
         <label style={S.lbl}>Trainee</label>
         <select style={S.sel} value={idle.charKey || ''} disabled={idle.running}
@@ -236,6 +237,12 @@ function jobStatus(job, runningLabel = 'Running') {
 function since(ts) {
   const d = new Date(ts);
   return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+/** UI Brackets lock: Hearth job cards carry a tool glyph — pick / crucible / training post (manifest icon-job-*, glyph fallback). */
+const JOB_GLYPH = { gather: '⛏', process: '⚗', train: '🏹' };
+function JobGlyph({ job }) {
+  return <span className="eld-job-glyph" aria-hidden="true"><Art name={`icon-job-${job}`} alt="" fit="contain" fallback={<span>{JOB_GLYPH[job]}</span>} /></span>;
 }
 
 function Bar({ value, accent }) {

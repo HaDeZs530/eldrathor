@@ -8,6 +8,9 @@ import '../components/ui/ui.css';
 import './world.css';
 import './explore.css';
 import './mind.css';
+import './bond.css';
+import './veinbinder.css';
+import './hearth.css';
 import './hub.css';
 
 const ThemeContext = createContext(null);

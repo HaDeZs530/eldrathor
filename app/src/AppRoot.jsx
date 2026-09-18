@@ -710,6 +710,7 @@ export default function Eldrathor() {
       <Frame style={S.frame}>
         <Header worldvein={worldvein} hubLabel={tab === 'mountain' ? mountainHubLabel : HUB_LABELS[tab]} actions={<ScreenHeaderActions onMenu={() => setSheet('menu')} onHelp={() => setSheet('help')} />} />
         {flash && <div style={{ ...S.flash, borderColor: flash.color, color: flash.color }}>{flash.msg}</div>}
+        <div className="eld-tab-view" key={tab} data-tab={tab}>
         {tab === 'town' && <TownScreen key={rootKey.town || 0} party={party} roster={roster} setParty={setParty} setRoster={setRoster} bag={bag} setBag={setBag} worldvein={worldvein} setWorldvein={setWorldvein} setTab={selectTab} equipped={equipped} unlocked={unlocked} locked={!!territory} />}
         {tab === 'party' && <PartyScreen key={rootKey.party || 0} party={party} setParty={setParty} roster={roster} setRoster={setRoster} locked={!!territory} bag={bag} setBag={setBag} setWorldvein={setWorldvein} equipped={equipped} onEmpower={() => selectTab('town')} />}
         {tab === 'player' && <PlayerScreen key={rootKey.player || 0} worldvein={worldvein} />}
@@ -734,6 +735,7 @@ export default function Eldrathor() {
             )}
           </div>
         )}
+        </div>
         <TabBar activeTab={tab} onSelect={selectTab} />
         {(sheet === 'help' || sheet === 'help+basics') && <HelpSheet screenId={screenId} showBasics={sheet === 'help+basics'} onClose={() => setSheet(null)} />}
         {sheet === 'runlog' && <RunLogSheet log={log} areaName={area?.name} onClose={() => { setLogSeen(log.length); setSheet(null); }} />}

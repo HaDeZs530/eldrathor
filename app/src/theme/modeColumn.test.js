@@ -8,16 +8,17 @@ import { readFileSync } from 'node:fs';
 import { modeColumn, MODE_COLUMNS, MODES } from './styleBible.js';
 import { MODE, HUB_SKIN, TAB_HUB_SKIN } from './tokens.js';
 
-test('§D mapping: Town / Party / Player / Hearth → Veinharbor; Route map → Exploration; Fight / Results / Sanctuary (MIND) → Mind View', () => {
+test('UI Brackets lock: Town → Veinharbor; Party → Bond; Player → Veinbinder; Hearth → Hearth; Route map → Exploration; Fight / Results / Sanctuary (MIND) → Mind View', () => {
   assert.equal(modeColumn(MODE.WORLD, TAB_HUB_SKIN.town), 'veinharbor');
-  assert.equal(modeColumn(MODE.WORLD, TAB_HUB_SKIN.party), 'veinharbor');
-  assert.equal(modeColumn(MODE.WORLD, TAB_HUB_SKIN.player), 'veinharbor');
-  assert.equal(modeColumn(MODE.WORLD, TAB_HUB_SKIN.afk), 'veinharbor');
+  assert.equal(modeColumn(MODE.WORLD, TAB_HUB_SKIN.party), 'bond');
+  assert.equal(modeColumn(MODE.WORLD, TAB_HUB_SKIN.player), 'veinbinder');
+  assert.equal(modeColumn(MODE.WORLD, TAB_HUB_SKIN.afk), 'hearth');
+  assert.equal(modeColumn(MODE.WORLD, HUB_SKIN.MIND), 'veinharbor', 'the legacy mind skin resolves to Veinharbor');
   assert.equal(modeColumn(MODE.WORLD, HUB_SKIN.MOUNTAIN), 'explore');
   assert.equal(modeColumn(MODE.MIND, HUB_SKIN.MOUNTAIN), 'mind');
   assert.equal(modeColumn(MODE.MIND, HUB_SKIN.RPG), 'mind');
   assert.equal(modeColumn(MODE.WORLD, 'unknown'), 'veinharbor');
-  assert.deepEqual(MODE_COLUMNS, ['veinharbor', 'explore', 'mind']);
+  assert.deepEqual(MODE_COLUMNS, ['veinharbor', 'explore', 'mind', 'bond', 'veinbinder', 'hearth']);
 });
 
 test('§D scopes exist in ui.css with the lock values for panel / border / title, out-weighing the hub-skin rules (repeated class)', () => {
