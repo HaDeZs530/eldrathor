@@ -39,6 +39,7 @@ test('§B sizes: hero 1560×500, rows 240×184, island 1560×2400, tiles 1024²,
   assert.equal(MANIFEST.filter((e) => e.name.startsWith('icon-aura-')).length, 5);
   assert.deepEqual(TAB_IDS, ['player', 'party', 'mountain', 'town', 'hearth']);
   for (const t of TAB_IDS) assert.deepEqual(size(`icon-tab-${t}`), [96, 96, true]);
+  for (const j of ['gather', 'process', 'train']) assert.deepEqual(size(`icon-job-${j}`), [96, 96, true]); // UI Brackets lock: Hearth job tool glyphs
   // every entry is a PNG under /art/ and names are unique
   for (const e of MANIFEST) { assert.ok(e.src.startsWith(ART_BASE) && e.file.endsWith('.png'), e.name); }
   assert.equal(new Set(MANIFEST.map((e) => e.name)).size, MANIFEST.length);

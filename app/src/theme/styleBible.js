@@ -94,21 +94,31 @@ export const MODES = {
     button: { outline: '#3d6fa8', bg: '#1a2b3b', activeOutline: '#e8c46a' },
     partyCard: { across: 3, minPx: 120, portraitPx: 64, portraitFrame: '#b8973f', namePx: 15, barPx: 14, iconPx: 28, icons: 2 },
   },
+  /** Bond bracket (UI Brackets lock, 2026-09-17). */
+  bond: { bg: '#0e0a08', panel: '#1c1410', card: '#231a14', border: '#8a5a2b', borderInner: '#3a2a1c', display: '#f2d9b8', body: '#d9c4a8', muted: '#a88a6c', accent: '#e0782f', primary: '#c9642a', primaryText: '#1a0f08', radiusPx: 10 },
+  /** Veinbinder bracket (UI Brackets lock, 2026-09-17). */
+  veinbinder: { bg: '#0f0a14', panel: '#1b1220', card: '#221828', border: '#6b4fa0', borderInner: '#3b3746', display: '#e6d8f5', body: '#cfc4dc', muted: '#9a8fae', accent: '#a678f0', primary: '#7a55c9', primaryText: '#f4eefc', radiusPx: 10 },
+  /** Hearth bracket (UI Brackets lock, 2026-09-17). */
+  hearth: { bg: '#0a1010', panel: '#121a1a', card: '#172020', border: '#3f8f7a', borderInner: '#5a4a2b', display: '#d9ede6', body: '#c4d6d0', muted: '#8aa39c', accent: '#4fb39a', primary: '#2f8a72', primaryText: '#eafaf5', radiusPx: 10 },
 };
 
-/** Which hub skin / expedition mode uses which Style Bible mode. */
-export const MODE_FOR_SKIN = { mind: 'veinharbor', rpg: 'veinharbor', mountain: 'explore' };
+/**
+ * UI Brackets lock (2026-09-17) — `docs/Eldrathor_UI_Brackets_Lock.md` is the ONLY place that says which
+ * bracket a screen uses; this table mirrors it (rule 1). Ruling lines: Party → Bond, Player + Settings →
+ * Veinbinder, Hearth + Offline summary → Hearth; Town / Bag / Recruit stay Veinharbor; Exploration and
+ * Mind View unchanged. The legacy `mind` hub skin is no tab's skin any more and resolves to Veinharbor.
+ */
+export const MODE_FOR_SKIN = { rpg: 'veinharbor', mind: 'veinharbor', mountain: 'explore', bond: 'bond', veinbinder: 'veinbinder', hearth: 'hearth' };
 
 /**
- * §D: the Style Bible column a screen (and every sheet / card opened over it) uses — Mind View while
- * the expedition is in MIND mode (fight / results / sanctuary), else the hub skin's column
- * (mountain → Exploration; everything else → Veinharbor).
+ * §D: the bracket a screen (and every sheet / card opened over it) uses — Mind View while the
+ * expedition is in MIND mode (fight / results / sanctuary), else the hub skin's bracket.
  */
 export function modeColumn(expeditionMode, hubSkin) {
   if (expeditionMode === 'MIND') return 'mind';
   return MODE_FOR_SKIN[hubSkin] || 'veinharbor';
 }
-export const MODE_COLUMNS = ['veinharbor', 'explore', 'mind'];
+export const MODE_COLUMNS = ['veinharbor', 'explore', 'mind', 'bond', 'veinbinder', 'hearth'];
 
 /**
  * §A — the FULL `--eld-*` token set every mode stylesheet must define (brief 2026-09-16, mode tokens).
@@ -238,6 +248,123 @@ export const MODE_TOKENS = {
     '--eld-art-ph-line': MODES.mind.border,
     '--eld-art-ph-text': '#7f97b0',
   },
+  bond: {
+    '--eld-bg': '#0e0a08',
+    '--eld-bg-mid': '#140e0a',
+    '--eld-panel': '#1c1410',
+    '--eld-card': '#231a14',
+    '--eld-border': '#8a5a2b',
+    '--eld-border-inner': '#3a2a1c',
+    '--eld-panel-shadow': '0 8px 18px -8px rgba(224, 120, 47, 0.45)',
+    '--eld-text': '#d9c4a8',
+    '--eld-display': '#f2d9b8',
+    '--eld-muted': '#a88a6c',
+    '--eld-accent': '#e0782f',
+    '--eld-accent-glow': 'rgba(224, 120, 47, 0.35)',
+    '--eld-gold': '#e8c46a',
+    '--eld-mythros': '#2cabf8',
+    '--eld-good': '#20a95e',
+    '--eld-danger': '#e5484d',
+    '--eld-header-bg': 'transparent',
+    '--eld-btn-bg': '#1c1410',
+    '--eld-btn-text': '#e0782f',
+    '--eld-btn-border': '#8a5a2b',
+    '--eld-btn-shadow': 'none',
+    '--eld-btn-primary-bg': '#c9642a',
+    '--eld-btn-primary-text': '#1a0f08',
+    '--eld-btn-ghost-border': '#8a5a2b',
+    '--eld-btn-ghost-text': '#d9c4a8',
+    '--eld-bar-track': 'rgba(0, 0, 0, 0.45)',
+    '--eld-bar-border': 'rgba(255, 255, 255, 0.12)',
+    '--eld-tabbar-bg': '#0f151d',
+    '--eld-tab-active': '#e8c46a',
+    '--eld-tab-inactive': '#a88a6c',
+    '--eld-font-display': "Cinzel, 'Palatino Linotype', Georgia, serif",
+    '--eld-font-body': "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+    '--eld-radius': '10px',
+    '--eld-shadow': '0 8px 18px -8px rgba(224, 120, 47, 0.45)',
+    '--eld-art-ph-bg': '#1c1410',
+    '--eld-art-ph-line': '#8a5a2b',
+    '--eld-art-ph-text': '#a88a6c',
+  },
+  veinbinder: {
+    '--eld-bg': '#0f0a14',
+    '--eld-bg-mid': '#150e1c',
+    '--eld-panel': '#1b1220',
+    '--eld-card': '#221828',
+    '--eld-border': '#6b4fa0',
+    '--eld-border-inner': '#3b3746',
+    '--eld-panel-shadow': 'inset 0 0 0 1px #3b3746',
+    '--eld-text': '#cfc4dc',
+    '--eld-display': '#e6d8f5',
+    '--eld-muted': '#9a8fae',
+    '--eld-accent': '#a678f0',
+    '--eld-accent-glow': 'rgba(166, 120, 240, 0.35)',
+    '--eld-gold': '#e8c46a',
+    '--eld-mythros': '#c9a6ff',
+    '--eld-good': '#20a95e',
+    '--eld-danger': '#e5484d',
+    '--eld-header-bg': 'transparent',
+    '--eld-btn-bg': '#1b1220',
+    '--eld-btn-text': '#a678f0',
+    '--eld-btn-border': '#6b4fa0',
+    '--eld-btn-shadow': 'none',
+    '--eld-btn-primary-bg': '#7a55c9',
+    '--eld-btn-primary-text': '#f4eefc',
+    '--eld-btn-ghost-border': '#6b4fa0',
+    '--eld-btn-ghost-text': '#cfc4dc',
+    '--eld-bar-track': 'rgba(0, 0, 0, 0.45)',
+    '--eld-bar-border': 'rgba(255, 255, 255, 0.12)',
+    '--eld-tabbar-bg': '#0f151d',
+    '--eld-tab-active': '#e8c46a',
+    '--eld-tab-inactive': '#9a8fae',
+    '--eld-font-display': "Cinzel, 'Palatino Linotype', Georgia, serif",
+    '--eld-font-body': "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+    '--eld-radius': '10px',
+    '--eld-shadow': 'none',
+    '--eld-art-ph-bg': '#1b1220',
+    '--eld-art-ph-line': '#6b4fa0',
+    '--eld-art-ph-text': '#9a8fae',
+  },
+  hearth: {
+    '--eld-bg': '#0a1010',
+    '--eld-bg-mid': '#0e1616',
+    '--eld-panel': '#121a1a',
+    '--eld-card': '#172020',
+    '--eld-border': '#3f8f7a',
+    '--eld-border-inner': '#5a4a2b',
+    '--eld-panel-shadow': 'inset 0 0 0 1px #5a4a2b',
+    '--eld-text': '#c4d6d0',
+    '--eld-display': '#d9ede6',
+    '--eld-muted': '#8aa39c',
+    '--eld-accent': '#4fb39a',
+    '--eld-accent-glow': 'rgba(79, 179, 154, 0.3)',
+    '--eld-gold': '#e8c46a',
+    '--eld-mythros': '#2cabf8',
+    '--eld-good': '#20a95e',
+    '--eld-danger': '#e5484d',
+    '--eld-header-bg': 'transparent',
+    '--eld-btn-bg': '#121a1a',
+    '--eld-btn-text': '#4fb39a',
+    '--eld-btn-border': '#3f8f7a',
+    '--eld-btn-shadow': 'none',
+    '--eld-btn-primary-bg': '#2f8a72',
+    '--eld-btn-primary-text': '#eafaf5',
+    '--eld-btn-ghost-border': '#3f8f7a',
+    '--eld-btn-ghost-text': '#c4d6d0',
+    '--eld-bar-track': 'rgba(0, 0, 0, 0.45)',
+    '--eld-bar-border': 'rgba(255, 255, 255, 0.12)',
+    '--eld-tabbar-bg': '#0f151d',
+    '--eld-tab-active': '#e8c46a',
+    '--eld-tab-inactive': '#8aa39c',
+    '--eld-font-display': "Cinzel, 'Palatino Linotype', Georgia, serif",
+    '--eld-font-body': "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+    '--eld-radius': '10px',
+    '--eld-shadow': 'none',
+    '--eld-art-ph-bg': '#121a1a',
+    '--eld-art-ph-line': '#3f8f7a',
+    '--eld-art-ph-text': '#8aa39c',
+  },
 };
 
 /** Every token name a mode stylesheet must define (the three columns are asserted to agree on this list). */
@@ -245,7 +372,10 @@ export const MODE_TOKEN_NAMES = Object.keys(MODE_TOKENS.veinharbor);
 
 /** The CSS selector that carries each column's token block, in ThemeProvider link order. */
 export const MODE_SELECTOR = {
-  veinharbor: '.eld-root.mode-world:not(.hub-mountain)',
+  veinharbor: '.eld-root.mode-world:not(.hub-mountain):not(.hub-bond):not(.hub-veinbinder):not(.hub-hearth)',
   explore: '.eld-root.hub-mountain:not(.mode-mind)',
   mind: '.eld-root.mode-mind',
+  bond: '.eld-root.mode-world.hub-bond',
+  veinbinder: '.eld-root.mode-world.hub-veinbinder',
+  hearth: '.eld-root.mode-world.hub-hearth',
 };

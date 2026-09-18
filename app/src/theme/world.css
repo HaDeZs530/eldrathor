@@ -10,7 +10,7 @@
  * every one of these with no fallback, so nothing here may be left to another column to supply.
  */
 
-.eld-root.mode-world:not(.hub-mountain) {
+.eld-root.mode-world:not(.hub-mountain):not(.hub-bond):not(.hub-veinbinder):not(.hub-hearth) {
   --eld-bg: #080807;
   --eld-bg-mid: #0e0d0b;
   --eld-panel: #141210;
@@ -52,26 +52,26 @@
 }
 
 /* wood texture lives only in the outer frame (a faint warm grain under the gold border) */
-.eld-root.mode-world:not(.hub-mountain) .eld-frame {
+.eld-root.mode-world:not(.hub-mountain):not(.hub-bond):not(.hub-veinbinder):not(.hub-hearth) .eld-frame {
   background:
     repeating-linear-gradient(90deg, rgba(90, 74, 34, 0.05) 0 2px, transparent 2px 9px),
     linear-gradient(180deg, #0b0a08 0%, #080807 100%);
 }
 
-.eld-root.mode-world:not(.hub-mountain) .eld-panel,
-.eld-root.mode-world:not(.hub-mountain) .eld-card {
+.eld-root.mode-world:not(.hub-mountain):not(.hub-bond):not(.hub-veinbinder):not(.hub-hearth) .eld-panel,
+.eld-root.mode-world:not(.hub-mountain):not(.hub-bond):not(.hub-veinbinder):not(.hub-hearth) .eld-card {
   box-shadow: inset 0 0 0 1px #292823; /* the inner line — no drop shadows on Town */
 }
 
-.eld-root.mode-world:not(.hub-mountain) .eld-btn {
+.eld-root.mode-world:not(.hub-mountain):not(.hub-bond):not(.hub-veinbinder):not(.hub-hearth) .eld-btn {
   box-shadow: none;
 }
 
-.eld-root.mode-world:not(.hub-mountain) .eld-btn:hover:not(:disabled) {
+.eld-root.mode-world:not(.hub-mountain):not(.hub-bond):not(.hub-veinbinder):not(.hub-hearth) .eld-btn:hover:not(:disabled) {
   border-color: #e8c46a;
   filter: none;
 }
 
 /* stat / section titles on Veinharbor screens read in Cinzel 26 (screen) / 20 (section) */
-.eld-root.mode-world:not(.hub-mountain) .eld-screen-title { font-size: 26px; }
-.eld-root.mode-world:not(.hub-mountain) .eld-section-title { font-size: 20px; }
+.eld-root.mode-world:not(.hub-mountain):not(.hub-bond):not(.hub-veinbinder):not(.hub-hearth) .eld-screen-title { font-size: 26px; }
+.eld-root.mode-world:not(.hub-mountain):not(.hub-bond):not(.hub-veinbinder):not(.hub-hearth) .eld-section-title { font-size: 20px; }

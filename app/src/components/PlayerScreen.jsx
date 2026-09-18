@@ -27,7 +27,7 @@ export default function PlayerScreen({ worldvein = 0 }) {
   return (
     <div style={S.wrap}>
       <div style={S.hero}>
-        <div style={S.kick}>Mind View · Veinbinder</div>
+        <div style={S.kick}>The Veinbinder · Player</div>
         <div className="eld-display eld-screen-title" style={S.title}>You</div>
         <div style={S.sub}>Base presence — growth purchased below</div>
         <div className="eld-panel" style={S.statGrid}>

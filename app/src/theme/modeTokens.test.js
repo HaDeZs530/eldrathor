@@ -17,7 +17,7 @@ import { MODE_TOKENS, MODE_TOKEN_NAMES, MODE_SELECTOR, MODE_COLUMNS, modeColumn 
 import { MODE, HUB_SKIN, TAB_HUB_SKIN } from './tokens.js';
 
 /* ---------- a minimal CSS cascade, over the sheets in ThemeProvider link order ---------- */
-const SHEETS = ['../components/ui/ui.css', './world.css', './explore.css', './mind.css', './hub.css'];
+const SHEETS = ['../components/ui/ui.css', './world.css', './explore.css', './mind.css', './bond.css', './veinbinder.css', './hearth.css', './hub.css'];
 const read = (f) => readFileSync(new URL(f, import.meta.url), 'utf8');
 
 function parse(css, rules = []) {
@@ -121,9 +121,13 @@ const set = (...c) => new Set(c);
 const root = (mode, skin) => set('eld-root', `mode-${mode.toLowerCase()}`, `hub-${skin}`);
 const SCREENS = [
   { name: 'Town', chain: [root(MODE.WORLD, TAB_HUB_SKIN.town)], column: 'veinharbor' },
-  { name: 'Party', chain: [root(MODE.WORLD, TAB_HUB_SKIN.party)], column: 'veinharbor' },
-  { name: 'Player', chain: [root(MODE.WORLD, TAB_HUB_SKIN.player)], column: 'veinharbor' },
-  { name: 'Hearth', chain: [root(MODE.WORLD, TAB_HUB_SKIN.afk)], column: 'veinharbor' },
+  // UI Brackets lock (2026-09-17): Party → Bond, Player → Veinbinder, Hearth → Hearth
+  { name: 'Party', chain: [root(MODE.WORLD, TAB_HUB_SKIN.party)], column: 'bond' },
+  { name: 'Player', chain: [root(MODE.WORLD, TAB_HUB_SKIN.player)], column: 'veinbinder' },
+  { name: 'Hearth', chain: [root(MODE.WORLD, TAB_HUB_SKIN.afk)], column: 'hearth' },
+  { name: 'Bag picker inside Party (a Town function)', chain: [root(MODE.WORLD, TAB_HUB_SKIN.party), set('eld-mode-veinharbor')], column: 'veinharbor' },
+  { name: 'Settings sheet (pinned Veinbinder, opened over Town)', chain: [root(MODE.WORLD, TAB_HUB_SKIN.town), set('eld-sheet-backdrop', 'eld-mode-veinbinder')], column: 'veinbinder' },
+  { name: 'Offline summary (pinned Hearth, opened over Town)', chain: [root(MODE.WORLD, TAB_HUB_SKIN.town), set('eld-sheet-backdrop', 'eld-mode-hearth')], column: 'hearth' },
   { name: 'Island', chain: [root(MODE.WORLD, HUB_SKIN.MOUNTAIN), set('eld-mode-explore')], column: 'explore' },
   { name: 'Rally', chain: [root(MODE.WORLD, HUB_SKIN.MOUNTAIN), set('eld-mode-explore')], column: 'explore' },
   { name: 'Route map', chain: [root(MODE.WORLD, HUB_SKIN.MOUNTAIN), set('eld-map-wrap', 'eld-mode-explore')], column: 'explore' },
@@ -134,7 +138,7 @@ const SCREENS = [
   { name: 'Route map under a fight', chain: [root(MODE.MIND, HUB_SKIN.MOUNTAIN), set('eld-map-wrap', 'eld-mode-explore')], column: 'explore' },
 ];
 
-test('§A: every mode stylesheet defines the FULL token set — the three columns agree on the list', () => {
+test('§A: every bracket stylesheet defines the FULL token set — all six agree on the list', () => {
   assert.deepEqual(MODE_COLUMNS, Object.keys(MODE_TOKENS));
   for (const col of MODE_COLUMNS) assert.deepEqual(Object.keys(MODE_TOKENS[col]), MODE_TOKEN_NAMES, col);
   for (const [col, selector] of Object.entries(MODE_SELECTOR)) {
@@ -164,7 +168,7 @@ test('§A: ui.css reads the mode tokens with NO fallback value (a missing token 
   assert.ok(!/#141210|#c9bfae|#a89c88|#f0e2bd|#191613|#292823/.test(shared), 'Veinharbor literals in the shared chrome');
 });
 
-test('§3: the panel background computes to three distinct values — one per mode', () => {
+test('§3: the panel background computes to six distinct values — one per bracket', () => {
   const panelOf = (screen) => computed([...screen.chain, set('eld-panel')], 'background');
   const byColumn = {};
   for (const screen of SCREENS) {
@@ -174,25 +178,25 @@ test('§3: the panel background computes to three distinct values — one per mo
     (byColumn[screen.column] ||= new Set()).add(bg);
   }
   const distinct = new Set(MODE_COLUMNS.map((c) => [...byColumn[c]][0]));
-  assert.equal(distinct.size, 3, `expected three distinct panel fills, got ${[...distinct].join(' | ')}`);
+  assert.equal(distinct.size, MODE_COLUMNS.length, `expected ${MODE_COLUMNS.length} distinct panel fills, got ${[...distinct].join(' | ')}`);
 });
 
-test('§D: the ☰ Menu sheet over each mode yields three distinct panels (the frozen column wins)', () => {
+test('§D: the ☰ Menu sheet over each bracket yields six distinct panels (the frozen bracket wins)', () => {
   // Sheet freezes modeColumn(currentMode, hubSkin) at open time onto the backdrop; .eld-sheet is .eld-panel.
   const over = (mode, skin) => {
     const column = modeColumn(mode, skin);
     const chain = [root(mode, skin), set('eld-sheet-backdrop', `eld-mode-${column}`), set('eld-sheet', 'eld-panel')];
     return { column, background: computed(chain, 'background'), title: computed([...chain, set('eld-sheet-title')], 'color') };
   };
-  const menus = [over(MODE.WORLD, TAB_HUB_SKIN.town), over(MODE.WORLD, HUB_SKIN.MOUNTAIN), over(MODE.MIND, HUB_SKIN.MOUNTAIN)];
+  const menus = [over(MODE.WORLD, TAB_HUB_SKIN.town), over(MODE.WORLD, HUB_SKIN.MOUNTAIN), over(MODE.MIND, HUB_SKIN.MOUNTAIN), over(MODE.WORLD, TAB_HUB_SKIN.party), over(MODE.WORLD, TAB_HUB_SKIN.player), over(MODE.WORLD, TAB_HUB_SKIN.afk)];
   assert.deepEqual(menus.map((m) => m.column), MODE_COLUMNS);
   for (const m of menus) {
     assert.ok(m.background && !m.background.includes('UNSET'), `menu panel unresolved: ${m.background}`);
     assert.ok(m.background.includes(MODE_TOKENS[m.column]['--eld-panel']), `menu over ${m.column} is ${m.background}`);
     assert.equal(m.title, MODE_TOKENS[m.column]['--eld-display']);
   }
-  assert.equal(new Set(menus.map((m) => m.background)).size, 3, 'three distinct menu panels');
-  assert.equal(new Set(menus.map((m) => m.title)).size, 3, 'three distinct menu titles');
+  assert.equal(new Set(menus.map((m) => m.background)).size, 6, 'six distinct menu panels');
+  assert.equal(new Set(menus.map((m) => m.title)).size, 6, 'six distinct menu titles');
 });
 
 test('§D: each .eld-mode-<column> scope also carries the full set, so a pinned subtree inherits nothing', () => {

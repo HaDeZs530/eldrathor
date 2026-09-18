@@ -28,7 +28,9 @@ export default function PartyScreen({ party, setParty, roster, setRoster, locked
   const [creating, setCreating] = useState(false);
 
   if (creating) {
+    // Recruit is a Town function — it stays Veinharbor even inside the Bond tab (UI Brackets lock)
     return (
+      <div className="eld-mode-veinharbor" data-mode-column="veinharbor" style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
       <CreateCharacter
         onCancel={() => setCreating(false)}
         onCreate={(n) => {
@@ -39,6 +41,7 @@ export default function PartyScreen({ party, setParty, roster, setRoster, locked
           setCreating(false);
         }}
       />
+      </div>
     );
   }
 
@@ -87,7 +90,7 @@ export default function PartyScreen({ party, setParty, roster, setRoster, locked
 
   return (
     <div style={S.wrap}>
-      <div style={S.kick}>Mind View · Party</div>
+      <div style={S.kick}>The Bond · Party</div>
       <div className="eld-display eld-screen-title" style={S.title}>Bonded Three</div>
       {locked && (
         <div className="eld-panel" style={{ padding: '10px 12px', fontSize: 'var(--mv-label, 15px)', color: 'var(--eld-muted)', lineHeight: 1.4 }} role="status">
@@ -155,7 +158,7 @@ function CreateCharacter({ onCancel, onCreate }) {
       <button type="button" className="eld-btn eld-btn-ghost" onClick={onCancel} style={S.back}>
         ← Party
       </button>
-      <div style={S.kick}>Mind View · New Adventurer</div>
+      <div style={S.kick}>Veinharbor · Recruit</div>
       <div className="eld-display eld-screen-title" style={S.title}>Bind a new Adventurer</div>
       <div style={S.sub}>Give them a name and choose a class. Both are required.</div>
 
@@ -290,7 +293,7 @@ function MemberDetail({ member, bag, setBag, setWorldvein, onEmpower, taken, loc
       <button type="button" className="eld-btn eld-btn-ghost" onClick={onBack} style={S.back}>
         ← Party
       </button>
-      <div style={S.kick}>Mind View · Adventurer</div>
+      <div style={S.kick}>The Bond · Adventurer</div>
       <div className="eld-display eld-screen-title" style={{ ...S.title, color: a.color }}>{member.name}</div>
       <div style={S.sub}>{member.archetype} · {a.blurb}</div>
 
@@ -362,7 +365,7 @@ function MemberDetail({ member, bag, setBag, setWorldvein, onEmpower, taken, loc
       )}
 
       {picking && (
-        <div style={S.pickerOverlay}>
+        <div style={S.pickerOverlay} className="eld-mode-veinharbor" data-mode-column="veinharbor">{/* Bag is a Town function — stays Veinharbor (UI Brackets lock) */}
           <BagScreen
             bag={bag}
             setBag={setBag}
