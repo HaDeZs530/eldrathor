@@ -39,6 +39,24 @@ test('enemyFirst: a failed flee gives enemies a 1.5 s free window before any par
   assert.ok(normal.events.find((e) => e.type === 'swing').t < 1500, 'without the flag the party swings before 1.5 s');
 });
 
+test('Results per-member dealt / taken / healed are whole numbers, even when heals clamp at a fractional max HP', () => {
+  let healedSomewhere = false;
+  for (const seed of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) {
+    for (const nodeType of ['normal', 'rare', 'boss']) {
+      const enemies = spawnEnemies(1, nodeType, false, { rng: mulberry32(seed * 13), bossName: 'Boss' });
+      // carried-in HP a hair under full: the first Renewal / Mend clamps at max HP and heals a fraction
+      const { stats } = simulateFight({ party: LEVEL1_PARTY, enemies, seed, startHpFrac: [0.987, 0.993, 0.971] });
+      for (const p of stats.party) {
+        for (const k of ['dealt', 'taken', 'healed']) {
+          assert.ok(Number.isInteger(p[k]), `seed ${seed} ${nodeType}: ${p.name} ${k} = ${p[k]} must be an integer`);
+        }
+        if (p.healed > 0) healedSomewhere = true;
+      }
+    }
+  }
+  assert.ok(healedSomewhere, 'the sweep must include real healing, or the test proves nothing');
+});
+
 test('brief §4: every enemy hit is an event with raw + mit, and each Adventurer\'s "damage taken" equals the sum of the enemy hits on them', () => {
   const enemies = spawnEnemies(1, 'boss', false, { rng: mulberry32(11), bossName: 'Boss' });
   const { events, stats } = simulateFight({ party: LEVEL1_PARTY, enemies, seed: 5 });
