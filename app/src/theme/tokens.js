@@ -8,12 +8,10 @@ export const MODE = {
 
 /** Hub navigation chrome skins (tab bar). Distinct from WORLD/MIND expedition dual-mode. */
 export const HUB_SKIN = {
-  MIND: 'mind', // legacy — no tab uses it since the UI Brackets lock; resolves to Veinharbor
+  MIND: 'mind', // the Mind View column outside an expedition (Party / Player tabs)
   MOUNTAIN: 'mountain',
   RPG: 'rpg',
-  BOND: 'bond',
-  VEINBINDER: 'veinbinder',
-  HEARTH: 'hearth',
+  HEARTH: 'hearth', // the one blend: Veinharbor base + Mythros accents
 };
 
 /**
@@ -22,11 +20,11 @@ export const HUB_SKIN = {
  * Market is no longer a root tab (under Town).
  */
 export const TAB_HUB_SKIN = {
-  player: HUB_SKIN.VEINBINDER, // UI Brackets lock: Player → The Veinbinder
-  party: HUB_SKIN.BOND, // Party → The Bond
+  player: HUB_SKIN.MIND, // UI Brackets lock (revised): Player + trees + Settings → Mind View
+  party: HUB_SKIN.MIND, // Party + Adventurer sheet + slots + roster → Mind View
   mountain: HUB_SKIN.MOUNTAIN,
   town: HUB_SKIN.RPG,
-  afk: HUB_SKIN.HEARTH, // Hearth → The Hearth
+  afk: HUB_SKIN.HEARTH, // Hearth → the Hearth blend
 };
 
 export const colors = {

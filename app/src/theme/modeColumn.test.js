@@ -8,23 +8,23 @@ import { readFileSync } from 'node:fs';
 import { modeColumn, MODE_COLUMNS, MODES } from './styleBible.js';
 import { MODE, HUB_SKIN, TAB_HUB_SKIN } from './tokens.js';
 
-test('UI Brackets lock: Town → Veinharbor; Party → Bond; Player → Veinbinder; Hearth → Hearth; Route map → Exploration; Fight / Results / Sanctuary (MIND) → Mind View', () => {
+test('UI Brackets lock (revised): Town → Veinharbor; Party + Player → Mind View (same column as Fight); Hearth → the Hearth blend; Route map → Exploration; Fight / Results / Sanctuary (MIND) → Mind View', () => {
   assert.equal(modeColumn(MODE.WORLD, TAB_HUB_SKIN.town), 'veinharbor');
-  assert.equal(modeColumn(MODE.WORLD, TAB_HUB_SKIN.party), 'bond');
-  assert.equal(modeColumn(MODE.WORLD, TAB_HUB_SKIN.player), 'veinbinder');
+  assert.equal(modeColumn(MODE.WORLD, TAB_HUB_SKIN.party), 'mind');
+  assert.equal(modeColumn(MODE.WORLD, TAB_HUB_SKIN.player), 'mind');
+  assert.equal(modeColumn(MODE.WORLD, TAB_HUB_SKIN.party), modeColumn(MODE.MIND, HUB_SKIN.MOUNTAIN), 'Party is the Fight column — no variant');
   assert.equal(modeColumn(MODE.WORLD, TAB_HUB_SKIN.afk), 'hearth');
-  assert.equal(modeColumn(MODE.WORLD, HUB_SKIN.MIND), 'veinharbor', 'the legacy mind skin resolves to Veinharbor');
   assert.equal(modeColumn(MODE.WORLD, HUB_SKIN.MOUNTAIN), 'explore');
   assert.equal(modeColumn(MODE.MIND, HUB_SKIN.MOUNTAIN), 'mind');
   assert.equal(modeColumn(MODE.MIND, HUB_SKIN.RPG), 'mind');
   assert.equal(modeColumn(MODE.WORLD, 'unknown'), 'veinharbor');
-  assert.deepEqual(MODE_COLUMNS, ['veinharbor', 'explore', 'mind', 'bond', 'veinbinder', 'hearth']);
+  assert.deepEqual(MODE_COLUMNS, ['veinharbor', 'explore', 'mind', 'hearth']);
 });
 
 test('§D scopes exist in ui.css with the lock values for panel / border / title, out-weighing the hub-skin rules (repeated class)', () => {
   const css = readFileSync(new URL('../components/ui/ui.css', import.meta.url), 'utf8');
   const block = (col) => {
-    const i = css.indexOf(`.eld-root .eld-mode-${col}.eld-mode-${col}.eld-mode-${col} {`);
+    const i = css.indexOf(`.eld-root .eld-mode-${col}.eld-mode-${col}.eld-mode-${col}.eld-mode-${col} {`);
     assert.ok(i >= 0, `${col} scope`);
     const j = css.indexOf('/* ---', i + 10);
     return css.slice(i, j > 0 ? j : undefined);

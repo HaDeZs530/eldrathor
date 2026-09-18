@@ -32,7 +32,7 @@ export default function AfkScreen({
   ];
   return (
     <div style={S.wrap} className={sub === 'process' ? 'eld-afk-process' : ''}>
-      <div style={S.kick}>The Hearth · Gather / Process / Train</div>
+      <div style={S.kick}>Veinharbor · Hearth</div>
       <div className="eld-display eld-screen-title" style={S.title}>The Hearth</div>
       <div style={S.sub}>The bench works at the hearth while the party is away. Park Adventurers who aren't on the Mountain into a job. Jobs run on real time — while you're on other tabs, and while the app is closed; you'll get a summary when you come back. Each Adventurer can hold one job at a time; a job pauses while its Adventurer is on the Mountain.</div>
       <div className="eld-seg" role="tablist" aria-label="AFK jobs">
@@ -76,7 +76,7 @@ function GatherPanel({ slots, areas, bench, skillXp, inventory, onUpdate, onTogg
         const area = areas.find((a) => a.id === slot.areaId) || areas[0];
         const char = bench.find((b) => b.key === slot.charKey);
         return (
-          <div key={i} className="eld-card" style={S.card}>
+          <div key={i} className={`eld-card${slot.running && !slot.suspended ? ' is-running' : ''}`} style={S.card}>
             <div style={S.row}><span style={S.h}><JobGlyph job="gather" />Gather slot {i + 1}</span>
               <span style={slot.running && !slot.suspended ? S.live : S.dim}>{jobStatus(slot)}</span></div>
             <label style={S.lbl}>Adventurer</label>
@@ -101,8 +101,8 @@ function GatherPanel({ slots, areas, bench, skillXp, inventory, onUpdate, onTogg
                 </button>
               ))}
             </div>
-            <Bar value={slot.progress} accent={area?.accent || 'var(--eld-accent)'} />
-            <div style={S.meta}>Cycle {Math.round((slot.progress || 0) * 100)}% · {area?.name || '—'} · {slot.family}{slot.running && slot.startedAt ? ` · since ${since(slot.startedAt)}` : ''}</div>
+            <Bar value={slot.progress} accent="var(--eld-accent)" />
+            <div style={S.meta}>Cycle {Math.round((slot.progress || 0) * 100)}% · {area?.name || '—'} · {slot.family}{slot.running && slot.startedAt ? <> · <span className="eld-job-timer">since {since(slot.startedAt)}</span></> : null}</div>
             {char && <div style={S.ok}>{char.name} · {ARCHETYPES[char.archetype]?.role}</div>}
             <button type="button" className="eld-btn" style={S.wide} disabled={!slot.charKey} onClick={() => onToggle(i)}>
               {slot.running ? 'Stop' : 'Start gather'}
@@ -147,7 +147,7 @@ function ProcessPanel({ process, bench, inventory, bag, unlocked, worldvein, ski
       <div className="eld-panel" style={{ ...S.strip, boxShadow: '0 0 18px rgba(224,120,60,0.25)' }}>
         <span>❖ {worldvein} Worldvein</span><span>Process XP {skillXp}</span><span>Raw {process.family}: {rawAvail}</span>
       </div>
-      <div className="eld-card" style={{ ...S.card, borderColor: 'rgba(224,120,60,0.45)' }}>
+      <div className={`eld-card${process.running && !process.suspended ? ' is-running' : ''}`} style={{ ...S.card, borderColor: 'rgba(224,120,60,0.45)' }}>
         <div style={S.row}><span style={S.h}><JobGlyph job="process" />Infusion berth</span>
           <span style={process.running && !process.suspended ? S.live : S.dim}>{jobStatus(process, 'Infusing')}</span></div>
         <label style={S.lbl}>Processor</label>
@@ -177,7 +177,7 @@ function ProcessPanel({ process, bench, inventory, bag, unlocked, worldvein, ski
             );
           })}
         </div>
-        <Bar value={process.progress} accent="#e0783c" />
+        <Bar value={process.progress} accent="var(--eld-accent)" />
         <div style={S.meta}>Per cycle: {recipe.inputs.map((i) => `${i.qty} raw ${i.family}`).join(' + ')} + {cost} ❖ → {recipe.output}</div>
         <button type="button" className="eld-btn" style={S.wide}
           disabled={!process.charKey || (rawAvail < 1 && !process.running) || (worldvein < cost && !process.running)}
@@ -206,7 +206,7 @@ function IdlePanel({ idle, bench, party, roster, unlocked, onUpdate, onToggle })
         <div style={S.helpH}>Train — steady XP for one Adventurer</div>
         <div>Assign one Adventurer. They earn a flat trickle of XP every cycle (~{Math.round(IDLE_CYCLE_MS / 1000)}s), scaled by your highest unlocked area — slower than fighting. Train only raises someone <em>up to your highest roster level</em> ({cap}); past that the Mountain is the only way up.</div>
       </div>
-      <div className="eld-card" style={S.card}>
+      <div className={`eld-card${idle.running && !idle.suspended ? ' is-running' : ''}`} style={S.card}>
         <div style={S.row}><span style={S.h}><JobGlyph job="train" />Training berth</span>
           <span style={idle.running && !idle.suspended ? S.live : S.dim}>{jobStatus(idle, 'Training')}</span></div>
         <label style={S.lbl}>Trainee</label>
@@ -217,7 +217,7 @@ function IdlePanel({ idle, bench, party, roster, unlocked, onUpdate, onToggle })
             <option key={b.key} value={b.key} disabled={b.deployed}>{b.name} · Lv {b.level}{b.deployed ? ' · on the Mountain' : ''}</option>
           ))}
         </select>
-        <Bar value={idle.progress} accent="#7fd6a0" />
+        <Bar value={idle.progress} accent="var(--eld-accent)" />
         <div style={S.meta}>{rateNote}</div>
         {live && <div style={S.ok}>{live.name} · Lv {live.level}{live.level >= LEVEL_CAP ? ' · max' : ` · ${Math.floor(live.xp || 0)} / ${xpToNext(live.level)} XP`}</div>}
         {atCap && <div style={{ ...S.meta, color: 'var(--eld-gold)' }}>{TRAIN_CAP_MESSAGE}</div>}
@@ -268,7 +268,7 @@ const S = {
   recipeName: { fontSize: 'var(--mv-text, 18px)', fontWeight: 700 },
   recipeIo: { display: 'flex', flexWrap: 'wrap', gap: '4px 10px', fontSize: 'var(--mv-label, 15px)', marginTop: 4, color: 'var(--eld-muted)' },
   strip: { display: 'flex', flexWrap: 'wrap', gap: 10, padding: '8px 10px', fontSize: 'var(--mv-label, 15px)', fontVariantNumeric: 'tabular-nums' },
-  xp: { fontSize: 'var(--mv-label, 15px)', color: 'var(--eld-accent)' },
+  xp: { fontSize: 'var(--mv-label, 15px)', color: 'var(--eld-gold)' }, // not blue — the lock's accent list is closed
   card: { padding: 12 },
   row: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
   rowWrap: { display: 'flex', gap: 6, flexWrap: 'wrap' },
@@ -279,7 +279,7 @@ const S = {
   sel: { width: '100%', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--eld-border)', color: 'inherit', borderRadius: 6, padding: '8px 10px', fontSize: 'var(--mv-text, 18px)', boxSizing: 'border-box' },
   fam: { padding: '8px 10px', flex: '1 1 80px', minHeight: 'var(--mv-tap, 52px)' },
   meta: { fontSize: 'var(--mv-label, 15px)', color: 'var(--eld-muted)', marginTop: 6 },
-  ok: { fontSize: 'var(--mv-text, 18px)', color: 'var(--eld-accent)', marginTop: 4 },
+  ok: { fontSize: 'var(--mv-text, 18px)', color: 'var(--eld-gold)', marginTop: 4 },
   wide: { width: '100%', marginTop: 10, padding: '10px 8px', minHeight: 'var(--mv-tap, 52px)' },
   list: { padding: 10, display: 'flex', flexDirection: 'column', gap: 6 },
   mat: { display: 'flex', justifyContent: 'space-between', padding: '6px 8px', borderLeft: '3px solid', fontSize: 'var(--mv-text, 18px)', background: 'rgba(0,0,0,0.2)' },

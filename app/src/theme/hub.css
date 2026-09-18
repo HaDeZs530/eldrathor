@@ -175,17 +175,13 @@
   }
 }
 
-/* Mind-view scale on the Party / Player / Hearth brackets (v3 §4): taps ≥ 52 px, inputs 18 px */
+/* Mind-view scale on the Party / Player / Hearth tabs (v3 §4): taps ≥ 52 px, inputs 18 px */
 .eld-root.hub-mind .eld-btn,
-.eld-root.hub-bond .eld-btn,
-.eld-root.hub-veinbinder .eld-btn,
 .eld-root.hub-hearth .eld-btn {
   min-height: var(--mv-tap, 52px);
 }
 
 .eld-root.hub-mind select, .eld-root.hub-mind input,
-.eld-root.hub-bond select, .eld-root.hub-bond input,
-.eld-root.hub-veinbinder select, .eld-root.hub-veinbinder input,
 .eld-root.hub-hearth select, .eld-root.hub-hearth input {
   font-size: var(--mv-text, 18px);
   min-height: 44px;

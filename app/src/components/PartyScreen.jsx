@@ -8,6 +8,8 @@ import BagScreen from './BagScreen.jsx';
 import { deriveDisplay, deriveBreakdown, equip } from '../combat/derive.js';
 import { useTestNumbers } from '../debug/useTestNumbers.js';
 import { INNATES } from '../combat/simulate.js';
+import { slug } from '../art/manifest.js';
+import { PartyCard } from './ui/index.jsx';
 
 const CLASS_GLYPH = {
   Bulwark: '🛡',
@@ -28,7 +30,7 @@ export default function PartyScreen({ party, setParty, roster, setRoster, locked
   const [creating, setCreating] = useState(false);
 
   if (creating) {
-    // Recruit is a Town function — it stays Veinharbor even inside the Bond tab (UI Brackets lock)
+    // Recruit is a Town function — it stays Veinharbor even inside the Mind View Party tab (UI Brackets lock)
     return (
       <div className="eld-mode-veinharbor" data-mode-column="veinharbor" style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
       <CreateCharacter
@@ -90,7 +92,7 @@ export default function PartyScreen({ party, setParty, roster, setRoster, locked
 
   return (
     <div style={S.wrap}>
-      <div style={S.kick}>The Bond · Party</div>
+      <div style={S.kick}>Mind View · Party</div>
       <div className="eld-display eld-screen-title" style={S.title}>Bonded Three</div>
       {locked && (
         <div className="eld-panel" style={{ padding: '10px 12px', fontSize: 'var(--mv-label, 15px)', color: 'var(--eld-muted)', lineHeight: 1.4 }} role="status">
@@ -99,15 +101,26 @@ export default function PartyScreen({ party, setParty, roster, setRoster, locked
       )}
       <div style={S.sub}>Active expedition party</div>
 
+      {/* UI Brackets lock (revised): the fight PartyCard treatment — portrait frame, HP/MP bars, innate + aura — so Party and Fight read as one place */}
       <div className="eld-panel" style={S.partyBox}>
-        {party.map((m, i) => (
-          <MemberRow
-            key={`p-${i}`}
-            m={m}
-            badge={`Slot ${i + 1}`}
-            onClick={() => setDetail({ source: 'party', index: i })}
-          />
-        ))}
+        <div className="eld-party-cards">
+          {party.map((m, i) => {
+            const a = ARCHETYPES[m.archetype] || {};
+            const d = deriveDisplay(equip(m, bag));
+            const inn = INNATES[m.archetype];
+            const icons = inn ? [
+              { key: 'innate', art: `icon-innate-${slug(inn.name)}`, glyph: inn.glyph, title: inn.name },
+              { key: 'aura', art: `icon-aura-${slug(inn.aura.id)}`, glyph: inn.aura.glyph, title: `${inn.aura.name}: ${inn.aura.text}` },
+            ] : [];
+            return (
+              <button key={`p-${i}`} type="button" className="eld-party-tap" aria-label={`${m.name} — Slot ${i + 1}`} onClick={() => setDetail({ source: 'party', index: i })}>
+                <PartyCard name={m.name} accent={a.color} portraitArt={`portrait-${slug(m.archetype)}-1`} hp={d.maxHp} hpMax={d.maxHp} mp={d.maxMana} mpMax={d.maxMana} icons={icons}>
+                  <span className="eld-party-slot">Slot {i + 1} · Lv {m.level}</span>
+                </PartyCard>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <div style={S.secHead}>Roster</div>
@@ -293,7 +306,7 @@ function MemberDetail({ member, bag, setBag, setWorldvein, onEmpower, taken, loc
       <button type="button" className="eld-btn eld-btn-ghost" onClick={onBack} style={S.back}>
         ← Party
       </button>
-      <div style={S.kick}>The Bond · Adventurer</div>
+      <div style={S.kick}>Mind View · Adventurer</div>
       <div className="eld-display eld-screen-title" style={{ ...S.title, color: a.color }}>{member.name}</div>
       <div style={S.sub}>{member.archetype} · {a.blurb}</div>
 
