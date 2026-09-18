@@ -10,10 +10,12 @@
 4. Open PRs; don't invent LOCKED design — use `// DESIGN-OPEN:` for gaps.
 
 ## Active briefs (priority)
-0. **`docs/CLAUDE_BRIEFS/2026-09-17_ui-brackets.md`** — Party/Player/Hearth become their own brackets (Bond / Veinbinder / Hearth). Spec: `Eldrathor_UI_Brackets_Lock.md`. PR must ship phone captures.
+0. _(empty — every queued brief is done. Waiting on the Design Chat: M2 lock 2 (gems), the 224 weapon names + 27 boss weapon names, the Mythic-T1 exception ruling, the DESIGN-OPEN numbers from PR #61, and art for `icon-job-gather / process / train`.)_
+0. ~~`2026-09-17_ui-brackets.md`~~ (DONE #66 — The Bond / The Veinbinder / The Hearth brackets, six §D sheet fills, 250 ms tab crossfade, phone captures in `docs/art/captures/2026-09-17-ui-brackets/`; archived)
 0. ~~`2026-09-17_item-numbers-and-names.md`~~ (DONE #65 — three-avenue formula, tier-named armor, boss-named drops, enemy damage in feed, test-numbers mode, save v4; archived)
 
 ## Recently DONE (don't redo)
+- PR #66 — UI brackets (UI Brackets lock): Party → **The Bond** (copper / ember, firelight under-glow + three embers), Player + Settings → **The Veinbinder** (amethyst, rune-ring watermark, Worldvein `#c9a6ff`), Hearth + Offline summary → **The Hearth** (verdigris / bronze, smoke wisp, job tool glyphs). `MODE_TOKENS` / `MODE_COLUMNS` are six; `TAB_HUB_SKIN` party → bond, player → veinbinder, afk → hearth; `bond.css` / `veinbinder.css` / `hearth.css`; three new `.eld-mode-*` scopes → six distinct sheet fills + six Menu panels (tested); Settings and Offline pinned to their bracket wherever opened; Bag picker + Recruit inside Party stay Veinharbor; `.eld-tab-view` 250 ms crossfade. Captures in `docs/art/captures/2026-09-17-ui-brackets/` — **Anthony approves from those.** DESIGN-OPEN: `icon-job-*` art (glyph fallback shown).
 - PR #65 — item numbers + names: tierMult 1.8^(T−1), rarityMult 1.158^rung, rating +15 % / empower +25 % polish; Gullwatch…Worldforge armor names; `data/bossWeaponNames.js` placeholders; save v4 with the §9 wipe policy (migrations removed); enemy hits in the feed with raw → mitigated; Settings → Show test numbers. Gates unchanged. **Design Chat:** T1 Mythic at 100/+100 edges past a T3 Common (3.46 vs 3.24) — the one exception to the brief's test.
 - PR #63 / #64 — Host mode: this PC hosts the phone dev server; the scheduled task "Eldrathor dev keep-alive" (every 2 min) fast-forwards a clean `main` and restarts the server if down, so any merged PR is live on the phone in ~2 min. `npm run dev:phone:bg` / `host:register`. Rule: this Claude Code session pushes the PRs; the remote session is the backup. Return the checkout to `main` after every PR or the host stops pulling.
 - PR #61 — M2 lock 1, the item model: seven rungs + the two-axis power formula in `progression/items.js`, six equip slots, Artifact-from-any-area drops, area-gated crafting with the Smith's Core upgrade bench, the §7 Train cap, save v3 (one bag), and the Bag / item sheet / character-slot / Roster UI. 101 tests; the §8 balance gates pass with no enemy retune.
@@ -59,7 +61,7 @@
 - PR #29 — route polish 2: run log sheet + badge + toast, node scale (40/34/26), planar outward generator (Gabriel + band-filtered, 200-map crossing test), 350 ms glide + eased camera follow
 
 ## Still OPEN (Anthony deciding / later)
-- **UI mode ownership** — Player / Party render Veinharbor per Style Bible §A + Progression lock §9, but Anthony expected them off the Town look; see `docs/notes/2026-09-17_ui-mode-ownership.md` (issue + proposed rules for how UI is treated). Design Chat to write the tab → column lock; Anthony decides whether Player / Party / Hearth flip to Mind View.
+- ~~UI mode ownership~~ — resolved by `Eldrathor_UI_Brackets_Lock.md` (one owning table) and shipped in #66. Anthony still to **approve the captures** in PR #66; Style Bible §A's "Veinharbor (Town / Party / Player)" heading is now stale — Design Chat to amend.
 - ~~AFK root tab final name~~ — **Hearth** (Progression Loop Lock §9, shipped #56)
 - Rally / Prepare-the-bond screen title
 - Gem tree screen; enemy rosters per area; weapon skill trees (Design Chat specs next)
