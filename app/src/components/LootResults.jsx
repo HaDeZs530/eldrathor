@@ -48,9 +48,9 @@ export default function LootResults({ area, nodeLabel, fight, party = [], onCont
                 {p.name}
                 {!p.alive && <span style={S.fallen}> · fallen</span>}
               </span>
-              <span>{p.dealt}</span>
-              <span>{p.taken}</span>
-              <span>{p.healed}</span>
+              <span>{Math.round(p.dealt)}</span>
+              <span>{Math.round(p.taken)}</span>
+              <span>{Math.round(p.healed)}</span>
             </div>
           ))}
         </div>
