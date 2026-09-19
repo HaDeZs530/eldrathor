@@ -16,8 +16,8 @@
 - **Levels:** stat facets have 3 levels (each level costs a fragment + Worldvein); procs and finishers 1 and 2 levels as before. Full gem = 40 fragments-worth of facets across ~86 imbues.
 - **Contents:** exactly the July lists per class — Row 1 stats → foundation ring, Row 2 → second ring, procs → second-ring specials, Row 4 → third ring, finishers → compass points. Magnitudes: `GEM_TUNING` (+4%/level stat, +10% flavor stat, proc/finisher values as tabled in ClassGems_Live §3).
 - **Cost per imbue:** **1 Vein Fragment + Worldvein** `20 × 1.12^n` (n = imbues already on that gem). Everything costs Worldvein.
-- **Per gem:** fragments and Worldvein are sunk into that gem. Gems transfer between Adventurers with their lattice intact. Two healers = two gems, each grown. Extra gems = extra farming.
-- **Fragments:** an account resource, **1 per Adventurer level-up, any Adventurer** (bench and Train included — Train is capped at roster max, so it can't mint fragments faster than the Mountain). Shown in the header next to Worldvein as a small crystal-shard counter. (tune: 1/level; could become 2 at high levels.)
+- **Per gem, entirely:** fragments are earned by the gem, spent on the gem, and Worldvein is sunk into the gem. Gems transfer between Adventurers with lattice and unspent fragments intact. Two healers = two gems, each worn and grown. Extra gems = extra farming.
+- **Fragments are gem-bound (RULED 2026-09-19).** When an Adventurer levels up, the gem **they are wearing** gains 1 Vein Fragment. Fragments live on that gem — unspent and spent alike — and travel with it when it's transferred. An unequipped gem never grows; to grow two Healer gems you wear and level both. No account pool, no header counter: the gem's sheet and lattice screen show `fragments: 3 unspent · 12 imbued`. (tune: 1/level.) Bench Train levels count if the gem is worn by the trainee.
 - **Respec:** none. Finisher swap: 200 ❖ + 2 fragments.
 - **Crossing / matching, drops, equip:** as ClassGems_Live §4–§5 (rares 20%, bosses 35%, one gem per Adventurer, crossing grants the Core ability, matching amplifies the archetype's innate by `1 + 0.5 × imbuedFacets/40`).
 
@@ -36,12 +36,12 @@
 | Level / XP | Party → Adventurer sheet header; Results | Mind View |
 | Weapon / Armor | Bag rows · character-sheet slots · Smith (empower, grade) · Crafter | Veinharbor / Mind View |
 | Class gem lattice | character-sheet Gem slot → **Lattice screen**; Bag → gem sheet → Lattice | Mind View |
-| Fragments · Worldvein | header counters; spent only on the Lattice screen (fragments) and Smith/Crafter/Market/Lattice (Worldvein) | all |
+| Fragments (on the gem) · Worldvein (header) | fragments shown on the gem sheet + Lattice screen only; Worldvein spent at Smith/Crafter/Market/Lattice/Player | all |
 | Resonance / rank / Bond + Craft upgrades | Player tab root | Mind View |
 | Gathering skills (later) | Hearth | Hearth |
 
 ## 4. Lattice screen (Mind View)
-Hex lattice centred on the Core; pinch-zoom and pan; imbued facets lit in Mythros blue with a facet glow, available facets dim outline, unreachable facets dark. Header: gem name, wearer, `imbued/40`, fragments, Worldvein, live cumulative readout. Tap facet → sheet: name, effect per level, cost (fragment + ❖), **Imbue**. Finisher facets show the swap fee. Test-numbers mode shows derive output.
+Hex lattice centred on the Core; pinch-zoom and pan; imbued facets lit in Mythros blue with a facet glow, available facets dim outline, unreachable facets dark. Header: gem name, wearer, `imbued/40`, this gem's unspent fragments, Worldvein, live cumulative readout. A gem with no wearer shows "Equip to grow." Tap facet → sheet: name, effect per level, cost (fragment + ❖), **Imbue**. Finisher facets show the swap fee. Test-numbers mode shows derive output.
 
 ## 5. Engine
 `LatticeDef { id, core, facets: [ { id, ring, pos, neighbors: [ids], kind, maxLevel, effect, exclusiveGroup? } ] }` · `LatticeState { levels, finisher, imbues, worldveinSpent }` · pure `canImbue / imbue / derive / summary`, unit-tested per facet. Adjacency from `neighbors`. Generic; only the class gems use it now.
