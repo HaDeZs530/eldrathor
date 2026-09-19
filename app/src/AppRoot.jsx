@@ -8,6 +8,7 @@ import { DEFAULT_PARTY, AREAS, withIds } from './data.js';
 import { simulateFight, spawnEnemies, rollRewards, deriveStats, mulberry32 } from './combat.js';
 import { equip } from './combat/derive.js';
 import { withStarterWeapons, equippedIds, fightXp, splitXp, applyXp, xpToNext } from './progression/progression.js';
+import { awardLevelFragments, fragmentLine } from './progression/gems.js';
 import { plainName } from './progression/items.js';
 import { Frame, Header } from './components/ui/index.jsx';
 import PlayerScreen from './components/PlayerScreen.jsx';
@@ -581,7 +582,9 @@ export default function Eldrathor() {
         const r = applyXp(m, gains[i]);
         return { id: m.id, name: m.name, gain: gains[i], fallen: (sim.result.partyHpFrac[i] ?? 1) <= 0, from: m.level || 1, to: r.member.level, levelsGained: r.levelsGained, xpAfter: Math.floor(r.member.xp), xpNeeded: xpToNext(r.member.level) };
       });
-      xp = { total, per };
+      // Growth Model §1: every level-up feeds the gem its Adventurer WEARS (shown on Results, credited at Continue)
+      const fragments = awardLevelFragments(bagRef.current, fielded.map((m, i) => ({ member: m, levelsGained: per[i].levelsGained }))).awards;
+      xp = { total, per, fragments };
     }
     setFight({ enemies, derived, events: sim.events, result: sim.result, stats: sim.stats, rewards, xp, seed, named: !!n.namedRare, rare: !!rare, eff, mapClear, ambush: !!opts.ambush });
     setFightNode({ ...n, tier: area.tier, type: eff });
@@ -636,6 +639,7 @@ export default function Eldrathor() {
     setRunVein((v) => v + (rewards?.worldvein || 0));
     pushLog(`✔ Cleared in ${res.durationSec}s. +${rewards?.worldvein || 0} Worldvein.${f.eff === 'crystal' ? ' The deposit splinters — ×2 harvest.' : ''}`, 'good');
     for (const g of rewards?.gears || []) { setBag((b) => [...b, g]); pushLog(`  ⬥ Loot: ${plainName(g)} (${g.rating}/100)`, 'loot'); }
+    for (const g of rewards?.gems || []) { setBag((b) => [...b, g]); pushLog(`  ◆ Loot: ${g.name} — a class gem!`, 'loot'); }
     if (f.xp) applyFightXp(f.xp);
     if (f.rare) pushLog(`☠ Rare slain. ${t.rares.filter((r) => r.alive).length} remain.`, 'rare');
     if (lastRareDown) { pushLog('☠ Every rare on this map is slain.', 'rare'); doFlash('All rares slain', colors.mythros); }
@@ -659,6 +663,13 @@ export default function Eldrathor() {
     setRoster((r) => r.map(bump));
     pushLog(`  ✦ +${xp.total} XP shared by the bond.`, 'good');
     for (const p of xp.per) if (p.levelsGained) { pushLog(`  ✦ ${p.name} reaches level ${p.to}!`, 'good'); }
+    // the worn gems grow: 1 Vein Fragment per level gained (an unequipped gem gains nothing)
+    const all = [...party, ...roster];
+    const gains = xp.per.filter((p) => p.levelsGained).map((p) => ({ member: all.find((m) => m.id === p.id), levelsGained: p.levelsGained })).filter((g) => g.member);
+    if (gains.length) {
+      setBag((b) => awardLevelFragments(b, gains).bag);
+      for (const a of awardLevelFragments(bagRef.current, gains).awards) pushLog(`  ◆ ${fragmentLine(a)}`, 'good');
+    }
   }
   function extract() {
     if (extractingRef.current) return; // §2: a second tap before the 600 ms reset must not credit twice

@@ -246,8 +246,8 @@ test('§4 sell value (RULED 2026-09-19): 5 × rarityIndex² × (1 + rating/200) 
 });
 
 // ---------------------------------------------------------------- §5 the bag
-test('§5 bag: the five filters, the three sorts, and a slot-filtered view for an empty character slot', () => {
-  assert.deepEqual(FILTERS.map((f) => f.label), ['All', 'Weapons', 'Armor', 'Cores', 'Materials']);
+test('§5 bag: the six filters (Gems added by M2 lock 2), the three sorts, and a slot-filtered view for an empty character slot', () => {
+  assert.deepEqual(FILTERS.map((f) => f.label), ['All', 'Weapons', 'Armor', 'Gems', 'Cores', 'Materials']);
   assert.deepEqual(SORTS.map((s) => s.label), ['Rating ↓', 'Rarity', 'Newest']);
   const bag = [
     makeWeapon({ tier: 1, rarity: 'Common', type: 'Bow', rating: 10, rng: () => 0 }),

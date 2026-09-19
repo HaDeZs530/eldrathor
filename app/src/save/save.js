@@ -12,7 +12,7 @@
 import { mulberry32 } from '../combat/simulate.js';
 import { newId } from '../data.js';
 
-export const SAVE_VERSION = 4; // bumped by the item-numbers brief (2026-09-17); older saves reset (§9)
+export const SAVE_VERSION = 5; // bumped by M2 lock 2 — class gems + the lattice (2026-09-19); older saves reset (§9)
 export const SAVE_KEY = 'eldrathor.save.v1';
 export const QUARANTINE_PREFIX = 'eldrathor.save.quarantine.';
 export const SAVE_DEBOUNCE_MS = 1000;

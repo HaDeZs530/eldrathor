@@ -129,7 +129,7 @@ function buildLattice(gemClass) {
       // DESIGN-OPEN: an unwritten hex — see the LOCK CONFLICT note at the top of this file
       : { id: g.id, ring: g.ring, pos: g.pos, neighbors: g.neighbors, slot: g.slot, name: 'Dormant', kind: 'dormant', maxLevel: 0, effect: {} };
   });
-  return { id: `gem-${gemClass.toLowerCase()}`, name: `${gemClass} Gem`, gemClass, core: { id: CORE_ID, ...T.core[gemClass] }, facets };
+  return { id: `gem-${gemClass.toLowerCase()}`, name: `${gemClass} Gem`, gemClass, core: { ...T.core[gemClass], abilityId: T.core[gemClass].id, id: CORE_ID }, facets };
 }
 
 export const CLASS_LATTICES = Object.fromEntries(GEM_CLASSES.map((k) => [k, buildLattice(k)]));
