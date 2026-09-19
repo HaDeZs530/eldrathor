@@ -11,7 +11,8 @@
 
 ## Active briefs (priority)
 0. **`docs/CLAUDE_BRIEFS/2026-09-19_open-numbers.md`** — rulings for the PR #61 open numbers, Mythic-T1 test, heading fix.
-1. (gems brief withdrawn — replaced by the lattice; new brief coming from the Design Chat after Anthony confirms `Eldrathor_Growth_Model_Lock.md`) Specs: `Eldrathor_ClassGems_Live_Lock.md`, `Eldrathor_ClassGemTrees_Lock.md`.
+1. **`docs/CLAUDE_BRIEFS/2026-09-19_m2-2-lattice-gems.md`** — lattice engine + class gems live + gem-bound fragments + lattice screen. Specs: Growth Model §1/§4/§5, ClassGems_Live §3–§5, ClassGemTrees.
+2. **`docs/CLAUDE_BRIEFS/2026-09-19_m2-3-player-resonance.md`** — Player tab: Resonance, ranks, rank-capped Bond/Craft upgrades. Spec: Growth Model §2. Specs: `Eldrathor_ClassGems_Live_Lock.md`, `Eldrathor_ClassGemTrees_Lock.md`.
 0. ~~`2026-09-17_ui-brackets-v2.md`~~ (DONE #67 — Party / Player / Settings → Mind View, Hearth = Veinharbor + Mythros accents, Bond / Veinbinder retired; captures in `docs/art/captures/2026-09-17-ui-brackets-v2/`; archived)
 
 ## Recently DONE (don't redo)

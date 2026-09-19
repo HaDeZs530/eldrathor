@@ -10,7 +10,8 @@ Active coding tasks for **Claude Code**. The **Claude Design Chat** writes these
 
 ## Queue
 - `2026-09-19_open-numbers.md` — **READY (first)**
-- `2026-09-19_m2-2-class-gems-live.md` — **READY**
+- `2026-09-19_m2-2-lattice-gems.md` — **READY**
+- `2026-09-19_m2-3-player-resonance.md` — **READY**
 - _(empty — every queued brief is done. Waiting on the Design Chat: M2 lock 2 (gems), the 224 weapon
   special names for `app/src/data/weaponNames.js`, and rulings on the DESIGN-OPEN numbers listed in PR #61.)_
 
