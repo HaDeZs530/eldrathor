@@ -10,7 +10,8 @@
 4. Open PRs; don't invent LOCKED design — use `// DESIGN-OPEN:` for gaps.
 
 ## Active briefs (priority)
-0. _(empty — every queued brief is done. Waiting on the Design Chat: M2 lock 2 (gems), the 224 weapon names + 27 boss weapon names, the Mythic-T1 exception ruling, the DESIGN-OPEN numbers from PR #61, art for `icon-job-gather / process / train`, and the Style Bible §A heading fix.)_
+0. **`docs/CLAUDE_BRIEFS/2026-09-19_open-numbers.md`** — rulings for the PR #61 open numbers, Mythic-T1 test, heading fix.
+1. **`docs/CLAUDE_BRIEFS/2026-09-19_m2-2-class-gems-live.md`** — M2 lock 2: generic tree engine + class gems live + tree screen. Specs: `Eldrathor_ClassGems_Live_Lock.md`, `Eldrathor_ClassGemTrees_Lock.md`.
 0. ~~`2026-09-17_ui-brackets-v2.md`~~ (DONE #67 — Party / Player / Settings → Mind View, Hearth = Veinharbor + Mythros accents, Bond / Veinbinder retired; captures in `docs/art/captures/2026-09-17-ui-brackets-v2/`; archived)
 
 ## Recently DONE (don't redo)
