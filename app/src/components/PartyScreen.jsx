@@ -3,9 +3,7 @@ import { newCharId, ARCHETYPES, STATS, STAT_LABELS, ARCHETYPE_SEEDS } from '../d
 import { starterWeapon, validName, NAME_MAX, equippedIds as equippedOf } from '../progression/progression.js';
 import { EQUIP_SLOTS, SLOT_LABEL } from '../progression/items.js';
 import SlotGrid from './items/SlotGrid.jsx';
-import ItemSheet from './items/ItemSheet.jsx';
 import BagScreen from './BagScreen.jsx';
-import GemSheet from './items/GemSheet.jsx';
 import { deriveDisplay, deriveBreakdown, equip } from '../combat/derive.js';
 import { useTestNumbers } from '../debug/useTestNumbers.js';
 import { INNATES } from '../combat/simulate.js';
@@ -27,6 +25,7 @@ const CLASS_GLYPH = {
  */
 export default function PartyScreen({ party, setParty, roster, setRoster, locked = false, bag = [], setBag, setWorldvein, equipped, onEmpower, onOpenLattice, bond = null }) {
   const taken = equipped || equippedOf(party, roster);
+  const ownerOf = (id) => [...party, ...roster].find((m) => Object.values(m.equipped || {}).includes(id))?.name || null;
   const [detail, setDetail] = useState(null); // { source: 'party'|'roster', index }
   const [creating, setCreating] = useState(false);
 
@@ -64,6 +63,7 @@ export default function PartyScreen({ party, setParty, roster, setRoster, locked
         onEmpower={onEmpower}
         onOpenLattice={onOpenLattice}
         bond={bond}
+        ownerOf={ownerOf}
         taken={taken}
         locked={locked}
         onBack={() => setDetail(null)}
@@ -259,10 +259,11 @@ function MemberRow({ m, badge, onClick }) {
 
 /**
  * The character sheet — docs/Eldrathor_Item_Model_Lock.md §6: header with the nine derived stats, then
- * the six premade slots. Tap a filled slot → that item's sheet; tap an empty one → the bag filtered to
- * the slot for this Adventurer, with Compare on every row.
+ * the six premade slots. Tap ANY slot, filled or empty (Anthony, 2026-09-19 — supersedes §6's "filled slot →
+ * item sheet") → the list of everything that fits it for this Adventurer, the worn item first, Compare on
+ * every row; a row prompts Equip / Cancel, and a filled slot then asks to Replace (OK / Cancel).
  */
-function MemberDetail({ member, bag, setBag, setWorldvein, onEmpower, onOpenLattice, bond = null, taken, locked, onBack, onChange, onPromoteToParty }) {
+function MemberDetail({ member, bag, setBag, setWorldvein, onEmpower, onOpenLattice, bond = null, ownerOf, taken, locked, onBack, onChange, onPromoteToParty }) {
   const a = ARCHETYPES[member.archetype];
   const geared = equip(member, bag, bond); // the Veinbinder's Bond upgrades apply to every Adventurer
   const d = deriveDisplay(geared);
@@ -270,7 +271,6 @@ function MemberDetail({ member, bag, setBag, setWorldvein, onEmpower, onOpenLatt
   const testNumbers = useTestNumbers();
   const [nameDraft, setNameDraft] = useState(member.name);
   const nameOk = validName(nameDraft);
-  const [openSlot, setOpenSlot] = useState(null); // a filled slot's item sheet
   const [picking, setPicking] = useState(null);   // the bag, filtered to one slot
   const eq = member.equipped || {};
   const byId = (id) => (id ? bag.find((i) => i.id === id) || null : null);
@@ -346,7 +346,7 @@ function MemberDetail({ member, bag, setBag, setWorldvein, onEmpower, onOpenLatt
       <SlotGrid
         items={slotItems}
         locked={locked}
-        onOpen={(item, slot) => setOpenSlot({ item, slot })}
+        onOpen={(item, slot) => setPicking(slot)}
         onPick={(slot) => setPicking(slot)}
       />
       {locked && <div style={S.note}>Your bond is on the mountain — gear changes at Rally.</div>}
@@ -369,25 +369,6 @@ function MemberDetail({ member, bag, setBag, setWorldvein, onEmpower, onOpenLatt
         {!nameOk && <div style={S.err}>A name is 1–{NAME_MAX} characters.</div>}
       </div>
 
-      {openSlot && openSlot.slot === 'gem' && (
-        <GemSheet
-          gem={bag.find((i) => i.id === openSlot.item.id) || openSlot.item}
-          wearer={member}
-          onClose={() => setOpenSlot(null)}
-          onOpenLattice={onOpenLattice ? (g) => { setOpenSlot(null); onOpenLattice(g.id); } : undefined}
-          onUnequip={locked ? undefined : () => { setSlot('gem', null); setOpenSlot(null); }}
-        />
-      )}
-      {openSlot && openSlot.slot !== 'gem' && (
-        <ItemSheet
-          item={openSlot.item}
-          equippedBy={member.name}
-          onClose={() => setOpenSlot(null)}
-          onEmpower={openSlot.item.kind === 'weapon' && onEmpower ? (i) => { setOpenSlot(null); onEmpower(i); } : undefined}
-          onEquip={locked ? undefined : () => { setSlot(openSlot.slot, null); setOpenSlot(null); }}
-        />
-      )}
-
       {picking && (
         <div style={S.pickerOverlay} className="eld-mode-veinharbor" data-mode-column="veinharbor">{/* Bag is a Town function — stays Veinharbor (UI Brackets lock) */}
           <BagScreen
@@ -398,6 +379,10 @@ function MemberDetail({ member, bag, setBag, setWorldvein, onEmpower, onOpenLatt
             slotFilter={picking}
             compareTo={slotItems[picking]}
             compareWith={member.name}
+            ownerOf={ownerOf}
+            wearerOf={(id) => (id === slotItems.gem?.id ? member : null)}
+            onUnequip={locked ? undefined : () => { setSlot(picking, null); setPicking(null); }}
+            onEmpower={onEmpower}
             title={`${SLOT_LABEL[picking]} for ${member.name}`}
             forArchetype={member.archetype}
             onOpenLattice={onOpenLattice}

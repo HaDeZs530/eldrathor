@@ -41,7 +41,7 @@ function Delta({ now, was, fmt, better = 'higher' }) {
 
 export default function ItemSheet({
   item, current = null, equippedBy, compareWith,
-  onClose, onEquip, onEmpower, onSell, onUpgrade,
+  onClose, onEquip, onUnequip, onEmpower, onSell, onUpgrade, closeLabel = 'Close',
 }) {
   const testNumbers = useTestNumbers();
   if (!item) return null;
@@ -86,12 +86,13 @@ export default function ItemSheet({
 
       <div className="eld-item-actions">
         {onEquip && <PrimaryButton onClick={() => onEquip(item)}>Equip</PrimaryButton>}
+        {onUnequip && <SecondaryButton onClick={() => onUnequip(item)}>Unequip</SecondaryButton>}
         {onEmpower && item.kind === 'weapon' && <SecondaryButton onClick={() => onEmpower(item)}>Empower</SecondaryButton>}
         {onUpgrade && step && <SecondaryButton onClick={() => onUpgrade(item)}>Upgrade → {step.to}</SecondaryButton>}
         {onSell && <SecondaryButton onClick={() => onSell(item)} disabled={!!equippedBy}>
           {equippedBy ? 'Equipped' : `Sell · ${sellValue(item) * (item.qty || 1)} ❖`}
         </SecondaryButton>}
-        <SecondaryButton onClick={onClose}>Close</SecondaryButton>
+        <SecondaryButton onClick={onClose}>{closeLabel}</SecondaryButton>
       </div>
     </Sheet>
   );
