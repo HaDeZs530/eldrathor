@@ -5,6 +5,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  GATHER_CORE_EVERY_MS, GATHER_CORE_AREAS,
   assignJob, resolveCharKey, emptyGatherSlot, emptyAfkState, reconcileAfk, trainXpGain, maxUnlockedTier, IDLE_CYCLE_MS,
   PROCESS_CYCLE_MS, PROCESS_VEIN_COST, startJob, stopJob, toggleJob, suspendJobs, resumeJobs, cyclesElapsed,
   wantsOfflineSummary, summaryLines, normalizeAfk, OFFLINE_SUMMARY_MS, gatherYield, AFK_TUNING,
@@ -191,4 +192,24 @@ test('§1 processing rolls a rarity capped by the highest unlocked area: Epic an
   assert.equal(rollInfusedQuality(top, 9), 'Artifact');
   assert.equal(rollInfusedQuality(top, 10), 'Mythic');
   assert.equal(rollInfusedQuality(() => 0, 10), 'Common');
+});
+
+test('open numbers (RULED 2026-09-19): a Gather job in areas 8–9 brings back 1 Artifact Core per 2 h, remainder carried; none below area 8', () => {
+  assert.equal(GATHER_CORE_EVERY_MS, 2 * 60 * 60 * 1000);
+  assert.deepEqual(GATHER_CORE_AREAS, [8, 9]);
+  const run = (areaId, ms, coreMs = 0) => {
+    let s = assignJob(state(), { kind: 'gather', index: 0 }, 'c1');
+    s = { ...s, gatherSlots: s.gatherSlots.map((g, i) => (i === 0 ? { ...startJob({ ...g, areaId }, T0), coreMs } : g)) };
+    return reconcileAfk({ state: s, inventory: inv(), bag: [], worldvein: 0, party, roster, unlocked: 10, now: T0 + ms, rng: never });
+  };
+  const five = run(8, 5 * 60 * 60 * 1000);
+  const cores = five.bag.filter((i) => i.kind === 'core');
+  assert.equal(cores.length, 2, '5 h → 2 cores');
+  assert.deepEqual([cores[0].type, cores[0].rarity], ['Artifact Core', 'Artifact']);
+  assert.equal(five.next.gatherSlots[0].coreMs, 60 * 60 * 1000, 'the odd hour carries');
+  assert.equal(five.summary.cores, 2);
+  assert.ok(summaryLines(five.summary).includes('+2 Artifact Cores'));
+  assert.equal(run(9, 60 * 60 * 1000, 60 * 60 * 1000).bag.filter((i) => i.kind === 'core').length, 1, 'carried hour + one more = a core');
+  assert.equal(run(7, 10 * 60 * 60 * 1000).bag.filter((i) => i.kind === 'core').length, 0, 'area 7 gathers no cores');
+  assert.equal(run(10, 10 * 60 * 60 * 1000).bag.filter((i) => i.kind === 'core').length, 0, 'area 10 gathers no Artifact cores');
 });

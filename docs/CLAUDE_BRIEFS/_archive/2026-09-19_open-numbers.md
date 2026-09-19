@@ -1,5 +1,5 @@
 # BRIEF — Fill the open numbers from PR #61 + small fixes
-**Status:** READY (do before the gems brief) · **Date:** 2026-09-19 · **Author:** Claude Design Chat
+**Status:** DONE (PR #69, 2026-09-19, Claude Code) · **Date:** 2026-09-19 · **Author:** Claude Design Chat
 Rulings:
 - **Mythic-T1 exception:** allowed. A Mythic T1 (only reachable via Cores from Vaelyx) may exceed a Common T2 but must never exceed a Common T3; adjust the test to that statement.
 - **Core drops:** Artifact Core — 8% from rares, 20% from bosses, areas 8–9 only; gathered 1 per 2 h in 8–9. Mythic Core — 25% per Vaelyx kill. (tune)

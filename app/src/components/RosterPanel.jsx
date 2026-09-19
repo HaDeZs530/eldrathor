@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { ARCHETYPES, newCharId } from '../data.js';
 import { starterWeapon, validName, NAME_MAX, rosterCap } from '../progression/progression.js';
 import { EQUIP_SLOTS } from '../progression/items.js';
-import { FREE_RECRUITS, RECRUIT_COST, recruitCost, candidatesForDay, dayNumber } from '../progression/roster.js';
+import { FREE_RECRUITS, RECRUIT_COST_STEP, recruitCost, candidatesForDay, dayNumber } from '../progression/roster.js';
 import { PrimaryButton, SecondaryButton, Sheet } from './ui/index.jsx';
 import './items/items.css';
 
@@ -58,7 +58,7 @@ export default function RosterPanel({ party, roster, setParty, setRoster, setBag
   return (
     <div style={S.col}>
       <div style={S.note}>
-        Three candidates a day. The first {FREE_RECRUITS} recruits are free; after that each costs {RECRUIT_COST} ❖ (DESIGN-OPEN).
+        Three candidates a day. The first {FREE_RECRUITS} recruits are free; after that the price climbs {RECRUIT_COST_STEP} ❖ with each hire ({RECRUIT_COST_STEP}, {RECRUIT_COST_STEP * 2}, {RECRUIT_COST_STEP * 3} …). Next: <strong>{cost === 0 ? 'free' : `${cost} ❖`}</strong>.
         Archetype is set at recruitment and never changes. Roster level ceiling: <strong>{cap}</strong>.
       </div>
 

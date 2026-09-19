@@ -68,9 +68,12 @@ export function rollRarity(rng, { area = 1, nodeType = 'normal', attune = false,
 // prototype's rollLoot so the economy does not change in this PR.
 const VEIN_BASE = { normal: 1, crystal: 2, rare: 3, boss: 5 };
 const GEAR_CHANCE = { normal: 0.12, crystal: 0.25, rare: 0.6, boss: 1 };
-// DESIGN-OPEN: Artifact Core drop rate from rares / bosses in areas 8–9 (§1 says they drop there).
+// RULED 2026-09-19 (open-numbers brief, tune): Artifact Core — 8 % from rares, 20 % from bosses, areas 8–9 only
+// (and gathered 1 per 2 h there — see afkRuntime). Mythic Core — 25 % per Vaelyx kill.
 export const CORE_AREA_MIN = 8;
-export const CORE_DROP_CHANCE = { rare: 0.15, boss: 0.5 };
+export const CORE_AREA_MAX = 9;
+export const CORE_DROP_CHANCE = { rare: 0.08, boss: 0.2 };
+export const MYTHIC_CORE_CHANCE = 0.25;
 
 /**
  * @param {{tier:number,area?:number,nodeType:string,attuneVein?:boolean,rng?:Function,named?:boolean,mapClear?:boolean}} args
@@ -78,9 +81,10 @@ export const CORE_DROP_CHANCE = { rare: 0.15, boss: 0.5 };
  *   named     — named variant: +1 extra loot roll one rung up (RouteMap §5)
  *   mapClear  — boss killed with every node cleared: +50 % Worldvein + one guaranteed Rare-or-better roll (§6)
  *   bossName  — the area boss (boss nodes): its weapon drops take a boss-named special name (Item Model §2)
+ *   vaelyx    — the kill was Vaelyx: 25 % Mythic Core (no Vaelyx encounter exists yet — the rule is wired and tested)
  * @returns {{worldvein:number, attuneBonus:number, mapClearBonus:number, gears:object[], gear:object|null}}
  */
-export function rollRewards({ tier, area, worldTier, nodeType, attuneVein = false, rng = Math.random, named = false, mapClear = false, bossName = null }) {
+export function rollRewards({ tier, area, worldTier, nodeType, attuneVein = false, rng = Math.random, named = false, mapClear = false, bossName = null, vaelyx = false }) {
   const A = Math.max(1, area || tier || worldTier || 1);
   const T = tierForArea(A);
   const base = VEIN_BASE[nodeType] || 1;
@@ -108,8 +112,9 @@ export function rollRewards({ tier, area, worldTier, nodeType, attuneVein = fals
   if (named) gears.push(rollGear(1)); // named variant: one extra roll one rung up (RouteMap §5)
   if (mapClear) gears.push(rollGear(0, 'Rare')); // map clear: one guaranteed Rare-or-better roll (§6)
   // §1: Artifact Cores are hunted in areas 8–9 — rares and bosses there can drop one.
-  if (A >= CORE_AREA_MIN && (nodeType === 'rare' || nodeType === 'boss') && rng() < (CORE_DROP_CHANCE[nodeType] || 0)) {
+  if (A >= CORE_AREA_MIN && A <= CORE_AREA_MAX && (nodeType === 'rare' || nodeType === 'boss') && rng() < (CORE_DROP_CHANCE[nodeType] || 0)) {
     gears.push(makeCore({ tier: T, rarity: 'Artifact', type: CORE_TYPES.Artifact }));
   }
+  if (vaelyx && rng() < MYTHIC_CORE_CHANCE) gears.push(makeCore({ tier: T, rarity: 'Mythic', type: CORE_TYPES.Mythic }));
   return { worldvein, attuneBonus, mapClearBonus, gears, gear: gears[0] || null };
 }

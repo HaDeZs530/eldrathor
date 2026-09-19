@@ -178,10 +178,18 @@ export const UPGRADE_COST = { Artifact: 250, Mythic: 1000 };
 export const upgradeCost = (item) => UPGRADE_COST[upgradeStepFor(item)?.to] ?? 0;
 
 // ---------- §4 sell value ----------
-// DESIGN-OPEN: the lock sets the shape `base(rarity) × (1 + rating/200)` but leaves base open.
-export const SELL_BASE = { Common: 4, Uncommon: 8, Rare: 16, Epic: 32, Legendary: 64, Artifact: 128, Mythic: 256 };
+// RULED 2026-09-19 (open-numbers brief): `5 × rarityIndex² × (1 + rating/200)` ❖, floored — Common 5–7,
+// Legendary 125–187. Materials sell per unit at `1 × rarityIndex` ❖.
+export const SELL_COEFF = 5;
+export const MATERIAL_SELL_COEFF = 1;
+/** The rating-1-ish base per rung (5 × index²) — kept as a table for the UI and the tests. */
+export const SELL_BASE = Object.fromEntries(RARITIES.map((r) => [r, SELL_COEFF * rarityIndex(r) ** 2]));
 /** Worldvein a sale gives (§4). Materials sell per unit. */
-export const sellValue = (item) => (item ? Math.max(1, Math.round((SELL_BASE[item.rarity] ?? 1) * (1 + clampRating(item.rating) / 200))) : 0);
+export const sellValue = (item) => {
+  if (!item) return 0;
+  if (item.kind === 'material') return MATERIAL_SELL_COEFF * rarityIndex(item.rarity);
+  return Math.max(1, Math.floor(SELL_BASE[item.rarity] * (1 + clampRating(item.rating) / 200)));
+};
 
 /** The 1–100 gear score shown in a row's `[72]` chip — the item's own rating, never a composite (§2). */
 export const gearScore = (item) => (item ? clampRating(item.rating) : 0);

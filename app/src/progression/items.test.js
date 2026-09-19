@@ -14,9 +14,9 @@ import {
 } from './items.js';
 import { bagView, bulkSell, FILTERS, SORTS } from './bag.js';
 import { upgradeFor, itemValue } from './upgrade.js';
-import { recruitCost, candidatesForDay, FREE_RECRUITS, RECRUIT_COST, CANDIDATES_PER_DAY } from './roster.js';
+import { recruitCost, candidatesForDay, FREE_RECRUITS, RECRUIT_COST_STEP, CANDIDATES_PER_DAY } from './roster.js';
 import { WEAPON_NAMES, NAMES_PER_POOL, weaponSpecialName, poolIsNamed, TIERS } from '../data/weaponNames.js';
-import { rollRarity, rollRewards, RARE_DROP_WEIGHTS, DROP_CAP, BOSS_RATING_FLOOR, dropWeights, applyAttune, stepUp } from '../combat/rewards.js';
+import { rollRarity, rollRewards, RARE_DROP_WEIGHTS, DROP_CAP, BOSS_RATING_FLOOR, dropWeights, applyAttune, stepUp, CORE_DROP_CHANCE, CORE_AREA_MIN, CORE_AREA_MAX, MYTHIC_CORE_CHANCE } from '../combat/rewards.js';
 import { BOSS_WEAPON_NAMES, bossWeaponName, bossPoolIsNamed, NAMES_PER_BOSS, bossShortName } from '../data/bossWeaponNames.js';
 import { AREAS } from '../data.js';
 import { WEAPONS } from '../data.js';
@@ -55,10 +55,15 @@ test('§1 three avenues (RULED 2026-09-17): tierMult 1.8^(T−1), rarityMult 1.1
   // no T1 item that can DROP (≤ Artifact) at any rating / empower beats a T3 Common at rating 1
   const t3floor = p(3, 'Common', 1, 0);
   for (const r of ['Common', 'Uncommon', 'Rare', 'Epic', 'Legendary', 'Artifact']) assert.ok(p(1, r, 100, 100) < t3floor, `T1 ${r} +100 @100 (${p(1, r, 100, 100).toFixed(2)}) < T3 Common @1 (${t3floor.toFixed(2)})`);
-  // LOCK CONFLICT for the Design Chat: a T1 MYTHIC (an Artifact upgraded with a Mythic Core keeps its tier) at
-  // rating 100 / +100 is 2.41 × 1.15 × 1.25 = 3.46 vs the T3 Common floor 3.24 — the only T1 item that passes it.
-  assert.ok(p(1, 'Mythic', 100, 100) > t3floor, 'documented exception: Mythic T1 fully polished edges past a T3 Common');
-  assert.ok(p(1, 'Mythic', 100, 0) < t3floor, 'without empower even Mythic T1 stays below');
+  // RULED 2026-09-19: the Mythic-T1 exception is allowed. A Mythic T1 (only reachable via Cores from Vaelyx) MAY
+  // exceed a Common T2 but must NEVER exceed a Common T3 — asserted like for like (same rating, same empower):
+  for (const [rating, empower] of [[1, 0], [50, 0], [100, 0], [50, 50], [100, 100]]) {
+    assert.ok(p(1, 'Mythic', rating, empower) > p(2, 'Common', rating, empower), `Mythic T1 > Common T2 @${rating}/+${empower}`);
+    assert.ok(p(1, 'Mythic', rating, empower) < p(3, 'Common', rating, empower), `Mythic T1 < Common T3 @${rating}/+${empower}`);
+  }
+  // still true and still flagged: a FULLY polished Mythic T1 (3.46) passes an UNPOLISHED T3 Common (3.24); without
+  // empower it does not. The ruling is read like for like; polish-vs-floor is the one crossing left.
+  assert.ok(p(1, 'Mythic', 100, 100) > t3floor && p(1, 'Mythic', 100, 0) < t3floor);
 });
 
 test('§1 two-axis power: base(type) × tierMult × rarityMult × ratingScale × empowerScale, and TIER DOMINATES', () => {
@@ -227,10 +232,15 @@ test('§1 cores: the upgrade step carries rating AND empower, and never changes 
 });
 
 // ---------------------------------------------------------------- §4 sell value
-test('§4 sell value: base(rarity) × (1 + rating/200) — the base table is DESIGN-OPEN', () => {
+test('§4 sell value (RULED 2026-09-19): 5 × rarityIndex² × (1 + rating/200) ❖ — Common 5–7, Legendary 125–187; materials 1 × rarityIndex', () => {
   assert.deepEqual(Object.keys(SELL_BASE), RARITIES);
+  assert.deepEqual(Object.values(SELL_BASE), [5, 20, 45, 80, 125, 180, 245]);
+  const sell = (rarity, rating) => sellValue(makeArmor({ tier: 1, rarity, rating }));
+  assert.deepEqual([sell('Common', 1), sell('Common', 100)], [5, 7]);
+  assert.deepEqual([sell('Legendary', 1), sell('Legendary', 100)], [125, 187]);
+  assert.deepEqual(RARITIES.map((r) => sellValue(makeMaterial({ tier: 1, rarity: r, type: 'Infused wood' }))), [1, 2, 3, 4, 5, 6, 7]);
   const item = makeArmor({ tier: 1, rarity: 'Epic', rating: 100 });
-  assert.equal(sellValue(item), Math.round(SELL_BASE.Epic * 1.5));
+  assert.equal(sellValue(item), Math.floor(SELL_BASE.Epic * 1.5));
   assert.ok(sellValue(makeArmor({ tier: 1, rarity: 'Mythic', rating: 1 })) > sellValue(makeArmor({ tier: 1, rarity: 'Common', rating: 100 })));
   assert.equal(sellValue(null), 0);
 });
@@ -284,10 +294,11 @@ test('§12 results: "↑ upgrade for <name>" only when the drop beats that Adven
 });
 
 // ---------------------------------------------------------------- §8 the roster
-test('§8 roster: three candidates a day, stable within the day, first three recruits free (cost DESIGN-OPEN)', () => {
+test('§8 roster: three candidates a day, stable within the day; first three recruits free, then 50 × (hired − 2) ❖', () => {
   assert.equal(FREE_RECRUITS, 3);
   assert.equal(CANDIDATES_PER_DAY, 3);
-  assert.deepEqual([0, 1, 2, 3, 99].map(recruitCost), [0, 0, 0, RECRUIT_COST, RECRUIT_COST]);
+  assert.equal(RECRUIT_COST_STEP, 50);
+  assert.deepEqual([0, 1, 2, 3, 4, 5, 10].map(recruitCost), [0, 0, 0, 50, 100, 150, 400]);
   const a = candidatesForDay(20300);
   assert.equal(a.length, 3);
   assert.deepEqual(candidatesForDay(20300), a, 'stable within the day');
@@ -296,4 +307,20 @@ test('§8 roster: three candidates a day, stable within the day, first three rec
     assert.ok(c.name && c.archetype && c.weapon);
     assert.ok(WEAPONS[c.weapon], `${c.weapon} is a real weapon type`);
   }
+});
+
+test('open numbers (RULED 2026-09-19): Artifact Core 8 % from rares / 20 % from bosses in areas 8–9 only; Mythic Core 25 % per Vaelyx kill', () => {
+  assert.deepEqual(CORE_DROP_CHANCE, { rare: 0.08, boss: 0.2 });
+  assert.deepEqual([CORE_AREA_MIN, CORE_AREA_MAX], [8, 9]);
+  assert.equal(MYTHIC_CORE_CHANCE, 0.25);
+  let seed = 12345; const rng = () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; };
+  const rate = (args, type, n = 6000) => { let hits = 0; for (let i = 0; i < n; i++) if (rollRewards({ rng, ...args }).gears.some((g) => g.kind === 'core' && g.type === type)) hits += 1; return hits / n; };
+  const near = (a, b, tol) => assert.ok(Math.abs(a - b) < tol, `${a.toFixed(3)} ≈ ${b}`);
+  near(rate({ area: 8, nodeType: 'rare' }, 'Artifact Core'), 0.08, 0.02);
+  near(rate({ area: 9, nodeType: 'boss' }, 'Artifact Core'), 0.2, 0.03);
+  assert.equal(rate({ area: 7, nodeType: 'boss' }, 'Artifact Core', 1500), 0, 'no cores below area 8');
+  assert.equal(rate({ area: 10, nodeType: 'boss' }, 'Artifact Core', 1500), 0, 'no Artifact cores above area 9');
+  assert.equal(rate({ area: 8, nodeType: 'normal' }, 'Artifact Core', 1500), 0, 'only rares and bosses');
+  near(rate({ area: 10, nodeType: 'boss', vaelyx: true }, 'Mythic Core'), 0.25, 0.03);
+  assert.equal(rate({ area: 10, nodeType: 'boss' }, 'Mythic Core', 1500), 0, 'only Vaelyx drops a Mythic Core');
 });
