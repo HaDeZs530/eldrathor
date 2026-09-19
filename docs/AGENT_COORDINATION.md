@@ -8,7 +8,7 @@
 |------|-----|------|
 | **Design authority** | **Claude Design Chat** (claude.ai Project "IOS Game Design - Eldrathor") | Design discussion & locks with Anthony, design-doc + lock-doc edits, `docs/CLAUDE_BRIEFS/`, `docs/SESSION_LOG.md`, audits of shipped code against locks, priorities |
 | **Coder** | **Claude Code** (Desktop app Code tab / Cowork / cloud sessions) | All `app/` code, refactors, wiring assets, implementing briefs, committing doc files handed over by the Design Chat |
-| **Art / helper** | **Grok Bot** | Image candidates, art exploration, ad-hoc tasks Anthony assigns. No design locks, no briefs. |
+| **Art / review** | **ChatGPT** | Illustrations per the Style Bible manifest; cold source reviews. No design locks, no briefs. Grok Bot retired 2026-09-19. |
 
 Claude Code does **not** invent LOCKED design — flag conflicts. Grok does **not** write locks or briefs.
 

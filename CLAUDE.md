@@ -6,7 +6,7 @@ Eldrathor: a UI-based iOS RPG (Vite + React now; Capacitor iOS wrap later). The 
 ## Agent split (LOCKED 2026-09-11, supersedes the Boss/Claude split from earlier the same day)
 - **Claude Design Chat** (claude.ai Project "IOS Game Design - Eldrathor") = design authority: design discussion with Anthony, LOCKS, design-doc edits, briefs in `docs/CLAUDE_BRIEFS/`, session log, audits of code vs. locks.
 - **Claude Code** (this agent) = **all coding** / implementation in `app/`, plus committing doc files handed over from the Design Chat.
-- **Grok Bot** = art / image candidates and ad-hoc tasks Anthony assigns. Grok does NOT lock design or write briefs anymore. Older locks signed "Anthony + Boss" remain valid history.
+- **ChatGPT** = illustration/art generation (one asset per prompt, per the Style Bible manifest) and cold source review. Grok Bot is **retired** (2026-09-19). Older locks signed "Anthony + Boss" remain valid history.
 - Full workflow: `docs/AGENT_COORDINATION.md`. **Home sessions: start at `docs/CLAUDE_HOME_HANDOFF.md`.** Active tasks: `docs/CLAUDE_BRIEFS/`.
 
 ## Source of truth — read before building
