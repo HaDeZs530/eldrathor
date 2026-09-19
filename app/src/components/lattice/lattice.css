@@ -1,0 +1,78 @@
+/*
+ * The Lattice screen — Growth Model §4 (Mind View). It carries `.eld-mode-mind`, so every colour token
+ * below is the Mind View column's wherever the screen was opened from (the Bag is Veinharbor).
+ */
+.eld-lattice {
+  position: absolute;
+  inset: 0;
+  z-index: 25;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: linear-gradient(180deg, #0c1a2b 0%, #152a41 100%);
+  color: var(--eld-text);
+  animation: eld-lattice-in 250ms ease-out both;
+}
+@keyframes eld-lattice-in { from { opacity: 0; } to { opacity: 1; } }
+
+.eld-lattice-head { flex-shrink: 0; padding: 10px 14px 8px; display: flex; flex-direction: column; gap: 4px; border-bottom: 1px solid var(--eld-border); }
+.eld-lattice-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.eld-lattice-top .eld-btn { min-height: 44px; padding: 6px 14px; }
+.eld-lattice-vein { font-family: var(--eld-font-display); font-weight: 700; font-size: 18px; color: var(--eld-mythros); }
+.eld-lattice-kick { font-family: var(--eld-font-display); font-size: 13px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--eld-muted); }
+.eld-lattice-title { font-size: 24px; line-height: 1.1; color: var(--eld-display); }
+.eld-lattice-meta { font-size: 15px; color: var(--eld-text); }
+.eld-lattice-meta strong { color: var(--eld-display); }
+.eld-lattice-warn { color: var(--eld-gold) !important; }
+.eld-lattice-readout { font-size: 14px; line-height: 1.35; color: var(--eld-mythros); }
+
+.eld-lattice-stage { position: relative; flex: 1; min-height: 0; overflow: hidden; }
+.eld-lattice-svg { width: 100%; height: 100%; display: block; touch-action: none; user-select: none; -webkit-user-select: none; }
+.eld-lattice-svg g { transform-box: view-box; }
+
+.eld-vein { stroke: #22384f; stroke-width: 2; }
+.eld-vein.is-lit { stroke: var(--eld-mythros); stroke-width: 3; opacity: 0.85; }
+
+.eld-facet { cursor: pointer; }
+.eld-facet polygon { fill: #101c2a; stroke: #24384e; stroke-width: 1.5; transition: fill 200ms ease, stroke 200ms ease; }
+.eld-facet text { text-anchor: middle; pointer-events: none; font-family: var(--eld-font-body); }
+.eld-facet-name { font-size: 8.5px; fill: #5f7690; font-weight: 600; }
+.eld-facet-lv { font-size: 10px; fill: #4c6078; }
+.eld-facet-glyph { font-size: 18px; }
+
+/* unreachable: dark */
+.eld-facet.is-unreachable polygon { fill: #0c1622; stroke: #1b2b3d; }
+/* dormant: a hex with nothing written on it — darker still, never tappable-looking */
+.eld-facet.is-dormant { cursor: default; }
+.eld-facet.is-dormant polygon { fill: #09111b; stroke: #14212f; stroke-dasharray: 3 4; }
+/* the other finisher, once one is set */
+.eld-facet.is-darkened polygon { fill: #0c1622; stroke: #3a3220; stroke-dasharray: 5 3; }
+.eld-facet.is-darkened .eld-facet-name { fill: #6b5d3a; }
+/* available: a dim outline */
+.eld-facet.is-available polygon { fill: #13233a; stroke: #3d6fa8; }
+.eld-facet.is-available .eld-facet-name { fill: #b7c6d8; }
+.eld-facet.is-available .eld-facet-lv { fill: #7f97b0; }
+/* imbued: lit in Mythros blue with a facet glow */
+.eld-facet.is-lit polygon, .eld-facet.is-full polygon { fill: #17466b; stroke: #2cabf8; stroke-width: 2; }
+.eld-facet.is-full polygon { fill: #1d5f92; }
+.eld-facet.is-lit .eld-facet-name, .eld-facet.is-full .eld-facet-name { fill: #eaf6ff; }
+.eld-facet.is-lit .eld-facet-lv, .eld-facet.is-full .eld-facet-lv { fill: #9fdcff; }
+.eld-facet.kind-finisher.is-available polygon { stroke: #e8c46a; }
+.eld-facet.kind-finisher.is-lit polygon, .eld-facet.kind-finisher.is-full polygon { stroke: #e8c46a; }
+.eld-facet.kind-proc.is-available polygon { stroke: #c9a6ff; }
+.eld-facet.is-core polygon { fill: #1d5f92; stroke: #9fdcff; stroke-width: 2.5; }
+.eld-facet.is-core .eld-facet-name { fill: #eaf6ff; }
+
+.eld-lattice-ctl { position: absolute; right: 10px; bottom: 10px; display: flex; flex-direction: column; gap: 6px; }
+.eld-lattice-ctl .eld-btn { width: 46px; min-height: 46px; padding: 0; font-size: 20px; background: rgba(12, 26, 43, 0.85); }
+.eld-lattice-legend { position: absolute; left: 10px; bottom: 10px; display: flex; gap: 10px; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; }
+.eld-lattice-legend span::before { content: '⬢ '; }
+.eld-lattice-legend .is-lit { color: #2cabf8; }
+.eld-lattice-legend .is-available { color: #7f97b0; }
+.eld-lattice-legend .is-unreachable { color: #33475c; }
+.eld-lattice .eld-item-note.is-now { color: var(--eld-mythros); }
+
+@media (prefers-reduced-motion: reduce) {
+  .eld-lattice { animation: none; }
+  .eld-facet polygon { transition: none; }
+}

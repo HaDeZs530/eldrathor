@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import { ARCHETYPES } from '../data.js';
 import { nodeTypeMeta } from '../theme/tokens.js';
 import { INNATES, partyAuras } from '../combat/simulate.js';
+import { gemEffects } from '../progression/gems.js';
 import { MODES } from '../theme/styleBible.js';
 import { enemySlug, slug } from '../art/manifest.js';
 import Art from '../art/Art.jsx';
@@ -31,7 +32,7 @@ export default function FightScreen({ area, node, party, fight, elapsedMs, speed
   const testNumbers = useTestNumbers();
   // brief §4: every ENEMY hit on a party member is a feed line (party hits stay crit-only to keep the feed short)
   const feedAll = useMemo(
-    () => events.filter((e) => FEED_TYPES.has(e.type) || (e.type === 'heal' && !e.aura) || (e.type === 'hit' && e.enemy)),
+    () => events.filter((e) => FEED_TYPES.has(e.type) || GEM_FEED.has(e.type) || (e.type === 'heal' && !e.aura && !e.hot) || (e.type === 'hit' && e.enemy)),
     [events],
   );
 
@@ -47,6 +48,7 @@ export default function FightScreen({ area, node, party, fight, elapsedMs, speed
   const hitTargets = new Set(recent.filter((e) => e.type === 'hit' || e.type === 'crit').map((e) => e.target));
   const critTargets = new Set(recent.filter((e) => e.type === 'crit').map((e) => e.target));
   const firedBy = new Set(recent.filter((e) => e.type === 'innate').map((e) => e.source));
+  const gemFiredBy = new Set(recent.filter((e) => e.type === 'gem' || e.type === 'proc' || e.type === 'finisher').map((e) => e.source));
 
   const feed = feedAll.filter((e) => e.t <= elapsedMs).slice(-40);
   const feedRef = useRef(null);
@@ -118,6 +120,13 @@ export default function FightScreen({ area, node, party, fight, elapsedMs, speed
             { key: 'innate', art: `icon-innate-${slug(inn.name)}`, glyph: inn.glyph, title: `${inn.name}${inn.passive && ps.stacks > 0 ? ` ×${ps.stacks}` : ''} ${onCd ? '(cooling down)' : '(ready)'}`, lit: fired, dim: onCd },
             { key: 'aura', art: `icon-aura-${slug(inn.aura.id)}`, glyph: inn.aura.glyph, title: `${inn.aura.name}: ${inn.aura.text}`, lit: auras.some((au) => au.id === inn.aura.id) && fired },
           ] : [];
+          // ClassGems_Live §5: a third slot shows the worn gem — its Core ability when crossing (dim on cooldown), the gem itself when matching
+          const gfx = m.gemItem ? gemEffects(m.archetype, m.gemItem) : null;
+          if (gfx) {
+            const core = gfx.coreAbility;
+            const gemCd = core && (ps.gemCdReady ?? 0) > elapsedMs;
+            icons.push({ key: 'gem', glyph: core ? core.glyph : '◆', title: core ? `${m.gemItem.name} — ${core.name} ${gemCd ? '(cooling down)' : '(ready)'}` : `${m.gemItem.name} — amplifies ${inn?.name || 'the innate'} ×${gfx.innateAmp.toFixed(2)}`, lit: gemFiredBy.has(id), dim: !!gemCd });
+          }
           return (
             <PartyCard
               key={id}
@@ -152,6 +161,8 @@ export default function FightScreen({ area, node, party, fight, elapsedMs, speed
   );
 }
 
+const GEM_FEED = new Set(['gem', 'proc', 'finisher']);
+
 function hpColor(f) {
   return f > 0.5 ? M.hp : f > 0.25 ? M.crit : M.damage;
 }
@@ -160,6 +171,9 @@ function feedClass(e) {
   if (e.type === 'hit') return e.enemy ? 'is-taken' : '';
   if (e.type === 'crit') return e.enemy ? 'is-bad' : 'is-crit';
   if (e.type === 'innate') return 'is-innate';
+  if (e.type === 'gem') return 'is-gem';
+  if (e.type === 'proc') return 'is-proc';
+  if (e.type === 'finisher') return 'is-finisher';
   if (e.type === 'heal') return 'is-heal';
   if (e.type === 'kill') return 'is-kill';
   if (e.type === 'death') return 'is-bad';
@@ -175,7 +189,8 @@ function feedText(e) {
     case 'crit': return e.enemy ? `${e.sourceName} ENRAGED hit ▸ ${e.targetName} for ${e.amount}` : `${e.sourceName} crits ${e.targetName} for ${e.amount}`;
     case 'kill': return `${e.sourceName} fells ${e.targetName}`;
     case 'innate': return e.text || `${e.name} ▸ ${e.sourceName}`;
-    case 'heal': return `${e.source === 'Renewal' ? 'Renewal' : 'Mend'} ▸ ${e.targetName} +${e.amount}`;
+    case 'gem': case 'proc': case 'finisher': return e.text || `${e.name} ▸ ${e.sourceName}`;
+    case 'heal': return `${e.source === 'Renewal' ? 'Renewal' : e.finisher || e.proc || (e.gem ? 'Gem Heal' : 'Mend')} ▸ ${e.targetName} +${e.amount}`;
     case 'enrage': return `${e.sourceName} enrages — next hit doubles`;
     case 'death': return `${e.targetName} falls`;
     case 'stun': return `${e.targetName} stunned ${(e.amount / 1000).toFixed(0)}s`;

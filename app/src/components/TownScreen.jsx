@@ -28,11 +28,16 @@ import './items/items.css';
 
 const SECTION_TITLE = { bag: 'Bag', roster: 'Roster', crafter: 'Crafter', upgrade: 'Smith', market: 'Market' };
 
-export default function TownScreen({ party, roster, setParty, setRoster, bag, setBag, worldvein, setWorldvein, setTab, equipped, unlocked = 1, locked = false }) {
+export default function TownScreen({ party, roster, setParty, setRoster, bag, setBag, worldvein, setWorldvein, setTab, equipped, unlocked = 1, locked = false, onOpenLattice }) {
   const taken = equipped || new Set();
   const ownerOf = useMemo(() => {
     const map = new Map();
     for (const m of [...(party || []), ...(roster || [])]) for (const id of Object.values(m.equipped || {})) if (id) map.set(id, m.name);
+    return (id) => map.get(id) || null;
+  }, [party, roster]);
+  const wearerOf = useMemo(() => {
+    const map = new Map();
+    for (const m of [...(party || []), ...(roster || [])]) if (m.equipped?.gem) map.set(m.equipped.gem, m);
     return (id) => map.get(id) || null;
   }, [party, roster]);
   const [section, setSection] = useState('hub');
@@ -68,7 +73,7 @@ export default function TownScreen({ party, roster, setParty, setRoster, bag, se
             <button type="button" className="eld-town-back" onClick={() => go('hub')} aria-label="Back to Veinharbor">← Back to Veinharbor</button>
             <div className="eld-town-display eld-town-dest-title" style={{ fontSize: TOWN_LAYOUT.titlePx }}>{SECTION_TITLE[section]}</div>
           </div>
-          {section === 'bag' && <BagScreen bag={bag} setBag={setBag} equipped={taken} ownerOf={ownerOf} setWorldvein={setWorldvein} title={null} />}
+          {section === 'bag' && <BagScreen bag={bag} setBag={setBag} equipped={taken} ownerOf={ownerOf} wearerOf={wearerOf} onOpenLattice={onOpenLattice} setWorldvein={setWorldvein} title={null} />}
           {section === 'roster' && <RosterPanel party={party} roster={roster} setParty={setParty} setRoster={setRoster} bag={bag} setBag={setBag} worldvein={worldvein} setWorldvein={setWorldvein} locked={locked} />}
           {section === 'crafter' && <CrafterPanel bag={bag} setBag={setBag} unlocked={unlocked} />}
           {section === 'upgrade' && <UpgradePanel bag={bag} setBag={setBag} worldvein={worldvein} setWorldvein={setWorldvein} taken={taken} unlocked={unlocked} />}

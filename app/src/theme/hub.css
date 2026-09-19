@@ -189,6 +189,7 @@
 
 /* UI Brackets lock: a tab switch is a 250 ms crossfade of everything INSIDE the frame; header + tab bar stay put */
 .eld-tab-view {
+  position: relative; /* the Lattice screen overlays the tab body, never the header or the tab bar */
   display: flex;
   flex-direction: column;
   flex: 1;

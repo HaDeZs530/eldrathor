@@ -266,7 +266,7 @@ export function simulateFight({ party, enemies, seed = 1, startHpFrac, runMods, 
           if (hurt) {
             const amt = round(core.base * p.d.healScale);
             ev({ t, type: 'gem', source: p.id, sourceName: p.name, name: core.name, target: hurt.id, targetName: hurt.name, amount: amt, text: `Gem Heal ▸ ${hurt.name} +${amt}` });
-            healFrom(p, hurt, amt); fired = true;
+            healFrom(p, hurt, amt, { gem: true }); fired = true;
           }
         } else if (core.id === 'gemBurst') {
           const target = livingE()[0];

@@ -1,0 +1,52 @@
+{
+ "bagRows": [
+  "Healer Gem0/4014 frag",
+  "Tank Gem0/400 frag"
+ ],
+ "gemSheet": "◆ Healer GemClass gem · 0/40 imbued · not wornFragments14 unspent · 0 imbuedWorldvein sunk0 ❖Core · Heal the lowest ally 25 × healing scale · every 7 s · 25 manaNothing imbued yet.Equip to grow — an unworn gem gains no fragments.Open latticeClose",
+ "gemSlotDisabled": false,
+ "pickSheet": "◆ Healer GemClass gem · 0/40 imbued · not wornFragments14 unspent · 0 imbuedWorldvein sunk0 ❖Core · Heal the lowest ally 25 × healing scale · every 7 s · 25 manaTank crossing → grants the Core ability.Nothing imbued yet.Equip to grow — an unworn gem gains no fragments.EquipOpen latticeClose",
+ "slotAfterEquip": "◆Gem0/40",
+ "latticeHead": "← Back❖ 5,000Mind View · The Lattice◆ Healer GemWorn by Kessa · 0/40 imbued · 14 fragments unspentNothing imbued yet — the Core is always lit.",
+ "facetStates": {
+  "is-available": 5,
+  "is-dormant": 24,
+  "is-unreachable": 11
+ },
+ "unreachable": "⬡ BenedictionLevel0 / 3L1 · +4% Healing Power ← nextL2 · +8% Healing PowerL3 · +12% Healing PowerCost1 fragment + 20 ❖Must touch an imbued facetClose",
+ "dormant": "⬡ DormantNothing is written on this facet yet.Close",
+ "first": "⬡ MendLevel0 / 3L1 · +4% Healing Power ← nextL2 · +8% Healing PowerL3 · +12% Healing PowerCost1 fragment + 20 ❖ImbueClose",
+ "imbues": [
+  "ok",
+  "ok",
+  "ok",
+  "ok",
+  "BLOCKED: Must touch an imbued facet",
+  "ok"
+ ],
+ "latticeHead2": "← Back❖ 4,706Mind View · The Lattice◆ Healer GemWorn by Kessa · 9/40 imbued · 5 fragments unspent+20% Healing Power · +8% Mana · Sanctuary II",
+ "swapSheet": "✷ LifeveinLevel0 / 2L1 · 90% instant heal on one ally, every 15 s ← nextL2 · 90% instant heal on one ally, every 10 sSwap fee2 fragments + 200 ❖One finisher per gem. Swapping moves the set finisher's levels here.Swap finisherClose",
+ "save": {
+  "v": 5,
+  "worldvein": 4519,
+  "imbues": 12,
+  "finisher": "h0_-4",
+  "fragments": {
+   "unspent": 2,
+   "imbued": 12
+  },
+  "spent": 481,
+  "kessaGem": "g-shot-healer"
+ },
+ "latticeClosed": true,
+ "unwornHead": "Equip to grow · 0/40 imbued · 0 fragments unspent",
+ "unwornReason": "⬡ FortifiedLevel0 / 3L1 · +4% HP ← nextL2 · +8% HPL3 · +12% HPCost1 fragment + 20 ❖Equip to growClose",
+ "latticeBracket": {
+  "column": "mind",
+  "root": "eld-root mode-world hub-rpg eld-col-veinharbor",
+  "title": "rgb(223, 233, 245)"
+ },
+ "fightIcons": [],
+ "feedGem": [],
+ "errors": []
+}

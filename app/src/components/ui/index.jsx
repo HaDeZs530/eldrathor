@@ -88,7 +88,7 @@ export function PartyCard({ name, portraitArt, hp, hpMax, mp, mpMax, hpColor = '
         <Bar keyLabel="MP" value={mpMax ? mp / mpMax : 0} color={mpColor} label={`${Math.round(mp)} / ${Math.round(mpMax)}`} />
       </div>
       <div className="eld-party-card-icons">
-        {icons.slice(0, 2).map((ic) => (
+        {icons.slice(0, 3).map((ic) => (
           <span key={ic.key} className={`eld-icon-28${ic.lit ? ' is-lit' : ''}${ic.dim ? ' is-dim' : ''}`} title={ic.title} role="img" aria-label={ic.title}>
             {ic.art ? <Art name={ic.art} alt="" fit="contain" fallback={<span>{ic.glyph}</span>} /> : ic.glyph}
           </span>

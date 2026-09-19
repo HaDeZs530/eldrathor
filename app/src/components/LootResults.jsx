@@ -2,6 +2,7 @@ import { ARCHETYPES } from '../data.js';
 import { useTestNumbers } from '../debug/useTestNumbers.js';
 import { upgradeFor } from '../progression/upgrade.js';
 import ItemRow from './items/ItemRow.jsx';
+import { fragmentLine } from '../progression/gems.js';
 
 /**
  * Results screen — docs/Eldrathor_Combat_v2_Lock.md §7.
@@ -88,6 +89,14 @@ export default function LootResults({ area, nodeLabel, fight, party = [], onCont
                     {p.levelsGained ? ` ▸ Level ${p.from} → ${p.to}!` : ` · ${p.xpAfter} / ${p.xpNeeded} to Lv ${p.to + 1}`}
                   </div>
                 ))}
+                {(fight.xp.fragments || []).map((a) => (
+                  <div key={a.gemId + a.memberName} style={{ ...S.line, color: 'var(--eld-mythros)' }}>◆ {fragmentLine(a)}</div>
+                ))}
+              </div>
+            )}
+            {(rewards.gems || []).length > 0 && (
+              <div style={S.lootList}>
+                {rewards.gems.map((g) => <ItemRow key={g.id} item={g} note="A class gem — equip it in an Adventurer's Gem slot to grow it" />)}
               </div>
             )}
             {rewards.gears.length ? (
@@ -97,7 +106,7 @@ export default function LootResults({ area, nodeLabel, fight, party = [], onCont
                   return <ItemRow key={g.id || i} item={g} note={up ? `↑ upgrade for ${up}` : undefined} />;
                 })}
               </div>
-            ) : (
+            ) : (rewards.gems || []).length ? null : (
               <div style={{ ...S.line, color: 'var(--eld-muted)', fontStyle: 'italic' }}>No weapon this time — the Vein still yields dust.</div>
             )}
           </>
