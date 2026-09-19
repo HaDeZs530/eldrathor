@@ -5,6 +5,7 @@ import { EQUIP_SLOTS, SLOT_LABEL } from '../progression/items.js';
 import SlotGrid from './items/SlotGrid.jsx';
 import ItemSheet from './items/ItemSheet.jsx';
 import BagScreen from './BagScreen.jsx';
+import GemSheet from './items/GemSheet.jsx';
 import { deriveDisplay, deriveBreakdown, equip } from '../combat/derive.js';
 import { useTestNumbers } from '../debug/useTestNumbers.js';
 import { INNATES } from '../combat/simulate.js';
@@ -24,7 +25,7 @@ const CLASS_GLYPH = {
  * Top: party-of-3 list. Below: extra roster + Create character.
  * Tap member → detail (stats top, purchasable upgrades below) — same shape as Player.
  */
-export default function PartyScreen({ party, setParty, roster, setRoster, locked = false, bag = [], setBag, setWorldvein, equipped, onEmpower }) {
+export default function PartyScreen({ party, setParty, roster, setRoster, locked = false, bag = [], setBag, setWorldvein, equipped, onEmpower, onOpenLattice }) {
   const taken = equipped || equippedOf(party, roster);
   const [detail, setDetail] = useState(null); // { source: 'party'|'roster', index }
   const [creating, setCreating] = useState(false);
@@ -61,6 +62,7 @@ export default function PartyScreen({ party, setParty, roster, setRoster, locked
         setBag={setBag}
         setWorldvein={setWorldvein}
         onEmpower={onEmpower}
+        onOpenLattice={onOpenLattice}
         taken={taken}
         locked={locked}
         onBack={() => setDetail(null)}
@@ -259,7 +261,7 @@ function MemberRow({ m, badge, onClick }) {
  * the six premade slots. Tap a filled slot → that item's sheet; tap an empty one → the bag filtered to
  * the slot for this Adventurer, with Compare on every row.
  */
-function MemberDetail({ member, bag, setBag, setWorldvein, onEmpower, taken, locked, onBack, onChange, onPromoteToParty }) {
+function MemberDetail({ member, bag, setBag, setWorldvein, onEmpower, onOpenLattice, taken, locked, onBack, onChange, onPromoteToParty }) {
   const a = ARCHETYPES[member.archetype];
   const geared = equip(member, bag);
   const d = deriveDisplay(geared);
@@ -290,7 +292,6 @@ function MemberDetail({ member, bag, setBag, setWorldvein, onEmpower, taken, loc
 
   // Progression Loop Lock §7: no archetype editing; the growth paths below are not built yet.
   const coming = [
-    { id: 'gem', tree: 'Gems', name: 'Class Gem Slot', blurb: 'Class-gem actives (Class Gem Trees lock).' },
     { id: 'armorgem', tree: 'Gems', name: 'Armor Gems', blurb: 'Passive armor gems.' },
   ];
 
@@ -367,7 +368,16 @@ function MemberDetail({ member, bag, setBag, setWorldvein, onEmpower, taken, loc
         {!nameOk && <div style={S.err}>A name is 1–{NAME_MAX} characters.</div>}
       </div>
 
-      {openSlot && (
+      {openSlot && openSlot.slot === 'gem' && (
+        <GemSheet
+          gem={bag.find((i) => i.id === openSlot.item.id) || openSlot.item}
+          wearer={member}
+          onClose={() => setOpenSlot(null)}
+          onOpenLattice={onOpenLattice ? (g) => { setOpenSlot(null); onOpenLattice(g.id); } : undefined}
+          onUnequip={locked ? undefined : () => { setSlot('gem', null); setOpenSlot(null); }}
+        />
+      )}
+      {openSlot && openSlot.slot !== 'gem' && (
         <ItemSheet
           item={openSlot.item}
           equippedBy={member.name}
@@ -388,7 +398,9 @@ function MemberDetail({ member, bag, setBag, setWorldvein, onEmpower, taken, loc
             compareTo={slotItems[picking]}
             compareWith={member.name}
             title={`${SLOT_LABEL[picking]} for ${member.name}`}
-            emptyNote={picking === 'weapon' ? 'No spare weapons. Weapons drop on the Mountain.' : 'No spare armor. Armor is crafted at the Crafter.'}
+            forArchetype={member.archetype}
+            onOpenLattice={onOpenLattice}
+            emptyNote={picking === 'weapon' ? 'No spare weapons. Weapons drop on the Mountain.' : picking === 'gem' ? 'No spare gems. Rares and bosses on the Mountain drop class gems.' : 'No spare armor. Armor is crafted at the Crafter.'}
             onBack={() => setPicking(null)}
             onEquip={(item) => { setSlot(picking, item); setPicking(null); }}
           />
@@ -402,7 +414,7 @@ function MemberDetail({ member, bag, setBag, setWorldvein, onEmpower, taken, loc
       )}
 
       <div style={{ ...S.secHead, marginTop: 16 }}>Growth</div>
-      <div style={S.note}>Levels come from fights and Train. Weapons grow at the Smith (empowerment). Armor is crafted.</div>
+      <div style={S.note}>Levels come from fights and Train. Weapons grow at the Smith (empowerment). Armor is crafted. A worn class gem gains a Vein Fragment every level — grow it on its lattice.</div>
       <div style={S.rosterList}>
         {coming.map((u) => (
           <div key={u.id} className="eld-card" style={{ ...S.upRow, opacity: 0.7 }}>

@@ -12,6 +12,7 @@ import { AREAS } from './data.js';
 import { trainXpPerMinute, applyTrainXp, rosterCap } from './progression/progression.js';
 import { RARITIES, rarityIndex, craftCapForArea, tierForArea, makeCore, CORE_TYPES } from './progression/items.js';
 import { addMaterial } from './town/recipes.js';
+import { awardLevelFragments, fragmentLine } from './progression/gems.js';
 
 /**
  * AFK_TUNING — Progression Loop Lock §9: the prototype's rates are v1, as one named table (tune later via
@@ -210,7 +211,7 @@ export function reconcileAfk({ state, inventory, bag = [], worldvein, party, ros
   let vein = worldvein;
   let partyNext = null;
   let rosterNext = null;
-  const summary = { elapsedMs: 0, raw: {}, gatherXp: 0, vein: 0, cores: 0, infused: {}, processXp: 0, xp: [], stops: [] };
+  const summary = { elapsedMs: 0, raw: {}, gatherXp: 0, vein: 0, cores: 0, infused: {}, processXp: 0, xp: [], fragments: [], stops: [] };
   const span = (job) => { const e = job.lastReconciledAt == null ? 0 : Math.max(0, now - job.lastReconciledAt); summary.elapsedMs = Math.max(summary.elapsedMs, e); return e; };
 
   next.gatherSlots = next.gatherSlots.map((slot, i) => {
@@ -280,6 +281,9 @@ export function reconcileAfk({ state, inventory, bag = [], worldvein, party, ros
           if (resolved.source === 'party') partyNext = party.map((m, i) => (i === resolved.index ? bumped : m));
           else rosterNext = roster.map((m, i) => (i === resolved.index ? bumped : m));
           summary.xp.push({ id: resolved.member.id, name: resolved.member.name, gain, from: resolved.member.level || 1, to: bumped.level });
+          // Growth Model §1: bench Train levels count — the gem the trainee WEARS gains a fragment per level
+          const fr = awardLevelFragments(bagNext, [{ member: resolved.member, levelsGained: bumped.level - (resolved.member.level || 1) }]);
+          bagNext = fr.bag; summary.fragments.push(...fr.awards);
         }
         if (capped) { summary.stops.push(`train: ${TRAIN_CAP_STOP}`); next.idle = stopped(job); }
         else next.idle = { ...job, progress, lastReconciledAt: now };
@@ -306,6 +310,7 @@ export function summaryLines(summary) {
   if (summary.vein) lines.push(`+${summary.vein} ❖ Worldvein`);
   if (summary.cores) lines.push(`+${summary.cores} Artifact Core${summary.cores === 1 ? '' : 's'}`);
   for (const x of summary.xp) lines.push(x.to > x.from ? `${x.name} +${x.to - x.from} level${x.to - x.from === 1 ? '' : 's'} (Lv ${x.from} → ${x.to})` : `${x.name} +${Math.round(x.gain)} XP`);
+  for (const a of summary.fragments || []) lines.push(fragmentLine(a));
   for (const s of summary.stops) lines.push(`Stopped — ${s}`);
   return lines;
 }

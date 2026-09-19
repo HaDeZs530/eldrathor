@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { sellValue } from '../progression/items.js';
 import { FILTERS, SORTS, bagView, bulkSell } from '../progression/bag.js';
 import ItemRow from './items/ItemRow.jsx';
+import GemSheet from './items/GemSheet.jsx';
 import ItemSheet from './items/ItemSheet.jsx';
 import { PrimaryButton, SecondaryButton, Sheet } from './ui/index.jsx';
 import './items/items.css';
@@ -12,8 +13,8 @@ import './items/items.css';
  * **Rating ↓ · Rarity · Newest**, rows per §3, no bag cap. Long-press (or the Select button) starts a
  * bulk **Sell** with a confirm; equipped items are skipped, never sold.
  */
-export default function BagScreen({ bag, setBag, equipped, ownerOf, setWorldvein, slotFilter = null, compareTo = null, compareWith = null, onEquip, onEmpower, onUpgrade, onBack, title = 'Bag', emptyNote = 'Nothing here yet.' }) {
-  const [filter, setFilter] = useState(slotFilter ? (slotFilter === 'weapon' ? 'weapon' : 'armor') : 'all');
+export default function BagScreen({ bag, setBag, equipped, ownerOf, wearerOf, forArchetype = null, onOpenLattice, setWorldvein, slotFilter = null, compareTo = null, compareWith = null, onEquip, onEmpower, onUpgrade, onBack, title = 'Bag', emptyNote = 'Nothing here yet.' }) {
+  const [filter, setFilter] = useState(slotFilter ? (slotFilter === 'weapon' ? 'weapon' : slotFilter === 'gem' ? 'gem' : 'armor') : 'all');
   const [sort, setSort] = useState('rating');
   const [open, setOpen] = useState(null);
   const [picking, setPicking] = useState(false);
@@ -80,7 +81,17 @@ export default function BagScreen({ bag, setBag, equipped, ownerOf, setWorldvein
         </div>
       )}
 
-      {open && (
+      {open && open.kind === 'gem' && (
+        <GemSheet
+          gem={bag.find((i) => i.id === open.id) || open}
+          wearer={wearerOf?.(open.id) || null}
+          forArchetype={forArchetype}
+          onClose={() => setOpen(null)}
+          onEquip={onEquip && !equipped.has(open.id) ? (g) => { onEquip(g); setOpen(null); } : undefined}
+          onOpenLattice={onOpenLattice ? (g) => { setOpen(null); onOpenLattice(g.id); } : undefined}
+        />
+      )}
+      {open && open.kind !== 'gem' && (
         <ItemSheet
           item={open}
           current={compareTo && compareTo.id !== open.id ? compareTo : null}

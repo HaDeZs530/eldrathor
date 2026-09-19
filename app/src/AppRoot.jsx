@@ -8,6 +8,7 @@ import { DEFAULT_PARTY, AREAS, withIds } from './data.js';
 import { simulateFight, spawnEnemies, rollRewards, deriveStats, mulberry32 } from './combat.js';
 import { equip } from './combat/derive.js';
 import { withStarterWeapons, equippedIds, fightXp, splitXp, applyXp, xpToNext } from './progression/progression.js';
+import { awardLevelFragments, fragmentLine } from './progression/gems.js';
 import { plainName } from './progression/items.js';
 import { Frame, Header } from './components/ui/index.jsx';
 import PlayerScreen from './components/PlayerScreen.jsx';
@@ -31,6 +32,7 @@ import { trace, isTraceOn, BUILD } from './debug/trace.js';
 import { travelDuration, cameraReducer, CARD_PAUSE_MS, OVERLAY_FADE_MS } from './map/camera.js';
 import { createStore, createSaver, countedRng } from './save/save.js';
 import SettingsSheet from './components/shell/SettingsSheet.jsx';
+import LatticeScreen from './components/lattice/LatticeScreen.jsx';
 import { retapAction } from './nav/tabRetap.js';
 import OfflineSheet from './components/shell/OfflineSheet.jsx';
 
@@ -103,6 +105,7 @@ export default function Eldrathor() {
   // M1c §6: jobs carry timestamps; a loaded save is normalised so a legacy running job counts time away
   // from the save's own afkSavedAt. The first tick after boot reconciles the whole absence (→ Offline sheet).
   const [afk, setAfk] = useState(() => normalizeAfk(S0.afk, { savedAt: S0.afkSavedAt ?? null, now: Date.now() }));
+  const [latticeGemId, setLatticeGemId] = useState(null); // Growth Model §4: the Lattice screen, opened from a Gem slot or a gem sheet
   const [offline, setOffline] = useState(null); // summary for the "While you were away" sheet
   // --- run state (route map v2) ---
   const [ambush, setAmbush] = useState(null); // AmbushCard (v3 §3): { nodeId, prevId, kind, enemies, fleeChance, ... }
@@ -132,6 +135,7 @@ export default function Eldrathor() {
   const fielded = useMemo(() => fieldedRaw.map((m) => equip(m, bag)), [fieldedRaw, bag]);
   const hpArrFor = (list) => (runHp ? list.map((m) => runHp[m.id] ?? 1) : undefined);
   const equipped = useMemo(() => equippedIds(party, roster), [party, roster]);
+  const latticeGem = latticeGemId ? bag.find((i) => i.id === latticeGemId && i.kind === 'gem') || null : null;
   const extractingRef = useRef(false); // §2: one extraction credit per run
   const fightRef = useRef(null); // §10: latest fight for finishFightToLoot (no setter inside an updater)
   const [fightNode, setFightNode] = useState(() => R0?.fightNode || null);
@@ -212,6 +216,7 @@ export default function Eldrathor() {
   // its `rootKey`; Rally goes back to the island; a live run stays on the route map.
   const [rootKey, setRootKey] = useState({});
   function selectTab(id) {
+    setLatticeGemId(null); // the Lattice belongs to the screen it was opened from
     if (id === tab) {
       const action = retapAction(id, { runStage, inRun: !!territory });
       trace('tab', { id, retap: action });
@@ -581,7 +586,9 @@ export default function Eldrathor() {
         const r = applyXp(m, gains[i]);
         return { id: m.id, name: m.name, gain: gains[i], fallen: (sim.result.partyHpFrac[i] ?? 1) <= 0, from: m.level || 1, to: r.member.level, levelsGained: r.levelsGained, xpAfter: Math.floor(r.member.xp), xpNeeded: xpToNext(r.member.level) };
       });
-      xp = { total, per };
+      // Growth Model §1: every level-up feeds the gem its Adventurer WEARS (shown on Results, credited at Continue)
+      const fragments = awardLevelFragments(bagRef.current, fielded.map((m, i) => ({ member: m, levelsGained: per[i].levelsGained }))).awards;
+      xp = { total, per, fragments };
     }
     setFight({ enemies, derived, events: sim.events, result: sim.result, stats: sim.stats, rewards, xp, seed, named: !!n.namedRare, rare: !!rare, eff, mapClear, ambush: !!opts.ambush });
     setFightNode({ ...n, tier: area.tier, type: eff });
@@ -636,6 +643,7 @@ export default function Eldrathor() {
     setRunVein((v) => v + (rewards?.worldvein || 0));
     pushLog(`✔ Cleared in ${res.durationSec}s. +${rewards?.worldvein || 0} Worldvein.${f.eff === 'crystal' ? ' The deposit splinters — ×2 harvest.' : ''}`, 'good');
     for (const g of rewards?.gears || []) { setBag((b) => [...b, g]); pushLog(`  ⬥ Loot: ${plainName(g)} (${g.rating}/100)`, 'loot'); }
+    for (const g of rewards?.gems || []) { setBag((b) => [...b, g]); pushLog(`  ◆ Loot: ${g.name} — a class gem!`, 'loot'); }
     if (f.xp) applyFightXp(f.xp);
     if (f.rare) pushLog(`☠ Rare slain. ${t.rares.filter((r) => r.alive).length} remain.`, 'rare');
     if (lastRareDown) { pushLog('☠ Every rare on this map is slain.', 'rare'); doFlash('All rares slain', colors.mythros); }
@@ -659,6 +667,13 @@ export default function Eldrathor() {
     setRoster((r) => r.map(bump));
     pushLog(`  ✦ +${xp.total} XP shared by the bond.`, 'good');
     for (const p of xp.per) if (p.levelsGained) { pushLog(`  ✦ ${p.name} reaches level ${p.to}!`, 'good'); }
+    // the worn gems grow: 1 Vein Fragment per level gained (an unequipped gem gains nothing)
+    const all = [...party, ...roster];
+    const gains = xp.per.filter((p) => p.levelsGained).map((p) => ({ member: all.find((m) => m.id === p.id), levelsGained: p.levelsGained })).filter((g) => g.member);
+    if (gains.length) {
+      setBag((b) => awardLevelFragments(b, gains).bag);
+      for (const a of awardLevelFragments(bagRef.current, gains).awards) pushLog(`  ◆ ${fragmentLine(a)}`, 'good');
+    }
   }
   function extract() {
     if (extractingRef.current) return; // §2: a second tap before the 600 ms reset must not credit twice
@@ -711,8 +726,18 @@ export default function Eldrathor() {
         <Header worldvein={worldvein} hubLabel={tab === 'mountain' ? mountainHubLabel : HUB_LABELS[tab]} actions={<ScreenHeaderActions onMenu={() => setSheet('menu')} onHelp={() => setSheet('help')} />} />
         {flash && <div style={{ ...S.flash, borderColor: flash.color, color: flash.color }}>{flash.msg}</div>}
         <div className="eld-tab-view" key={tab} data-tab={tab}>
-        {tab === 'town' && <TownScreen key={rootKey.town || 0} party={party} roster={roster} setParty={setParty} setRoster={setRoster} bag={bag} setBag={setBag} worldvein={worldvein} setWorldvein={setWorldvein} setTab={selectTab} equipped={equipped} unlocked={unlocked} locked={!!territory} />}
-        {tab === 'party' && <PartyScreen key={rootKey.party || 0} party={party} setParty={setParty} roster={roster} setRoster={setRoster} locked={!!territory} bag={bag} setBag={setBag} setWorldvein={setWorldvein} equipped={equipped} onEmpower={() => selectTab('town')} />}
+        {latticeGem && (
+          <LatticeScreen
+            gem={latticeGem}
+            wearer={[...party, ...roster].find((m) => m.equipped?.gem === latticeGem.id) || null}
+            worldvein={worldvein}
+            onSpend={(cost) => setWorldvein((v) => Math.max(0, v - cost))}
+            onChangeGem={(next) => setBag((b) => b.map((i) => (i.id === next.id ? next : i)))}
+            onClose={() => setLatticeGemId(null)}
+          />
+        )}
+        {tab === 'town' && <TownScreen key={rootKey.town || 0} onOpenLattice={setLatticeGemId} party={party} roster={roster} setParty={setParty} setRoster={setRoster} bag={bag} setBag={setBag} worldvein={worldvein} setWorldvein={setWorldvein} setTab={selectTab} equipped={equipped} unlocked={unlocked} locked={!!territory} />}
+        {tab === 'party' && <PartyScreen key={rootKey.party || 0} onOpenLattice={setLatticeGemId} party={party} setParty={setParty} roster={roster} setRoster={setRoster} locked={!!territory} bag={bag} setBag={setBag} setWorldvein={setWorldvein} equipped={equipped} onEmpower={() => selectTab('town')} />}
         {tab === 'player' && <PlayerScreen key={rootKey.player || 0} worldvein={worldvein} />}
         {tab === 'afk' && <AfkScreen key={rootKey.afk || 0} unlocked={unlocked} party={party} roster={roster} inventory={inventory} bag={bag} afk={afk} worldvein={worldvein} deployedIds={runParty ? runParty.map((m) => m.id) : []} onUpdateGatherSlot={onUpdateGatherSlot} onToggleGather={onToggleGather} onUpdateProcess={onUpdateProcess} onToggleProcess={onToggleProcess} onUpdateIdle={onUpdateIdle} onToggleIdle={onToggleIdle} />}
         {tab === 'mountain' && runStage === 'island' && <IslandWorldMap key={rootKey.mountain || 0} areas={AREAS} unlocked={unlocked} onSelectArea={onSelectArea} onHarbor={() => selectTab('town')} />}

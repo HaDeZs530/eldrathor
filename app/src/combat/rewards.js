@@ -10,6 +10,7 @@
  *   · Attune Vein doubles the top-two chances.
  * Mythic never drops: it exists only by upgrading an Artifact with a Mythic Core at the Smith.
  */
+import { rollGemDrop } from '../progression/gems.js';
 import {
   RARITIES, rarityIndex, tierForArea, makeWeapon, makeCore, CORE_TYPES, WEAPON_TYPES,
 } from '../progression/items.js';
@@ -84,6 +85,9 @@ export const MYTHIC_CORE_CHANCE = 0.25;
  *   vaelyx    — the kill was Vaelyx: 25 % Mythic Core (no Vaelyx encounter exists yet — the rule is wired and tested)
  * @returns {{worldvein:number, attuneBonus:number, mapClearBonus:number, gears:object[], gear:object|null}}
  */
+/** Class gems (ClassGems_Live §4): rolled last so every earlier roll keeps its place in the rng stream. */
+export { gemDropChance } from '../progression/gems.js';
+
 export function rollRewards({ tier, area, worldTier, nodeType, attuneVein = false, rng = Math.random, named = false, mapClear = false, bossName = null, vaelyx = false }) {
   const A = Math.max(1, area || tier || worldTier || 1);
   const T = tierForArea(A);
@@ -116,5 +120,6 @@ export function rollRewards({ tier, area, worldTier, nodeType, attuneVein = fals
     gears.push(makeCore({ tier: T, rarity: 'Artifact', type: CORE_TYPES.Artifact }));
   }
   if (vaelyx && rng() < MYTHIC_CORE_CHANCE) gears.push(makeCore({ tier: T, rarity: 'Mythic', type: CORE_TYPES.Mythic }));
-  return { worldvein, attuneBonus, mapClearBonus, gears, gear: gears[0] || null };
+  const gem = rollGemDrop(rng, { nodeType, named });
+  return { worldvein, attuneBonus, mapClearBonus, gears, gear: gears[0] || null, gems: gem ? [gem] : [] };
 }

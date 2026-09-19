@@ -101,7 +101,7 @@ export function makeItem({ kind, type, tier, rarity, rating = 1, empower = 0, na
 const ID_PREFIX = { weapon: 'w', armor: 'a', core: 'k', material: 'm' };
 
 /** Plain name — what the item is called everywhere except the bag list and the item-sheet header (§2). */
-export const plainName = (item) => (item ? `${item.rarity} ${item.type}` : '');
+export const plainName = (item) => (!item ? '' : item.kind === 'gem' ? item.name : `${item.rarity} ${item.type}`);
 /** §2 (RULED 2026-09-17): armor is named by TIER — one island prefix per tier → "Saltcliff Helm". */
 export const TIER_PREFIX = { 1: 'Gullwatch', 2: 'Saltcliff', 3: 'Quay', 4: 'Serpent', 5: 'Forge', 6: 'Bastion', 7: 'Worldforge' };
 export const armorName = (tier, type) => `${TIER_PREFIX[Math.max(TIER_MIN, Math.min(TIER_MAX, tier | 0))]} ${type}`;
@@ -186,10 +186,10 @@ export const MATERIAL_SELL_COEFF = 1;
 export const SELL_BASE = Object.fromEntries(RARITIES.map((r) => [r, SELL_COEFF * rarityIndex(r) ** 2]));
 /** Worldvein a sale gives (§4). Materials sell per unit. */
 export const sellValue = (item) => {
-  if (!item) return 0;
+  if (!item || item.kind === 'gem') return 0; // gems are grown, never sold
   if (item.kind === 'material') return MATERIAL_SELL_COEFF * rarityIndex(item.rarity);
   return Math.max(1, Math.floor(SELL_BASE[item.rarity] * (1 + clampRating(item.rating) / 200)));
 };
 
 /** The 1–100 gear score shown in a row's `[72]` chip — the item's own rating, never a composite (§2). */
-export const gearScore = (item) => (item ? clampRating(item.rating) : 0);
+export const gearScore = (item) => (item && item.kind !== 'gem' ? clampRating(item.rating) : 0);

@@ -200,6 +200,10 @@
 .eld-feed-line.is-crit { color: #f2c14e; }
 .eld-feed-line.is-innate { color: #2cabf8; }
 .eld-feed-line.is-heal { color: #20a95e; }
+/* class gems (ClassGems_Live §5): the Core ability, procs and finishers carry their own colours */
+.eld-feed-line.is-gem { color: #7fd0ff; }
+.eld-feed-line.is-proc { color: #c9a6ff; }
+.eld-feed-line.is-finisher { color: #f2c14e; font-weight: 600; }
 .eld-feed-line.is-kill { color: #dfe9f5; }
 .eld-feed-line.is-bad { color: #e5484d; }
 .eld-feed-line.is-taken { color: #d98a8e; } /* enemy hit on a party member (brief §4) — damage, one shade softer than a crit */

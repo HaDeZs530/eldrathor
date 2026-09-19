@@ -2,6 +2,7 @@ import { useRef } from 'react';
 import { RARITY_COLOR, displayName, plainName, gearScore } from '../../progression/items.js';
 import { useTestNumbers } from '../../debug/useTestNumbers.js';
 import { itemPowerLine } from './itemNumbers.js';
+import { gemProgress } from '../../progression/gems.js';
 import './items.css';
 
 /**
@@ -9,6 +10,7 @@ import './items.css';
  *   `Tidebreaker  [T3] [Rare] [72] +12   Equipped · Kessa`
  * Name in the rarity colour, tier chip, rarity chip, rating chip, +N when empowered, an "Equipped"
  * tag (with who) when worn. **No icons in lists.** Materials read as `[Rare] Ingot ×14` (§5).
+ * A class gem reads `Tank Gem  [12/40]  3 frag` — no tier, rarity or rating (Growth Model §1).
  * Every item rendering in the app goes through this component.
  * `onLongPress` fires after LONG_PRESS_MS of held contact — the bag uses it to start a bulk selection.
  */
@@ -27,7 +29,8 @@ export default function ItemRow({ item, equippedBy, onClick, onLongPress, select
   const up = onLongPress ? () => clear() : undefined;
   const tap = onClick ? () => { if (fired.current) { fired.current = false; return; } onClick(item); } : undefined;
   if (!item) return null;
-  const color = RARITY_COLOR[item.rarity] || 'var(--eld-text)';
+  const isGemRow = item.kind === 'gem';
+  const color = isGemRow ? 'var(--eld-mythros)' : RARITY_COLOR[item.rarity] || 'var(--eld-text)';
   const isMaterial = item.kind === 'material';
   const Tag = onClick ? 'button' : 'div';
   return (
@@ -44,6 +47,12 @@ export default function ItemRow({ item, equippedBy, onClick, onLongPress, select
     >
       <span className="eld-item-main">
         <span className="eld-item-name" style={{ color }}>{displayName(item)}</span>
+        {isGemRow ? (
+          <span className="eld-item-chips">
+            <span className="eld-item-chip" style={{ color }}>{gemProgress(item)}</span>
+            <span className="eld-item-chip">{item.fragments?.unspent || 0} frag</span>
+          </span>
+        ) : (
         <span className="eld-item-chips">
           <span className="eld-item-chip">T{item.tier}</span>
           <span className="eld-item-chip" style={{ color }}>{item.rarity}</span>
@@ -51,8 +60,9 @@ export default function ItemRow({ item, equippedBy, onClick, onLongPress, select
           {item.empower > 0 && <span className="eld-item-chip is-empower">+{item.empower}</span>}
           {isMaterial && <span className="eld-item-qty">×{item.qty || 1}</span>}
         </span>
+        )}
         {note && <span className="eld-item-note">{note}</span>}
-        {testNumbers && <span className="eld-item-note eld-test-numbers">{itemPowerLine(item)}</span>}
+        {testNumbers && !isGemRow && <span className="eld-item-note eld-test-numbers">{itemPowerLine(item)}</span>}
       </span>
       {equippedBy && <span className="eld-item-equipped">Equipped · {equippedBy}</span>}
       {right}
