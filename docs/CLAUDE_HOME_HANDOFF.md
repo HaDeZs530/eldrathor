@@ -11,7 +11,7 @@
 
 ## Active briefs (priority)
 0. **`docs/CLAUDE_BRIEFS/2026-09-19_open-numbers.md`** — rulings for the PR #61 open numbers, Mythic-T1 test, heading fix.
-1. **`docs/CLAUDE_BRIEFS/2026-09-19_m2-2-class-gems-live.md`** — M2 lock 2: generic tree engine + class gems live + tree screen. Specs: `Eldrathor_ClassGems_Live_Lock.md`, `Eldrathor_ClassGemTrees_Lock.md`.
+1. ~~`2026-09-19_m2-2-class-gems-live.md`~~ — **HOLD.** Growth model being re-planned in the Design Chat (tree shape changing from rows to a PoE-style outward lattice). Do not build; open-numbers brief only. Specs: `Eldrathor_ClassGems_Live_Lock.md`, `Eldrathor_ClassGemTrees_Lock.md`.
 0. ~~`2026-09-17_ui-brackets-v2.md`~~ (DONE #67 — Party / Player / Settings → Mind View, Hearth = Veinharbor + Mythros accents, Bond / Veinbinder retired; captures in `docs/art/captures/2026-09-17-ui-brackets-v2/`; archived)
 
 ## Recently DONE (don't redo)

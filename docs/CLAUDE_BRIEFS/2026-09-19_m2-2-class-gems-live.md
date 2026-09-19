@@ -1,5 +1,5 @@
 # BRIEF — M2 lock 2: talent tree engine + class gems live (drop, equip, effects, tree screen)
-**Status:** READY · **Date:** 2026-09-19 · **Author:** Claude Design Chat  
+**Status:** HOLD — growth model under review 2026-09-19; do not build · **Date:** 2026-09-19 · **Author:** Claude Design Chat  
 **Specs:** `docs/Eldrathor_ClassGems_Live_Lock.md` (authoritative) + `docs/Eldrathor_ClassGemTrees_Lock.md` (node contents). Bump `SAVE_VERSION` (wipe policy).
 1. `app/src/trees/engine.js` per §1 — generic, pure, tested; no gem assumptions.
 2. `app/src/trees/classGems.js` — four `TreeDef`s transcribed from the ClassGemTrees lock with §2 thresholds and §3 numbers in a single `GEM_TUNING` table.
