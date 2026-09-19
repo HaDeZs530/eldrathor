@@ -16,7 +16,7 @@ export const gemReadout = (gem) => summary(latticeFor(gem.gemClass), gem.lattice
   finisherLabel: (k) => GEM_TUNING.finishers[k]?.name || k,
 });
 
-export default function GemSheet({ gem, wearer = null, forArchetype = null, onClose, onEquip, onUnequip, onOpenLattice }) {
+export default function GemSheet({ gem, wearer = null, forArchetype = null, onClose, onEquip, onUnequip, onOpenLattice, closeLabel = 'Close' }) {
   if (!gem) return null;
   const archetype = wearer?.archetype || forArchetype;
   const crossing = archetype ? isCrossing(archetype, gem.gemClass) : null;
@@ -47,7 +47,7 @@ export default function GemSheet({ gem, wearer = null, forArchetype = null, onCl
         {onEquip && <PrimaryButton onClick={() => onEquip(gem)}>Equip</PrimaryButton>}
         {onOpenLattice && <PrimaryButton onClick={() => onOpenLattice(gem)}>Open lattice</PrimaryButton>}
         {onUnequip && <SecondaryButton onClick={() => onUnequip(gem)}>Unequip</SecondaryButton>}
-        <SecondaryButton onClick={onClose}>Close</SecondaryButton>
+        <SecondaryButton onClick={onClose}>{closeLabel}</SecondaryButton>
       </div>
     </Sheet>
   );

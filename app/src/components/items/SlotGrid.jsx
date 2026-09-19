@@ -7,8 +7,8 @@ import './items.css';
  * The character sheet's six equip slots — docs/Eldrathor_Item_Model_Lock.md §6.
  * Weapon · Body · Head · Hands · Feet · Gem, one premade icon each (art manifest `icon-slot-*`).
  * FILLED: the item's rarity tints the slot's top border and the rating shows under the icon.
- * EMPTY: greyed with a "nothing equipped" state. Tap a filled slot → the item sheet; tap an empty one
- * → the bag filtered to that slot for this Adventurer, with Compare on each row. The Gem slot went
+ * EMPTY: greyed with a "nothing equipped" state. Tap ANY slot → the list of everything that fits it for
+ * this Adventurer (Anthony, 2026-09-19), with Compare on each row. The Gem slot went
  * live with M2 lock 2: a worn gem shows its lattice progress `12/40`.
  */
 

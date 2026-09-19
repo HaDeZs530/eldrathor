@@ -67,6 +67,7 @@
 - PR #29 — route polish 2: run log sheet + badge + toast, node scale (40/34/26), planar outward generator (Gabriel + band-filtered, 200-map crossing test), 350 ms glide + eased camera follow
 
 ## Still OPEN (Anthony deciding / later)
+- **Item Model lock §6 needs amending (Design Chat):** Anthony ruled the equip flow from the phone on 2026-09-19 — tapping ANY slot, filled or empty, opens the list of what fits; a row prompts Equip / Cancel; a filled slot then asks "Replace <current> with <new>?" OK / Cancel. The lock still says "tap a filled slot → that item's sheet". Shipped in the equip-flow PR; `progression/equipFlow.js` carries the rule and its tests.
 - ~~UI mode ownership~~ — resolved by `Eldrathor_UI_Brackets_Lock.md` (one owning table); shipped in #66, revised on Anthony's phone ruling in #67 (four brackets). Style Bible §A's "Veinharbor (Town / Party / Player)" heading is stale — Design Chat to amend to the four-bracket table.
 - ~~AFK root tab final name~~ — **Hearth** (Progression Loop Lock §9, shipped #56)
 - Rally / Prepare-the-bond screen title
