@@ -9,7 +9,7 @@ import { setTestNumbers } from '../../debug/testNumbers.js';
  * as the fallback on plain http), Import (paste → validated → installed → reload), Reset (confirm →
  * cleared → reload). The save store is injected from AppRoot.
  */
-export default function SettingsSheet({ store, onClose }) {
+export default function SettingsSheet({ store, onClose, onGrantTestGems }) {
   const [mode, setMode] = useState('menu'); // menu | export | import | reset
   const [text, setText] = useState('');
   const [note, setNote] = useState(null);
@@ -42,6 +42,8 @@ export default function SettingsSheet({ store, onClose }) {
             <button type="button" className="eld-card eld-menu-item" onClick={() => { setText(''); setNote(null); setMode('import'); }}><span className="eld-menu-glyph">⇩</span><span>Import save</span><span className="eld-menu-note">paste JSON</span></button>
             <button type="button" className="eld-card eld-menu-item" onClick={() => setMode('reset')}><span className="eld-menu-glyph">⟲</span><span>Reset save</span><span className="eld-menu-note">start over</span></button>
             <button type="button" className={`eld-card eld-menu-item${testNumbers ? ' is-current' : ''}`} onClick={() => setTestNumbers(!testNumbers)} aria-pressed={testNumbers}><span className="eld-menu-glyph">Σ</span><span>Show test numbers</span><span className="eld-menu-note">{testNumbers ? 'on' : 'off'} · item power, stat sources, enemy blocks, raw → mitigated</span></button>
+            {/* TEMPORARY (Anthony, 2026-09-19): test kit — remove before TestFlight */}
+            {onGrantTestGems && <button type="button" className="eld-card eld-menu-item" onClick={() => setNote(onGrantTestGems())}><span className="eld-menu-glyph">◆</span><span>Grant test gems</span><span className="eld-menu-note">testing only · a gem on each party member, all four classes in the bag, 40 fragments each, +20,000 ❖</span></button>}
           </div>
         )}
         {(mode === 'export' || mode === 'import') && (
