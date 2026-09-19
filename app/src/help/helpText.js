@@ -66,7 +66,12 @@ export const HELP = {
   },
   player: {
     title: 'Player',
-    bullets: ['You — the Veinbinder. Your trees strengthen the whole bond (Bond) or your economy (Craft).'],
+    bullets: [
+      'You — the Veinbinder. Resonance is the sum of √level over every Adventurer you have, fielded or benched. Breadth beats depth: ten at level 5 out-resonate one at level 50.',
+      'Resonance sets your rank (I–X). A rank is a cap, not a reward: every upgrade below can be bought up to your rank and no further.',
+      'Bond upgrades strengthen every Adventurer. Craft upgrades strengthen the economy: gathering, Worldvein from nodes, loot, Process time and Hearth job slots.',
+      'Each level costs Worldvein and costs more than the last. There is no respec. Recruit and level the bench to raise your rank; spend Worldvein to grow.',
+    ],
   },
 };
 

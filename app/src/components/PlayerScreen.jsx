@@ -1,137 +1,96 @@
+import { useEffect, useMemo, useState } from 'react';
+import { resonanceStatus, MAX_RANK, rankNumeral } from '../player/resonance.js';
+import { BOND_IDS, CRAFT_IDS, PLAYER_TUNING, canBuy, levelOf, levelCap, effectText } from '../player/upgrades.js';
+import { useTestNumbers } from '../debug/useTestNumbers.js';
+import './player.css';
 
 /**
- * Player tab — Mind-view Veinbinder screen (LOCKED Anthony 2026-09-10).
- * Top: base stats. Below (scroll): growth / purchasable upgrade placeholders.
- * // DESIGN-OPEN: economy costs, real Bond/Craft tree contents.
+ * Player tab — the Veinbinder (Mind View). docs/Eldrathor_Growth_Model_Lock.md §2.
+ * Top: Resonance (Σ √level over the whole roster), the rank it sets, and the bar to the next rank with
+ * its threshold. Below: the Bond and Craft upgrade rows — `Might  lvl 3/4  +6% Power · Buy 98 ❖` — bought
+ * with Worldvein level by level and CAPPED at the rank. Buy is disabled with its reason. Ranking up
+ * lights every row's next level with a brief glow.
  */
-export default function PlayerScreen({ worldvein = 0 }) {
-  const stats = [
-    { k: 'Bond Rank', v: 'I' },
-    { k: 'Craft Rank', v: 'I' },
-    { k: 'Vein Sense', v: '12' },
-    { k: 'Will', v: '18' },
-    { k: 'Resonance', v: '9' },
-    { k: 'Stash Cap', v: '24' },
-  ];
+const SEEN_RANK_KEY = 'eld.player.seenRank';
+const GLOW_MS = 1800;
+const readSeen = () => { try { return Number(window.localStorage.getItem(SEEN_RANK_KEY)) || 0; } catch { return 0; } };
+const writeSeen = (r) => { try { window.localStorage.setItem(SEEN_RANK_KEY, String(r)); } catch { /* private mode */ } };
 
-  // DESIGN-OPEN: costs & effects — stub rows only; economy not locked.
-  const upgrades = [
-    { id: 'bond-ii', tree: 'Bond', name: 'Deepen the Bond', blurb: 'Party vitality & tempo while projected.', cost: '???' },
-    { id: 'bond-heal', tree: 'Bond', name: 'Shared Pulse', blurb: 'Minor mid-fight vitality echo.', cost: '???' },
-    { id: 'craft-socket', tree: 'Craft', name: 'Socket Insight', blurb: 'Reveal one more gem socket on craft.', cost: '???' },
-    { id: 'craft-merge', tree: 'Craft', name: 'Merge Familiarity', blurb: 'Weapon merge preview clarity.', cost: '???' },
-    { id: 'sense-fog', tree: 'Sense', name: 'Fog Pierce', blurb: 'Expedition fog reveals +1 adjacency.', cost: '???' },
-    { id: 'sense-loot', tree: 'Sense', name: 'Vein Glean', blurb: 'Slight Worldvein find bonus.', cost: '???' },
-  ];
+export default function PlayerScreen({ worldvein = 0, party = [], roster = [], upgrades = {}, onBuy }) {
+  const members = useMemo(() => [...party, ...roster], [party, roster]);
+  const st = useMemo(() => resonanceStatus(members), [members]);
+  const testNumbers = useTestNumbers();
+  // a rank gained since the tab was last seen: every row's next level glows briefly
+  const [glow, setGlow] = useState(() => { const seen = readSeen(); return seen > 0 && st.rank > seen; });
+  useEffect(() => {
+    writeSeen(st.rank);
+    if (!glow) return undefined;
+    const id = window.setTimeout(() => setGlow(false), GLOW_MS);
+    return () => window.clearTimeout(id);
+  }, [st.rank, glow]);
+
+  const row = (id) => {
+    const def = PLAYER_TUNING.bond[id] || PLAYER_TUNING.craft[id];
+    const level = levelOf(upgrades, id);
+    const cap = levelCap(id, st.rank);
+    const check = canBuy(upgrades, id, { rank: st.rank, worldvein });
+    const opened = glow && level < cap;
+    return (
+      <div key={id} className={`eld-card eld-up-row${opened ? ' is-opened' : ''}`} data-upgrade={id}>
+        <div className="eld-up-main">
+          <span className="eld-up-name">{def.name}</span>
+          <span className="eld-up-level">lvl {level}/{cap}</span>
+          <span className="eld-up-effect">{level > 0 ? effectText(id, level) : `next: ${effectText(id, id === 'hearth' ? PLAYER_TUNING.craft.hearth.slotsAt[0] : 1)}`}</span>
+        </div>
+        <button type="button" className="eld-btn eld-up-buy" disabled={!check.ok} onClick={() => onBuy?.(id)} aria-label={`Buy ${def.name} level ${level + 1}`}>
+          {check.ok ? `Buy ${check.cost} ❖` : check.reason}
+        </button>
+      </div>
+    );
+  };
 
   return (
-    <div style={S.wrap}>
-      <div style={S.hero}>
-        <div style={S.kick}>Mind View · Veinbinder</div>
-        <div className="eld-display eld-screen-title" style={S.title}>You</div>
-        <div style={S.sub}>Base presence — growth purchased below</div>
-        <div className="eld-panel" style={S.statGrid}>
-          {stats.map((s) => (
-            <div key={s.k} style={S.statCell}>
-              <div style={S.statK}>{s.k}</div>
-              <div style={S.statV}>{s.v}</div>
-            </div>
-          ))}
+    <div className="eld-player">
+      <div className="eld-player-kick">Mind View · Veinbinder</div>
+      <div className="eld-display eld-screen-title eld-player-title">You</div>
+      <div className="eld-player-sub">The conduit. Your roster's breadth is your reach.</div>
+
+      <div className={`eld-panel eld-res${glow ? ' is-ranked-up' : ''}`} aria-label={`Resonance ${st.value.toFixed(1)}, rank ${st.numeral}`}>
+        <div className="eld-res-top">
+          <div>
+            <div className="eld-res-k">Resonance</div>
+            <div className="eld-res-v">{st.value.toFixed(1)}</div>
+          </div>
+          <div className="eld-res-rank">
+            <div className="eld-res-k">Rank</div>
+            <div className="eld-res-numeral">{st.numeral}</div>
+          </div>
         </div>
-        <div style={S.veinRow}>
-          <span style={S.veinLbl}>Banked Worldvein</span>
-          <span style={S.veinNum}>{worldvein.toLocaleString()} ❖</span>
+        <div className="eld-res-bar" role="progressbar" aria-valuemin={st.at} aria-valuemax={st.next ?? st.at} aria-valuenow={Number(st.value.toFixed(1))}>
+          <div className="eld-res-fill" style={{ width: `${Math.round(st.progress * 100)}%` }} />
         </div>
+        <div className="eld-res-next">
+          {st.next == null
+            ? `Rank ${rankNumeral(MAX_RANK)} — the highest`
+            : <>Rank {rankNumeral(st.rank + 1)} at <strong>{st.next}</strong> · {st.toNext.toFixed(1)} to go</>}
+        </div>
+        <div className="eld-res-note">Σ √level over all {members.length} Adventurers, fielded or benched. Your rank caps every upgrade below at level {st.rank}.</div>
+        {testNumbers && (
+          <div className="eld-test-numbers" aria-label="Resonance sources (test numbers)">
+            {members.map((m) => `${m.name} √${m.level || 1} = ${Math.sqrt(Math.max(1, m.level || 1)).toFixed(2)}`).join(' · ')}
+          </div>
+        )}
       </div>
 
-      <div style={S.secHead}>Growth</div>
-      <div style={S.note}>
-        {/* DESIGN-OPEN: economy not locked — costs shown as ??? until Anthony locks sinks. */}
-        Purchasable upgrades (placeholders). Costs DESIGN-OPEN.
-      </div>
-      <div style={S.list}>
-        {upgrades.map((u) => (
-          <div key={u.id} className="eld-card" style={S.upRow}>
-            <div style={S.upTop}>
-              <span style={S.treeTag}>{u.tree}</span>
-              <span style={S.cost}>{u.cost} ❖</span>
-            </div>
-            <div style={S.upName}>{u.name}</div>
-            <div style={S.upBlurb}>{u.blurb}</div>
-            <button type="button" className="eld-btn" disabled style={S.buyBtn}>
-              Purchase (locked)
-            </button>
-          </div>
-        ))}
-      </div>
+      <div className="eld-player-vein"><span>Banked Worldvein</span><strong>{worldvein.toLocaleString()} ❖</strong></div>
+
+      <div className="eld-player-sec">Bond</div>
+      <div className="eld-player-note">Party-wide — every Adventurer carries these.</div>
+      <div className="eld-up-list">{BOND_IDS.map(row)}</div>
+
+      <div className="eld-player-sec">Craft</div>
+      <div className="eld-player-note">The economy — gathering, Worldvein, loot, Process time, Hearth job slots.</div>
+      <div className="eld-up-list">{CRAFT_IDS.map(row)}</div>
     </div>
   );
 }
-
-const S = {
-  wrap: {
-    flex: 1,
-    minHeight: 0,
-    overflowY: 'auto',
-    padding: '12px 14px 16px',
-    textAlign: 'left',
-  },
-  hero: { marginBottom: 14 },
-  kick: {
-    fontSize: 'var(--mv-label, 15px)',
-    letterSpacing: '0.24em',
-    textTransform: 'uppercase',
-    color: 'var(--eld-muted)',
-    fontFamily: 'var(--eld-font-display)',
-  },
-  title: { fontSize: 'var(--mv-title, 26px)', fontWeight: 700, marginTop: 4, color: 'var(--eld-text)' },
-  sub: { fontSize: 'var(--mv-text, 18px)', color: 'var(--eld-muted)', fontStyle: 'italic', margin: '4px 0 10px' },
-  statGrid: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: 8,
-    padding: 12,
-  },
-  statCell: {
-    background: 'rgba(0,0,0,0.22)',
-    borderRadius: 8,
-    padding: '8px 10px',
-    border: '1px solid var(--eld-border)',
-  },
-  statK: { fontSize: 'var(--mv-label, 15px)', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--eld-muted)' },
-  statV: { fontSize: 'var(--mv-num, 24px)', fontWeight: 700, marginTop: 4, color: 'var(--eld-accent)' },
-  veinRow: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 10,
-    padding: '8px 4px',
-  },
-  veinLbl: { fontSize: 'var(--mv-label, 15px)', color: 'var(--eld-muted)', letterSpacing: '0.08em', textTransform: 'uppercase' },
-  veinNum: { fontSize: 'var(--mv-text, 18px)', fontWeight: 700, color: 'var(--eld-accent)' },
-  secHead: {
-    fontSize: 'var(--mv-text, 18px)',
-    fontWeight: 700,
-    letterSpacing: '0.12em',
-    textTransform: 'uppercase',
-    fontFamily: 'var(--eld-font-display)',
-    marginBottom: 4,
-  },
-  note: { fontSize: 'var(--mv-label, 15px)', color: 'var(--eld-muted)', fontStyle: 'italic', marginBottom: 10 },
-  list: { display: 'flex', flexDirection: 'column', gap: 10 },
-  upRow: { padding: 12 },
-  upTop: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-  treeTag: {
-    fontSize: 'var(--mv-label, 15px)',
-    letterSpacing: '0.14em',
-    textTransform: 'uppercase',
-    color: 'var(--eld-accent)',
-    border: '1px solid #1c4a54',
-    borderRadius: 4,
-    padding: '2px 6px',
-  },
-  cost: { fontSize: 'var(--mv-text, 18px)', color: 'var(--eld-muted)', fontVariantNumeric: 'tabular-nums' },
-  upName: { fontSize: 'var(--mv-text, 18px)', fontWeight: 700 },
-  upBlurb: { fontSize: 'var(--mv-text, 18px)', color: 'var(--eld-muted)', marginTop: 4, lineHeight: 1.4 },
-  buyBtn: { marginTop: 10, width: '100%', padding: '10px 8px', opacity: 0.55, cursor: 'not-allowed', minHeight: 'var(--mv-tap, 52px)' },
-};

@@ -82,17 +82,18 @@ export const MYTHIC_CORE_CHANCE = 0.25;
  *   named     — named variant: +1 extra loot roll one rung up (RouteMap §5)
  *   mapClear  — boss killed with every node cleared: +50 % Worldvein + one guaranteed Rare-or-better roll (§6)
  *   bossName  — the area boss (boss nodes): its weapon drops take a boss-named special name (Item Model §2)
+ *   veinMult / oneUpChance — the Veinbinder's Craft upgrades (Growth Model §2): node Worldvein ×, loot one-up chance
  *   vaelyx    — the kill was Vaelyx: 25 % Mythic Core (no Vaelyx encounter exists yet — the rule is wired and tested)
  * @returns {{worldvein:number, attuneBonus:number, mapClearBonus:number, gears:object[], gear:object|null}}
  */
 /** Class gems (ClassGems_Live §4): rolled last so every earlier roll keeps its place in the rng stream. */
 export { gemDropChance } from '../progression/gems.js';
 
-export function rollRewards({ tier, area, worldTier, nodeType, attuneVein = false, rng = Math.random, named = false, mapClear = false, bossName = null, vaelyx = false }) {
+export function rollRewards({ tier, area, worldTier, nodeType, attuneVein = false, rng = Math.random, named = false, mapClear = false, bossName = null, vaelyx = false, veinMult = 1, oneUpChance = 0 }) {
   const A = Math.max(1, area || tier || worldTier || 1);
   const T = tierForArea(A);
   const base = VEIN_BASE[nodeType] || 1;
-  let worldvein = Math.round((4 + rng() * 5) * base * A);
+  let worldvein = Math.round((4 + rng() * 5) * base * A * veinMult); // Craft · Vein: +5 % Worldvein from nodes per level
   let attuneBonus = 0;
   if (attuneVein) { attuneBonus = Math.round(worldvein * 0.2); worldvein += attuneBonus; }
   let mapClearBonus = 0;
@@ -102,7 +103,9 @@ export function rollRewards({ tier, area, worldTier, nodeType, attuneVein = fals
   const bossStep = nodeType === 'boss' ? 1 : 0;
   const ratingFloor = nodeType === 'boss' ? BOSS_RATING_FLOOR : 1;
   const rollGear = (extraSteps = 0, minRarity = null) => {
-    let rarity = rollRarity(rng, { area: A, nodeType, attune: attuneVein, steps: bossStep + extraSteps });
+    // Craft · Fortune: +3 % per level that a roll lands one rung up (rolled only when bought, so the rng stream is unchanged at 0)
+    const lucky = oneUpChance > 0 && rng() < oneUpChance ? 1 : 0;
+    let rarity = rollRarity(rng, { area: A, nodeType, attune: attuneVein, steps: bossStep + extraSteps + lucky });
     if (minRarity && rarityIndex(rarity) < rarityIndex(minRarity)) rarity = minRarity;
     const type = WEAPON_TYPES[Math.floor(rng() * WEAPON_TYPES.length)];
     const rating = ratingFloor + Math.floor(rng() * (101 - ratingFloor));

@@ -25,7 +25,7 @@ const CLASS_GLYPH = {
  * Top: party-of-3 list. Below: extra roster + Create character.
  * Tap member → detail (stats top, purchasable upgrades below) — same shape as Player.
  */
-export default function PartyScreen({ party, setParty, roster, setRoster, locked = false, bag = [], setBag, setWorldvein, equipped, onEmpower, onOpenLattice }) {
+export default function PartyScreen({ party, setParty, roster, setRoster, locked = false, bag = [], setBag, setWorldvein, equipped, onEmpower, onOpenLattice, bond = null }) {
   const taken = equipped || equippedOf(party, roster);
   const [detail, setDetail] = useState(null); // { source: 'party'|'roster', index }
   const [creating, setCreating] = useState(false);
@@ -63,6 +63,7 @@ export default function PartyScreen({ party, setParty, roster, setRoster, locked
         setWorldvein={setWorldvein}
         onEmpower={onEmpower}
         onOpenLattice={onOpenLattice}
+        bond={bond}
         taken={taken}
         locked={locked}
         onBack={() => setDetail(null)}
@@ -108,7 +109,7 @@ export default function PartyScreen({ party, setParty, roster, setRoster, locked
         <div className="eld-party-cards">
           {party.map((m, i) => {
             const a = ARCHETYPES[m.archetype] || {};
-            const d = deriveDisplay(equip(m, bag));
+            const d = deriveDisplay(equip(m, bag, bond));
             const inn = INNATES[m.archetype];
             const icons = inn ? [
               { key: 'innate', art: `icon-innate-${slug(inn.name)}`, glyph: inn.glyph, title: inn.name },
@@ -261,9 +262,9 @@ function MemberRow({ m, badge, onClick }) {
  * the six premade slots. Tap a filled slot → that item's sheet; tap an empty one → the bag filtered to
  * the slot for this Adventurer, with Compare on every row.
  */
-function MemberDetail({ member, bag, setBag, setWorldvein, onEmpower, onOpenLattice, taken, locked, onBack, onChange, onPromoteToParty }) {
+function MemberDetail({ member, bag, setBag, setWorldvein, onEmpower, onOpenLattice, bond = null, taken, locked, onBack, onChange, onPromoteToParty }) {
   const a = ARCHETYPES[member.archetype];
-  const geared = equip(member, bag);
+  const geared = equip(member, bag, bond); // the Veinbinder's Bond upgrades apply to every Adventurer
   const d = deriveDisplay(geared);
   const inn = INNATES[member.archetype];
   const testNumbers = useTestNumbers();

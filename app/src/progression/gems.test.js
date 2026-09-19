@@ -120,7 +120,7 @@ test('fragments are gem-bound: a level-up feeds ONLY the worn gem; unworn gems g
   // save round-trip keeps the lattice and both fragment counts
   const state = { party: [kessa], roster: [orin2], worldvein: 80, bag: [g, spare] };
   const back = deserialize(serialize(state));
-  assert.ok(back.ok); assert.equal(SAVE_VERSION, 5);
+  assert.ok(back.ok); assert.ok(SAVE_VERSION >= 5, 'gems bumped the save to v5');
   assert.deepEqual(back.state.bag[0], g);
   assert.equal(addFragments([g], 'nope', 3)[0], g);
 });
