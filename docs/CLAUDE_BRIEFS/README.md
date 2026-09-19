@@ -9,11 +9,11 @@ Active coding tasks for **Claude Code**. The **Claude Design Chat** writes these
 - When a brief is done, mark **DONE** at the top, move it to `_archive/`, and note it in `docs/SESSION_LOG.md`.
 
 ## Queue
-- `2026-09-19_m2-3-player-resonance.md` — **READY**
 - _(empty — every queued brief is done. Waiting on the Design Chat: M2 lock 2 (gems), the 224 weapon
   special names for `app/src/data/weaponNames.js`, and rulings on the DESIGN-OPEN numbers listed in PR #61.)_
 
 ## Archive (`_archive/`, newest first — all DONE or superseded)
+- `2026-09-19_m2-3-player-resonance.md` — DONE (#71)
 - `2026-09-19_m2-2-lattice-gems.md` — DONE (#70; lock conflict flagged)
 - `2026-09-19_open-numbers.md` — DONE (#69)
 - `2026-09-17_ui-brackets-v2.md` — DONE (#67)
