@@ -11,6 +11,7 @@ import { withStarterWeapons, equippedIds, fightXp, splitXp, applyXp, xpToNext } 
 import { awardLevelFragments, fragmentLine } from './progression/gems.js';
 import { bondMods, craftMods, normalizeUpgrades, canBuy, buy } from './player/upgrades.js';
 import { rankFor, resonance } from './player/resonance.js';
+import { grantTestGems, TEST_KIT } from './debug/testKit.js';
 import { gatherSlotCount, withGatherSlots } from './afkRuntime.js';
 import { plainName } from './progression/items.js';
 import { Frame, Header } from './components/ui/index.jsx';
@@ -225,6 +226,13 @@ export default function Eldrathor() {
   // Tab re-tap pops to root (brief 2026-09-15): the tab's screen remounts (sub-state + scroll reset) via
   // its `rootKey`; Rally goes back to the island; a live run stays on the route map.
   const [rootKey, setRootKey] = useState({});
+  /** TEMPORARY test kit (Settings → Grant test gems): gems on the party, every class in the bag, fragments + Worldvein. Not offered mid-run. */
+  function grantGems() {
+    const r = grantTestGems({ party, bag, worldvein });
+    setParty(r.party); setBag(r.bag); setWorldvein(r.worldvein);
+    trace('debug', { testGems: true, equipped: r.equipped.length });
+    return `${r.equipped.length ? `Equipped: ${r.equipped.map((e) => `${e.name} · ${e.gem}`).join(', ')}. ` : 'The party already wears gems. '}Added ${r.spares.length} spare gems to the Bag and +${TEST_KIT.worldvein.toLocaleString()} ❖.`;
+  }
   /** Buy one level of a Veinbinder upgrade — capped at the current Resonance rank, paid in Worldvein. */
   function buyUpgrade(id) {
     const check = canBuy(playerUpgrades, id, { rank: rankFor(resonance([...party, ...roster])), worldvein });
@@ -784,7 +792,7 @@ export default function Eldrathor() {
         {(sheet === 'help' || sheet === 'help+basics') && <HelpSheet screenId={screenId} showBasics={sheet === 'help+basics'} onClose={() => setSheet(null)} />}
         {sheet === 'runlog' && <RunLogSheet log={log} areaName={area?.name} onClose={() => { setLogSeen(log.length); setSheet(null); }} />}
         {sheet === 'debug' && <DebugTraceSheet onClose={() => setSheet(null)} />}
-        {sheet === 'settings' && <SettingsSheet store={SAVE_STORE} onClose={() => setSheet(null)} />}
+        {sheet === 'settings' && <SettingsSheet store={SAVE_STORE} onClose={() => setSheet(null)} onGrantTestGems={territory ? null : grantGems} />}
         {offline && !sheet && <OfflineSheet summary={offline} onClose={() => setOffline(null)} />}
         {sheet === 'menu' && (
           <MenuSheet
