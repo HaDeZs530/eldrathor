@@ -3,11 +3,13 @@
 *Author: Claude Design Chat. Target image: `docs/art/concept/style-target-2026-09-14.png` (ChatGPT concept, Anthony-approved). This doc turns that one composite into (A) UI tokens Claude Code builds chrome from and (B) an asset manifest of individually generated art files. The concept's **text and mechanics are NOT canon** (it shows a seal and party bars in the stage; ignore) — only its look is.*
 
 ## A. Three modes, one frame
-> **Superseded in part 2026-09-17:** screen → bracket mapping now lives ONLY in `Eldrathor_UI_Brackets_Lock.md` (six brackets). The Veinharbor / Exploration / Mind View token values below still hold; Bond, Veinbinder and Hearth are defined there.
+> **Superseded in part 2026-09-17:** screen → bracket mapping now lives ONLY in `Eldrathor_UI_Brackets_Lock.md` (four brackets since the evening revision). The Veinharbor / Exploration / Mind View token values below still hold; Bond, Veinbinder and Hearth are defined there.
 
 **Shared frame (all modes):** 2 px outer border in antique gold `#b8973f` with a 1 px inner line `#5a4a22`, 10 px radius; app header 57 px with the wordmark **ELDRATHOR** in Cinzel 22 px, letter-spacing 0.08 em, colour `#e6d6a8`; Worldvein counter (crystal glyph + number, Cinzel numerals); `?` and `☰` as 32 px round-outlined icons. Tab bar 76 px, dark slate `#0f151d`, icons 28 px, labels 12 px Cinzel; active tab gold `#e8c46a` with a top hairline.
 
-| | **Veinharbor (Town / Party / Player)** | **Exploration (Route map)** | **Mind View (Fight / Results / cards)** |
+*Screen → column is owned by `Eldrathor_UI_Brackets_Lock.md` (four brackets, revised 2026-09-17); the column headings below mirror it.*
+
+| | **Veinharbor (Town / Bag / Recruit; the Hearth = this column + Mythros accents)** | **Exploration (Island / Rally / Route map)** | **Mind View (Player / Party / Settings / Fight / Results / cards)** |
 |---|---|---|---|
 | Tagline | Sunlit wood — home lives here | Parchment — worlds unfold | Sapphire crystal — farther sees |
 | Background | near-black warm `#080807` behind panels; wood texture only in the outer frame | parchment `#e8d5b7` with fog `#f3ead9` at 85% over unexplored regions | deep navy `#0c1a2b` → `#152a41` vertical gradient, faint crystal noise |
@@ -50,7 +52,7 @@ All at **@2x for a 390 pt phone** (widths below are px at 2×), **PNG**, sRGB. I
 
 ## D. Sheets, cards and dialogs inherit the mode underneath them (RULED 2026-09-14)
 Every overlay — Help (?), Menu (☰), Settings, Run log, Offline summary, Explore/Reveal/Ambush cards, Sanctuary, Results, roster picker, confirms — takes the **§A column of the screen it opens over**, never a fixed style:
-- Over **Town / Party / Player / Hearth** → Veinharbor: `#141210` panel, 1 px `#5a4a22`+`#292823` borders, Cinzel `#f0e2bd` title, gold primary button, no glow.
+- Over **Town / Bag / Recruit** (and the **Hearth**, with its Mythros accent) → Veinharbor: `#141210` panel, 1 px `#5a4a22`+`#292823` borders, Cinzel `#f0e2bd` title, gold primary button, no glow.
 - Over the **Route map** → Exploration: parchment `#f1e6cf` card, 1 px `#8a7350` hand-drawn border, ink text, gold-filled primary / parchment-outline secondary, paper grain.
 - Over **Fight / Results / Sanctuary** (Mind View) → `#1a2b3b` panel, 1 px `#3d6fa8` border with the blue glow, `#dfe9f5` title, outline buttons.
 Implementation: the shared `Sheet` reads the active mode from `ThemeProvider` at open time and keeps it until closed (a sheet doesn't re-skin if the theme transitions underneath). Test: open Menu on Town, Route map and Fight → three different panel colours.

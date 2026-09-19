@@ -10,7 +10,7 @@
  */
 import { AREAS } from './data.js';
 import { trainXpPerMinute, applyTrainXp, rosterCap } from './progression/progression.js';
-import { RARITIES, rarityIndex, craftCapForArea, tierForArea } from './progression/items.js';
+import { RARITIES, rarityIndex, craftCapForArea, tierForArea, makeCore, CORE_TYPES } from './progression/items.js';
 import { addMaterial } from './town/recipes.js';
 
 /**
@@ -40,6 +40,9 @@ export const IDLE_CYCLE_MS = AFK_TUNING.trainCycleMs;
 export const PROCESS_VEIN_COST = AFK_TUNING.processVeinCost;
 export const OFFLINE_SUMMARY_MS = AFK_TUNING.offlineSummaryMs;
 export const GATHER_VEIN_CHANCE = AFK_TUNING.gatherVeinChance;
+/** RULED 2026-09-19: a Gather job in areas 8–9 also brings back one Artifact Core per 2 h of gathering. */
+export const GATHER_CORE_EVERY_MS = 2 * 60 * 60 * 1000;
+export const GATHER_CORE_AREAS = [8, 9];
 export const CYCLE_MS = { gather: GATHER_CYCLE_MS, process: PROCESS_CYCLE_MS, idle: IDLE_CYCLE_MS };
 /** §7: what a Train slot says once its Adventurer reaches the roster ceiling. */
 export const TRAIN_CAP_STOP = 'at roster cap';
@@ -64,7 +67,7 @@ export function trainXpGain(unlocked, cycleMs = IDLE_CYCLE_MS) {
 export const gatherYield = (tier) => ({ gain: AFK_TUNING.gatherYield(tier), xp: AFK_TUNING.gatherXp(tier) });
 
 export function emptyGatherSlot() {
-  return { charKey: null, areaId: 1, family: 'wood', running: false, progress: 0, startedAt: null, lastReconciledAt: null, suspended: false };
+  return { charKey: null, areaId: 1, family: 'wood', running: false, progress: 0, coreMs: 0, startedAt: null, lastReconciledAt: null, suspended: false };
 }
 export function emptyJob(extra = {}) {
   return { charKey: null, running: false, progress: 0, startedAt: null, lastReconciledAt: null, suspended: false, ...extra };
@@ -207,7 +210,7 @@ export function reconcileAfk({ state, inventory, bag = [], worldvein, party, ros
   let vein = worldvein;
   let partyNext = null;
   let rosterNext = null;
-  const summary = { elapsedMs: 0, raw: {}, gatherXp: 0, vein: 0, infused: {}, processXp: 0, xp: [], stops: [] };
+  const summary = { elapsedMs: 0, raw: {}, gatherXp: 0, vein: 0, cores: 0, infused: {}, processXp: 0, xp: [], stops: [] };
   const span = (job) => { const e = job.lastReconciledAt == null ? 0 : Math.max(0, now - job.lastReconciledAt); summary.elapsedMs = Math.max(summary.elapsedMs, e); return e; };
 
   next.gatherSlots = next.gatherSlots.map((slot, i) => {
@@ -215,7 +218,16 @@ export function reconcileAfk({ state, inventory, bag = [], worldvein, party, ros
     const area = AREAS.find((w) => w.id === slot.areaId);
     const tier = area?.tier || 1;
     if ((area?.id || 1) > unlocked) { summary.stops.push(`gather ${i + 1}: area locked`); return stopped(slot); }
-    const { cycles, progress } = cyclesElapsed(slot.progress, span(slot), GATHER_CYCLE_MS);
+    const elapsed = span(slot);
+    const { cycles, progress } = cyclesElapsed(slot.progress, elapsed, GATHER_CYCLE_MS);
+    // areas 8–9: one Artifact Core per 2 h gathered — the remainder carries like a cycle does
+    let coreMs = slot.coreMs || 0;
+    if (GATHER_CORE_AREAS.includes(area?.id)) {
+      coreMs += elapsed;
+      const n = Math.floor(coreMs / GATHER_CORE_EVERY_MS); coreMs -= n * GATHER_CORE_EVERY_MS;
+      for (let k = 0; k < n; k++) bagNext = [...bagNext, makeCore({ tier: tierForArea(area.id), rarity: 'Artifact', type: CORE_TYPES.Artifact })];
+      summary.cores += n;
+    } else coreMs = 0;
     if (cycles > 0) {
       const y = gatherYield(tier);
       const gain = y.gain * cycles;
@@ -225,7 +237,7 @@ export function reconcileAfk({ state, inventory, bag = [], worldvein, party, ros
       summary.gatherXp += y.xp * cycles;
       for (let c = 0; c < cycles; c++) if (rng() < GATHER_VEIN_CHANCE) { vein += 1; summary.vein += 1; }
     }
-    return { ...slot, progress, lastReconciledAt: now };
+    return { ...slot, progress, coreMs, lastReconciledAt: now };
   });
 
   if (next.process.running && !next.process.suspended && next.process.charKey) {
@@ -281,7 +293,7 @@ export function reconcileAfk({ state, inventory, bag = [], worldvein, party, ros
 /** True when the reconciled span deserves the Offline summary sheet (§6: > 60 s) and something happened. */
 export function wantsOfflineSummary(summary, thresholdMs = OFFLINE_SUMMARY_MS) {
   if (!summary || summary.elapsedMs <= thresholdMs) return false;
-  const any = Object.keys(summary.raw).length || Object.keys(summary.infused).length || summary.vein || summary.xp.length || summary.stops.length;
+  const any = Object.keys(summary.raw).length || Object.keys(summary.infused).length || summary.vein || summary.cores || summary.xp.length || summary.stops.length;
   return !!any;
 }
 
@@ -292,6 +304,7 @@ export function summaryLines(summary) {
   const infusedTotal = Object.values(summary.infused).reduce((a, b) => a + b, 0);
   if (infusedTotal) lines.push(`+${infusedTotal} infused (${Object.entries(summary.infused).map(([q, n]) => `${n} ${q}`).join(', ')})`);
   if (summary.vein) lines.push(`+${summary.vein} ❖ Worldvein`);
+  if (summary.cores) lines.push(`+${summary.cores} Artifact Core${summary.cores === 1 ? '' : 's'}`);
   for (const x of summary.xp) lines.push(x.to > x.from ? `${x.name} +${x.to - x.from} level${x.to - x.from === 1 ? '' : 's'} (Lv ${x.from} → ${x.to})` : `${x.name} +${Math.round(x.gain)} XP`);
   for (const s of summary.stops) lines.push(`Stopped — ${s}`);
   return lines;
