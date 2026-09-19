@@ -274,8 +274,9 @@ export function simulateFight({ party, enemies, seed = 1, startHpFrac, runMods, 
   ev({ t, type: outcome });
 
   const win = outcome === 'victory';
+  // maxHp and carried-in HP are fractional, so a heal clamped at full HP adds a fraction — totals are whole numbers
   const stats = {
-    party: P.map((p) => ({ id: p.id, name: p.name, archetype: p.archetype, dealt: p.dealt, taken: p.taken, healed: p.healed, kills: p.kills, alive: p.alive, hpFrac: Math.max(0, p.hp / p.d.maxHp) })),
+    party: P.map((p) => ({ id: p.id, name: p.name, archetype: p.archetype, dealt: round(p.dealt), taken: round(p.taken), healed: round(p.healed), kills: p.kills, alive: p.alive, hpFrac: Math.max(0, p.hp / p.d.maxHp) })),
     kills: P.reduce((n, p) => n + p.kills, 0),
     durationMs: t,
     auras: [...auras],
