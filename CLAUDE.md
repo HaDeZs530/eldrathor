@@ -22,7 +22,7 @@ Eldrathor: a UI-based iOS RPG (Vite + React now; Capacitor iOS wrap later). The 
    - `docs/Eldrathor_TabBar_Lock.md` / `docs/Eldrathor_DualMode_Art_Lock.md`
    - `docs/Eldrathor_BaseStats_Lock.md` — the nine stats every system uses (LOCKED July 2026).
    - `docs/Eldrathor_ClassGemTrees_Lock.md` — full 40-pt trees for Tank/DPS/Controller/Healer (LOCKED July 2026).
-   - `docs/Eldrathor_ClassGems_Live_Lock.md` — generic tree engine, gem numbers table, drops/equip/crossing-matching, tree screen (LOCKED 2026-09-19).
+   - `docs/Eldrathor_Growth_Model_Lock.md` — THE growth list: lattice gems (fragments + Worldvein), Resonance ranks for the player, weapon trees cut (LOCKED 2026-09-19). `Eldrathor_ClassGems_Live_Lock.md` §3–§5 still hold numbers/drops/equip.
    - `docs/Eldrathor_Archetype_Seeds_DRAFT.md` — archetype base numbers (approved for build 2026-09-11).
    - `docs/Eldrathor_Item_Model_Lock.md` — seven-rung ladder (Common→Mythic), Artifact/Mythic via cores from areas 8–9 / Vaelyx, fixed types spanning rarities, weapon special names (bag only), rows + item sheet with real stats, slot icons, Train capped at roster max level (LOCKED 2026-09-16).
    - `docs/Eldrathor_Progression_Loop_Lock.md` — Milestone 1: ids + save/resume, rarity ladder, XP, equipment/empower/armor that apply, crit fix, true-idle AFK, balance gates (LOCKED 2026-09-14).

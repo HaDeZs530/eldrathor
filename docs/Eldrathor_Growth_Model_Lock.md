@@ -1,0 +1,44 @@
+# Growth Model — every path of growth in one place (LOCKED 2026-09-19)
+
+*Author: Claude Design Chat from Anthony's rulings 2026-09-19. Supersedes: design doc §6c weapon skill trees (CUT), §6d row-grid talent trees (replaced by the lattice), §6f Veinbinder Bond/Craft purchased trees (replaced by Resonance ranks); `Eldrathor_ClassGems_Live_Lock.md` §1–§3 and §6 (row engine, thresholds, screen) are withdrawn — its §3 numbers table, §4 drops and §5 equip/crossing rules carry over. The July `Eldrathor_ClassGemTrees_Lock.md` node CONTENTS (stat facets, procs, finishers) carry over onto the lattice.*
+
+## 0. The list (nothing grows that isn't here)
+**Adventurer:** 1 Level · 2 Archetype (fixed) · 3 Weapon (item: tier·rarity·rating + empower) · 4 Armor (crafted item, same axes; sockets later) · 5 Class gem (a crystal grown as a lattice).
+**Player (Veinbinder):** 6 Resonance — derived from the whole roster's levels; grants Bond (party stats) and Craft (economy) bonuses by rank. No purchase.
+**Account:** areas (boss kills), roster size (recruits), Artifact/Mythic grades (Cores), gathering skills + mastery (later, unchanged).
+**Cut:** weapon skill trees. "Talents" as a word: gone — the game says *facets* and *the lattice*.
+
+## 1. The lattice — how a class gem grows
+**Fiction (design doc §5, no new lore):** the Veinbinder is the conduit. When an Adventurer levels up, the bond channels a spark of Worldvein through them and a **Vein Fragment** crystallises. The Veinbinder imbues a fragment with a facet's power and sets it into a gem's lattice, growing the crystal outward.
+
+- **Shape:** a hex lattice growing **outward from a centre**. The centre is the gem's **Core** (its base ability — taunt / heal / burst / stun — always lit). Facets are hexes. A facet can be imbued only if it **touches an imbued facet** (adjacency is the only gate; no rows, no thresholds, no node links).
+- **Size:** 40 facets per gem (the July count), laid out as: 6 facets touching the Core (**foundation**), 12 in the second ring (**refinement**), 18 in the third (**mastery**), and **4 finisher facets** at the four compass points of the outer edge — imbue **one**; the other three darken. Procs sit as two special facets in the second ring, opposite each other.
+- **Levels:** stat facets have 3 levels (each level costs a fragment + Worldvein); procs and finishers 1 and 2 levels as before. Full gem = 40 fragments-worth of facets across ~86 imbues.
+- **Contents:** exactly the July lists per class — Row 1 stats → foundation ring, Row 2 → second ring, procs → second-ring specials, Row 4 → third ring, finishers → compass points. Magnitudes: `GEM_TUNING` (+4%/level stat, +10% flavor stat, proc/finisher values as tabled in ClassGems_Live §3).
+- **Cost per imbue:** **1 Vein Fragment + Worldvein** `20 × 1.12^n` (n = imbues already on that gem). Everything costs Worldvein.
+- **Per gem:** fragments and Worldvein are sunk into that gem. Gems transfer between Adventurers with their lattice intact. Two healers = two gems, each grown. Extra gems = extra farming.
+- **Fragments:** an account resource, **1 per Adventurer level-up, any Adventurer** (bench and Train included — Train is capped at roster max, so it can't mint fragments faster than the Mountain). Shown in the header next to Worldvein as a small crystal-shard counter. (tune: 1/level; could become 2 at high levels.)
+- **Respec:** none. Finisher swap: 200 ❖ + 2 fragments.
+- **Crossing / matching, drops, equip:** as ClassGems_Live §4–§5 (rares 20%, bosses 35%, one gem per Adventurer, crossing grants the Core ability, matching amplifies the archetype's innate by `1 + 0.5 × imbuedFacets/40`).
+
+## 2. Resonance — how the player grows
+- **Resonance** = `Σ over the whole roster of √(level_i)` — every Adventurer counts, fielded or benched. Ten level-5 Adventurers (22.4) out-resonate three at level 17 (12.4) or one at 50 (7.1). Breadth beats depth by design.
+- **Ranks** at thresholds (tune): I 0 · II 8 · III 14 · IV 22 · V 32 · VI 44 · VII 58 · VIII 74 · IX 92 · X 112.
+- Each rank grants **Bond** (party-wide: +2% all nine stats per rank) and **Craft** (economy: per rank one of — +5% gather yield, +5% Worldvein from nodes, +3% loot one-up chance, −5% Process time, +1 Hearth job slot at IV and VIII). Fixed per rank, no choices, no purchase. The Player tab shows Resonance, rank, the bar to the next rank, and the bonus list with the next rank's preview.
+- Recruiting more Adventurers is therefore player growth: the Recruit row matters.
+
+## 3. Where each system lives (UI map)
+| System | Screen | Bracket |
+|---|---|---|
+| Level / XP | Party → Adventurer sheet header; Results | Mind View |
+| Weapon / Armor | Bag rows · character-sheet slots · Smith (empower, grade) · Crafter | Veinharbor / Mind View |
+| Class gem lattice | character-sheet Gem slot → **Lattice screen**; Bag → gem sheet → Lattice | Mind View |
+| Fragments · Worldvein | header counters; spent only on the Lattice screen (fragments) and Smith/Crafter/Market/Lattice (Worldvein) | all |
+| Resonance / rank | Player tab root | Mind View |
+| Gathering skills (later) | Hearth | Hearth |
+
+## 4. Lattice screen (Mind View)
+Hex lattice centred on the Core; pinch-zoom and pan; imbued facets lit in Mythros blue with a facet glow, available facets dim outline, unreachable facets dark. Header: gem name, wearer, `imbued/40`, fragments, Worldvein, live cumulative readout. Tap facet → sheet: name, effect per level, cost (fragment + ❖), **Imbue**. Finisher facets show the swap fee. Test-numbers mode shows derive output.
+
+## 5. Engine
+`LatticeDef { id, core, facets: [ { id, ring, pos, neighbors: [ids], kind, maxLevel, effect, exclusiveGroup? } ] }` · `LatticeState { levels, finisher, imbues, worldveinSpent }` · pure `canImbue / imbue / derive / summary`, unit-tested per facet. Adjacency from `neighbors`. Generic; only the class gems use it now.

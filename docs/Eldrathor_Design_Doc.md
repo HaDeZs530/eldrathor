@@ -212,6 +212,7 @@ Each archetype = **role pull (soft, not a lock) + stat spine + 2 innate skills (
 *Notes:* Resonator is the intentional exception (both innates group-facing) — acceptable because the class-gem layer bends it into a real role anyway. No two group effects use the same lever (shield / heal / attack-speed / enemy-vuln / broad-buff). Weapons are free — any archetype, any weapon.
 
 ### 6c. Weapons — Pure Damage Delivery (LOCKED)
+> **Weapon skill trees CUT 2026-09-19** (`Eldrathor_Growth_Model_Lock.md` §0). Weapon power = tier × rarity × rating × empower only.
 - **Weapon = damage delivery ONLY.** Rhythm/speed + damage flavor. **NO specials, NO effects, NO role/utility** — all effects (taunt, control, buffs, heals) live in the Archetype + Class Gem layers. This keeps the three layers non-overlapping (zero redundancy — e.g. taunt exists only on Bulwark archetype / Guardian gem, never on a weapon).
 - **Two-hand model (Eternal Hero-style):** every weapon is a full two-hand loadout — no off-hand/shield-slot juggling. One weapon = both hands = one attack pattern = one skill tree. (e.g. Dual Daggers, Dual Swords, Bow, Greatsword, Staff+Tome as a set.)
 - **All weapons partial-AoE** (fits the ~1–3 enemies-per-node fights — no explicit single-target vs AoE axis; classes are roles, not target-count splits).
@@ -244,6 +245,7 @@ Three swappable layers per character:
 - **BALANCE APPROACH (locked principle):** never balance combos directly. Balance each archetype/gem/weapon **individually**; let combinations be emergent.
 
 ### 6d. Class Gems — the role toolkit layer (LOCKED)
+> **Tree shape changed 2026-09-19:** row grid → outward hex **lattice** grown with Vein Fragments + Worldvein (`Eldrathor_Growth_Model_Lock.md` §1). Node contents below still apply.
 > **Built contents (July 2026, committed 2026-09-11):** the full 40-point trees for all four gems live in `docs/Eldrathor_ClassGemTrees_Lock.md`; the nine-stat vocabulary they reference lives in `docs/Eldrathor_BaseStats_Lock.md`; archetype seed numbers are in `docs/Eldrathor_Archetype_Seeds_DRAFT.md` (under review).
 - **4 class gems** (the core roles): **Tank, DPS, Controller, Healer.** (No support/Resonator-mirror class — that role stays archetype-only via Resonator.) **DPS covers melee/ranged/magic — the WEAPON decides delivery** (all damage is Mythros; no separate mage).
 - **Bonus flavor classes** (e.g. Summoner) = optional ADDITIONS to this list later, not core. (Court-art gems sidelined for now — see below.)
@@ -265,7 +267,7 @@ Three swappable layers per character:
 - **Talent tree structure:** a main **spine** (linearly scale the ability's core numbers + role stats), **branch** nodes (specialization forks — e.g. Healer: single-target-burst vs party-heal; Tank: self-survival vs party-protection), and **capstone(s)** deep in the tree. The tree also governs the size of the matching-amplify.
 - **Archetype tilts the gem:** all combos valid, no bad pairings.
 
-### 6f. Veinbinder Skill Trees (LOCKED — structure; node contents open)
+### 6f. Veinbinder Skill Trees (SUPERSEDED 2026-09-19 — replaced by **Resonance ranks** derived from roster levels; `Eldrathor_Growth_Model_Lock.md` §2)
 The player character's own permanent progression — the roguelite meta-layer. **Funded by Worldvein** (pure currency spend; every run's harvest converts into permanent account power). Separate from gem trees.
 - **TREE 1 — The Bond (party buffs):** permanent stat boosts your essence grants ALL bonded Adventurers — attack, defense, vitality, etc. Party-wide combat power.
 - **TREE 2 — The Craft (passive/economy buffs):** crafting improvements, gathering yield/speed, idle-slot speed, farming bonuses (drop luck, Worldvein per node, crystal yields) — the "in-UI passives."

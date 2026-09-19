@@ -1,4 +1,4 @@
-# Class Gems Live + Talent Tree Engine (LOCKED 2026-09-19) — Milestone 2, lock 2
+# Class Gems Live (PARTIALLY SUPERSEDED 2026-09-19 by `Eldrathor_Growth_Model_Lock.md`) — §1–§3 structure/thresholds and §6 screen are withdrawn; §3 numbers table, §4 acquisition and §5 equip/crossing carry over onto the lattice.
 
 *Author: Claude Design Chat. Builds on `Eldrathor_ClassGemTrees_Lock.md` (tree contents, July) and design doc §6d (crossing/matching, per-gem investment, Worldvein-bought). Numbers marked (tune) are first-pass and live in one table so we can iterate without touching structure.*
 
