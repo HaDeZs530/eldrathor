@@ -27,6 +27,16 @@ function gemMods(adventurer) {
   return g;
 }
 
+/**
+ * The Veinbinder's Bond upgrades (Growth Model §2) — party-wide, so every Adventurer carries them as
+ * `adventurer.bond = { mult, add }`: relative bonuses on the nine-stat keys, and percentage POINTS for
+ * mitigation / crit chance. Absent → no effect.
+ */
+function bondOf(adventurer) {
+  const m = adventurer.bond?.mult || {}; const a = adventurer.bond?.add || {};
+  return { hp: m.hp || 0, power: m.power || 0, attackSpeed: m.attackSpeed || 0, healingPower: m.healingPower || 0, manaRegen: m.manaRegen || 0, mitigation: a.mitigation || 0, critChance: a.critChance || 0 };
+}
+
 const FALLBACK_SEEDS = Object.freeze({
   hp: 10, mana: 10, manaRegen: 10, power: 10, mitigation: 10, attackSpeed: 10, critChance: 10, critDamage: 10, healingPower: 10,
 });
@@ -40,6 +50,7 @@ const FALLBACK_SEEDS = Object.freeze({
 export function deriveStats(adventurer) {
   const s = ARCHETYPE_SEEDS[adventurer.archetype] || FALLBACK_SEEDS;
   const g = gemMods(adventurer);
+  const b = bondOf(adventurer);
   const wi = adventurer.weaponItem || null;
   const weaponType = wi?.type || adventurer.weapon || 'Sword + Shield';
   const w = WEAPONS[weaponType] || WEAPONS['Sword + Shield'];
@@ -55,15 +66,15 @@ export function deriveStats(adventurer) {
     weaponType,
     weaponMult: wm,
     armor: ar,
-    maxHp: s.hp * 20 * (1 + g.hp) * lvl + ar.hp,
+    maxHp: s.hp * 20 * (1 + g.hp) * (1 + b.hp) * lvl + ar.hp,
     maxMana: s.mana * 10 * (1 + g.mana),
-    manaRegen: s.manaRegen * 0.5 * (1 + g.manaRegen), // per second
-    hitDamage: w.dmg * (s.power / 10) * (1 + g.power) * lvl * wm,
-    swingInterval: w.tempo / ((s.attackSpeed / 10) * (1 + g.attackSpeed)), // seconds
-    critChance: s.critChance * 0.01 * (1 + g.critChance),
+    manaRegen: s.manaRegen * 0.5 * (1 + g.manaRegen) * (1 + b.manaRegen), // per second
+    hitDamage: w.dmg * (s.power / 10) * (1 + g.power) * (1 + b.power) * lvl * wm,
+    swingInterval: w.tempo / ((s.attackSpeed / 10) * (1 + g.attackSpeed) * (1 + b.attackSpeed)), // seconds
+    critChance: s.critChance * 0.01 * (1 + g.critChance) + b.critChance,
     critMult: critMult(s.critDamage, g.critDamage), // Progression lock §5: gem crit damage is ADDITIVE — a +4 % Crit Damage facet level adds +0.04× to the multiplier
-    mitigation: Math.min(MITIGATION_CAP, (s.mitigation * 0.02 + w.mit) * (1 + g.mitigation) + ar.mit),
-    healScale: (s.healingPower / 10) * (1 + g.healingPower),
+    mitigation: Math.min(MITIGATION_CAP, (s.mitigation * 0.02 + w.mit) * (1 + g.mitigation) + ar.mit + b.mitigation),
+    healScale: (s.healingPower / 10) * (1 + g.healingPower) * (1 + b.healingPower),
   };
 }
 
@@ -74,20 +85,20 @@ export function deriveStats(adventurer) {
  */
 export function deriveBreakdown(adventurer) {
   const d = deriveStats(adventurer);
-  const s = d.seeds; const g = gemMods(adventurer);
+  const s = d.seeds; const g = gemMods(adventurer); const b = bondOf(adventurer);
   const lvl = 1 + 0.05 * (d.level - 1);
   const w = d.weapon;
   const x = (label, v) => [label, v];
   return [
-    { k: 'Max HP', v: d.maxHp, op: 'sum', parts: [x(`seed ${s.hp} × 20`, s.hp * 20), x('gem', s.hp * 20 * g.hp), x(`level ×${lvl.toFixed(2)}`, s.hp * 20 * (1 + g.hp) * (lvl - 1)), x('gear (armor)', d.armor.hp)] },
-    { k: 'Hit', v: d.hitDamage, op: 'product', parts: [x(`weapon ${d.weaponType} ${w.dmg}`, w.dmg), x(`power seed ${s.power}/10`, s.power / 10), x('gem', 1 + g.power), x(`level ×${lvl.toFixed(2)}`, lvl), x('gear (weapon item)', d.weaponMult)] },
-    { k: 'Swing', v: d.swingInterval, op: 'product', parts: [x(`tempo ${w.tempo}s`, w.tempo), x(`÷ speed seed ${s.attackSpeed}/10`, 1 / (s.attackSpeed / 10)), x('÷ gem', 1 / (1 + g.attackSpeed))] },
-    { k: 'Crit chance', v: d.critChance, op: 'product', parts: [x(`seed ${s.critChance} × 1%`, s.critChance * 0.01), x('gems', 1 + g.critChance)] },
+    { k: 'Max HP', v: d.maxHp, op: 'sum', parts: [x(`seed ${s.hp} × 20`, s.hp * 20), x('gem', s.hp * 20 * g.hp), x('bond (Vitality)', s.hp * 20 * (1 + g.hp) * b.hp), x(`level ×${lvl.toFixed(2)}`, s.hp * 20 * (1 + g.hp) * (1 + b.hp) * (lvl - 1)), x('gear (armor)', d.armor.hp)] },
+    { k: 'Hit', v: d.hitDamage, op: 'product', parts: [x(`weapon ${d.weaponType} ${w.dmg}`, w.dmg), x(`power seed ${s.power}/10`, s.power / 10), x('gem', 1 + g.power), x('bond (Might)', 1 + b.power), x(`level ×${lvl.toFixed(2)}`, lvl), x('gear (weapon item)', d.weaponMult)] },
+    { k: 'Swing', v: d.swingInterval, op: 'product', parts: [x(`tempo ${w.tempo}s`, w.tempo), x(`÷ speed seed ${s.attackSpeed}/10`, 1 / (s.attackSpeed / 10)), x('÷ gem', 1 / (1 + g.attackSpeed)), x('÷ bond (Tempo)', 1 / (1 + b.attackSpeed))] },
+    { k: 'Crit chance', v: d.critChance, op: 'sum', parts: [x(`seed ${s.critChance} × 1% × gems`, s.critChance * 0.01 * (1 + g.critChance)), x('bond (Keen)', b.critChance)] },
     { k: 'Crit mult', v: d.critMult, op: 'sum', parts: [x('base 1.5', 1.5), x(`seed (${s.critDamage} − 10) × 0.05`, (s.critDamage - 10) * 0.05), x('gem', g.critDamage)] },
-    { k: 'Mitigation', v: d.mitigation, op: 'sum', parts: [x(`seed ${s.mitigation} × 2%`, s.mitigation * 0.02 * (1 + g.mitigation)), x(`weapon ${d.weaponType}`, w.mit * (1 + g.mitigation)), x('gear (armor)', d.armor.mit)], cap: MITIGATION_CAP },
+    { k: 'Mitigation', v: d.mitigation, op: 'sum', parts: [x(`seed ${s.mitigation} × 2%`, s.mitigation * 0.02 * (1 + g.mitigation)), x(`weapon ${d.weaponType}`, w.mit * (1 + g.mitigation)), x('gear (armor)', d.armor.mit), x('bond (Ward)', b.mitigation)], cap: MITIGATION_CAP },
     { k: 'Max mana', v: d.maxMana, op: 'product', parts: [x(`seed ${s.mana} × 10`, s.mana * 10), x('gems', 1 + g.mana)] },
-    { k: 'Mana regen', v: d.manaRegen, op: 'product', parts: [x(`seed ${s.manaRegen} × 0.5`, s.manaRegen * 0.5), x('gems', 1 + g.manaRegen)] },
-    { k: 'Heal scale', v: d.healScale, op: 'product', parts: [x(`seed ${s.healingPower}/10`, s.healingPower / 10), x('gems', 1 + g.healingPower)] },
+    { k: 'Mana regen', v: d.manaRegen, op: 'product', parts: [x(`seed ${s.manaRegen} × 0.5`, s.manaRegen * 0.5), x('gems', 1 + g.manaRegen), x('bond (Flow)', 1 + b.manaRegen)] },
+    { k: 'Heal scale', v: d.healScale, op: 'product', parts: [x(`seed ${s.healingPower}/10`, s.healingPower / 10), x('gems', 1 + g.healingPower), x('bond (Grace)', 1 + b.healingPower)] },
   ];
 }
 
@@ -115,10 +126,11 @@ export function deriveDisplay(adventurer) {
 /**
  * Attach the equipped items (by id, from the one bag) to an Adventurer so deriveStats / the simulator
  * see them. `member.equipped` is the six-slot map `{weapon, body, head, hands, feet, gem}` (§6).
+ * `bond` is the Veinbinder's party-wide Bond upgrades (`bondMods(upgrades)`), carried by every Adventurer.
  */
-export function equip(member, bag = []) {
+export function equip(member, bag = [], bond = null) {
   const eq = member.equipped || {};
   const byId = (id) => (id ? bag.find((i) => i.id === id) || null : null);
   const armorItems = ARMOR_SLOTS.map((slot) => byId(eq[slot])).filter(Boolean);
-  return { ...member, weaponItem: byId(eq.weapon), armorItems, gemItem: byId(eq.gem) };
+  return { ...member, weaponItem: byId(eq.weapon), armorItems, gemItem: byId(eq.gem), ...(bond ? { bond } : {}) };
 }

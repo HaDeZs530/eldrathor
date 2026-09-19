@@ -1,5 +1,5 @@
 # BRIEF — M2 lock 3: Player tab — Resonance, ranks, rank-capped Bond & Craft upgrades
-**Status:** READY (after the lattice brief) · **Date:** 2026-09-19 · **Author:** Claude Design Chat  
+**Status:** DONE (PR #71, 2026-09-19, Claude Code) · **Date:** 2026-09-19 · **Author:** Claude Design Chat  
 **Spec:** `docs/Eldrathor_Growth_Model_Lock.md` §2 (authoritative). Bump `SAVE_VERSION`.
 
 ## Deliverables

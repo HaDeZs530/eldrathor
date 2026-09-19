@@ -1,0 +1,89 @@
+{
+ "fresh": {
+  "head": "Resonance5.0RankIRank II at 8 · 3.0 to goΣ √level over all 5 Adventurers, fielded or benched. Your rank caps every upgrade below at level 1.",
+  "rows": [
+   "vitality | lvl 0/1 | next: +2% HP | Buy 50 ❖",
+   "might | lvl 0/1 | next: +2% Power | Buy 50 ❖",
+   "ward | lvl 0/1 | next: +1% mitigation | Buy 50 ❖",
+   "tempo | lvl 0/1 | next: +1.5% attack speed | Buy 50 ❖",
+   "grace | lvl 0/1 | next: +2% healing | Buy 50 ❖",
+   "keen | lvl 0/1 | next: +1% crit chance | Buy 50 ❖",
+   "flow | lvl 0/1 | next: +2% mana regen | Buy 50 ❖",
+   "yield | lvl 0/1 | next: +5% gather output | Buy 50 ❖",
+   "vein | lvl 0/1 | next: +5% Worldvein from nodes | Buy 50 ❖",
+   "fortune | lvl 0/1 | next: +3% loot one-up chance | Buy 50 ❖",
+   "haste | lvl 0/1 | next: −5% Process time | Buy 50 ❖",
+   "hearth | lvl 0/1 | next: +1 job slot (at levels 4 and 8) | Buy 50 ❖"
+  ]
+ },
+ "buyMight": "stopped at 1: At the rank cap — raise your Resonance",
+ "afterFirstBuy": {
+  "vein": "30 ❖",
+  "might": "might | lvl 1/1 | +2% Power | At the rank cap — raise your Resonance (disabled)"
+ },
+ "glow": {
+  "panel": "eld-panel eld-res",
+  "opened": 0
+ },
+ "broad": {
+  "head": "Resonance22.4RankIVRank V at 32 · 9.6 to goΣ √level over all 10 Adventurers, fielded or benched. Your rank caps every upgrade below at level 4.",
+  "rows": [
+   "vitality | lvl 0/4 | next: +2% HP | Buy 50 ❖",
+   "might | lvl 1/4 | +2% Power | Buy 63 ❖",
+   "ward | lvl 0/4 | next: +1% mitigation | Buy 50 ❖",
+   "tempo | lvl 0/4 | next: +1.5% attack speed | Buy 50 ❖",
+   "grace | lvl 0/4 | next: +2% healing | Buy 50 ❖",
+   "keen | lvl 0/4 | next: +1% crit chance | Buy 50 ❖",
+   "flow | lvl 0/4 | next: +2% mana regen | Buy 50 ❖",
+   "yield | lvl 0/4 | next: +5% gather output | Buy 50 ❖",
+   "vein | lvl 0/4 | next: +5% Worldvein from nodes | Buy 50 ❖",
+   "fortune | lvl 0/4 | next: +3% loot one-up chance | Buy 50 ❖",
+   "haste | lvl 0/4 | next: −5% Process time | Buy 50 ❖",
+   "hearth | lvl 0/4 | next: +1 job slot (at levels 4 and 8) | Buy 50 ❖"
+  ]
+ },
+ "buys": {
+  "might": "stopped at 3: At the rank cap — raise your Resonance",
+  "vitality": "ok",
+  "ward": "ok",
+  "hearth": "ok",
+  "yield": "ok",
+  "haste": "ok"
+ },
+ "afterBuys": {
+  "vein": "7,829 ❖",
+  "rows": [
+   "vitality | lvl 4/4 | +8% HP | At the rank cap — raise your Resonance (disabled)",
+   "might | lvl 4/4 | +8% Power | At the rank cap — raise your Resonance (disabled)",
+   "ward | lvl 2/4 | +2% mitigation | Buy 78 ❖",
+   "tempo | lvl 0/4 | next: +1.5% attack speed | Buy 50 ❖",
+   "grace | lvl 0/4 | next: +2% healing | Buy 50 ❖",
+   "keen | lvl 0/4 | next: +1% crit chance | Buy 50 ❖",
+   "flow | lvl 0/4 | next: +2% mana regen | Buy 50 ❖",
+   "yield | lvl 3/4 | +15% gather output | Buy 98 ❖",
+   "vein | lvl 0/4 | next: +5% Worldvein from nodes | Buy 50 ❖",
+   "fortune | lvl 0/4 | next: +3% loot one-up chance | Buy 50 ❖",
+   "haste | lvl 1/4 | −5% Process time | Buy 63 ❖",
+   "hearth | lvl 4/4 | +1 job slot (at levels 4 and 8) | At the rank cap — raise your Resonance (disabled)"
+  ]
+ },
+ "help": "? PlayerYou — the Veinbinder. Resonance is the sum of √level over every Adventurer you have, fielded or benched. Breadth beats depth: ten at level 5 out-resonate one at level 50.Resonance sets your rank (I–X). A rank is a cap, not a reward: every upgrade below",
+ "gatherSlots": 4,
+ "slot4": true,
+ "sheetNumbers": "Max HP = seed 15 × 20 [300.000] + gem [0.000] + bond (Vitality) [24.000] + level ×1.20 [64.800] + gear (armor) [0.000] → 388.800Hit = weapon Sword + Shield 12 [12.000] × power seed 10/10 [1.000] × gem [1.000] × bond (Might) [1.080] × level ×1.20 [1.200] × gear (weapon item) [1.044] → 16.235Swing = tempo 1.2s [1.200] × ÷ speed seed 10/10 [1.000] × ÷ gem [1.000] × ÷ bond (Tempo) [1.000] → 1.200Crit chance = seed 10 × 1",
+ "save": {
+  "v": 6,
+  "player": {
+   "upgrades": {
+    "vitality": 4,
+    "might": 4,
+    "ward": 2,
+    "yield": 3,
+    "haste": 1,
+    "hearth": 4
+   }
+  },
+  "slots": 4,
+  "worldvein": 7829
+ }
+}

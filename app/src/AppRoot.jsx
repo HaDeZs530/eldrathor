@@ -9,6 +9,9 @@ import { simulateFight, spawnEnemies, rollRewards, deriveStats, mulberry32 } fro
 import { equip } from './combat/derive.js';
 import { withStarterWeapons, equippedIds, fightXp, splitXp, applyXp, xpToNext } from './progression/progression.js';
 import { awardLevelFragments, fragmentLine } from './progression/gems.js';
+import { bondMods, craftMods, normalizeUpgrades, canBuy, buy } from './player/upgrades.js';
+import { rankFor, resonance } from './player/resonance.js';
+import { gatherSlotCount, withGatherSlots } from './afkRuntime.js';
 import { plainName } from './progression/items.js';
 import { Frame, Header } from './components/ui/index.jsx';
 import PlayerScreen from './components/PlayerScreen.jsx';
@@ -104,7 +107,10 @@ export default function Eldrathor() {
   const logRef = useRef(null);
   // M1c §6: jobs carry timestamps; a loaded save is normalised so a legacy running job counts time away
   // from the save's own afkSavedAt. The first tick after boot reconciles the whole absence (→ Offline sheet).
-  const [afk, setAfk] = useState(() => normalizeAfk(S0.afk, { savedAt: S0.afkSavedAt ?? null, now: Date.now() }));
+  // Craft · Hearth: +1 Gather slot at levels 4 and 8 — appended when bought (see buyUpgrade) and on load; never taken away
+  const [afk, setAfk] = useState(() => withGatherSlots(normalizeAfk(S0.afk, { savedAt: S0.afkSavedAt ?? null, now: Date.now() }), gatherSlotCount(craftMods(normalizeUpgrades(S0.player?.upgrades)).extraSlots)));
+  // Growth Model §2: the Veinbinder's Worldvein-bought upgrades — Bond (every Adventurer) and Craft (the economy)
+  const [playerUpgrades, setPlayerUpgrades] = useState(() => normalizeUpgrades(S0.player?.upgrades));
   const [latticeGemId, setLatticeGemId] = useState(null); // Growth Model §4: the Lattice screen, opened from a Gem slot or a gem sheet
   const [offline, setOffline] = useState(null); // summary for the "While you were away" sheet
   // --- run state (route map v2) ---
@@ -132,7 +138,9 @@ export default function Eldrathor() {
   const [runHp, setRunHp] = useState(() => R0?.runHp || null); // per-Adventurer HP carried across fights, keyed by character id (0 = fallen); null = fresh
   const fieldedRaw = runParty || party; // the party that fights this run
   // M1b §4: equipment applies — the simulator and stat sheets see the equipped weapon / armor items
-  const fielded = useMemo(() => fieldedRaw.map((m) => equip(m, bag)), [fieldedRaw, bag]);
+  const bond = useMemo(() => bondMods(playerUpgrades), [playerUpgrades]);
+  const craft = useMemo(() => craftMods(playerUpgrades), [playerUpgrades]);
+  const fielded = useMemo(() => fieldedRaw.map((m) => equip(m, bag, bond)), [fieldedRaw, bag, bond]);
   const hpArrFor = (list) => (runHp ? list.map((m) => runHp[m.id] ?? 1) : undefined);
   const equipped = useMemo(() => equippedIds(party, roster), [party, roster]);
   const latticeGem = latticeGemId ? bag.find((i) => i.id === latticeGemId && i.kind === 'gem') || null : null;
@@ -157,6 +165,8 @@ export default function Eldrathor() {
   const rosterRef = useRef(roster);
   const unlockedRef = useRef(unlocked);
   useEffect(() => { afkRef.current = afk; }, [afk]);
+  const craftRef = useRef(craft);
+  useEffect(() => { craftRef.current = craft; }, [craft]);
   useEffect(() => { inventoryRef.current = inventory; }, [inventory]);
   useEffect(() => { bagRef.current = bag; }, [bag]);
   useEffect(() => { worldveinRef.current = worldvein; }, [worldvein]);
@@ -172,8 +182,8 @@ export default function Eldrathor() {
       logSeq: logSeq.current, fight, fightNode, cameraPan: camera.pan, seed: runSeed.current,
       rngCount: typeof runRng.current?.count === 'number' ? runRng.current.count : 0, fightIndex: fightIndex.current,
     } : null;
-    SAVER.schedule({ tab, party, roster, worldvein, bag, inventory, unlocked, afk, afkSavedAt: Date.now(), run });
-  }, [tab, party, roster, worldvein, bag, inventory, unlocked, afk, runStage, area, territory, currentId, prevId, runParty, runHp, runMods, runVein, partyHP, log, logSeen, fight, fightNode, camera.pan]);
+    SAVER.schedule({ tab, party, roster, worldvein, bag, inventory, unlocked, afk, afkSavedAt: Date.now(), player: { upgrades: playerUpgrades }, run });
+  }, [tab, party, roster, worldvein, bag, inventory, unlocked, afk, playerUpgrades, runStage, area, territory, currentId, prevId, runParty, runHp, runMods, runVein, partyHP, log, logSeen, fight, fightNode, camera.pan]);
   useEffect(() => {
     if (BOOT.reset) doFlash('Save reset for a game update', colors.mythros); // Item Model §9: older saves are discarded while M2–M3 build
     else if (BOOT.quarantined) doFlash('Save was unreadable — started fresh (copy kept)', colors.mindDanger);
@@ -187,7 +197,7 @@ export default function Eldrathor() {
     const reconcile = () => {
       const patch = reconcileAfk({
         state: afkRef.current, inventory: inventoryRef.current, bag: bagRef.current, worldvein: worldveinRef.current,
-        party: partyRef.current, roster: rosterRef.current, unlocked: unlockedRef.current, now: Date.now(),
+        party: partyRef.current, roster: rosterRef.current, unlocked: unlockedRef.current, now: Date.now(), craft: craftRef.current,
       });
       if (!patch) return;
       afkRef.current = patch.next; // the next tick must not re-run this span before React commits
@@ -215,6 +225,15 @@ export default function Eldrathor() {
   // Tab re-tap pops to root (brief 2026-09-15): the tab's screen remounts (sub-state + scroll reset) via
   // its `rootKey`; Rally goes back to the island; a live run stays on the route map.
   const [rootKey, setRootKey] = useState({});
+  /** Buy one level of a Veinbinder upgrade — capped at the current Resonance rank, paid in Worldvein. */
+  function buyUpgrade(id) {
+    const check = canBuy(playerUpgrades, id, { rank: rankFor(resonance([...party, ...roster])), worldvein });
+    if (!check.ok) return;
+    setWorldvein((v) => v - check.cost);
+    setPlayerUpgrades((u) => buy(u, id));
+    if (id === 'hearth') setAfk((a) => withGatherSlots(a, gatherSlotCount(craftMods(buy(playerUpgrades, id)).extraSlots)));
+    trace('player', { buy: id, level: check.level + 1, cost: check.cost });
+  }
   function selectTab(id) {
     setLatticeGemId(null); // the Lattice belongs to the screen it was opened from
     if (id === tab) {
@@ -574,7 +593,7 @@ export default function Eldrathor() {
     const bossKill = sim.result.win && eff === 'boss';
     const mapClear = bossKill && allCleared({ ...t, nodes: t.nodes.map((x) => (x.id === n.id ? { ...x, cleared: true } : x)) });
     const rewards = sim.result.win
-      ? rollRewards({ area: area.id, nodeType: eff, attuneVein: sim.result.attuneVein, rng, named: !!n.namedRare, mapClear, bossName: eff === 'boss' ? area.boss : null })
+      ? rollRewards({ area: area.id, nodeType: eff, attuneVein: sim.result.attuneVein, rng, named: !!n.namedRare, mapClear, bossName: eff === 'boss' ? area.boss : null, veinMult: craft.veinMult, oneUpChance: craft.oneUpChance })
       : null;
     const derived = fielded.map((m) => deriveStats(m));
     // Progression Loop Lock §3: fight XP on a win, split evenly, the fallen at half; applied at Continue
@@ -737,8 +756,8 @@ export default function Eldrathor() {
           />
         )}
         {tab === 'town' && <TownScreen key={rootKey.town || 0} onOpenLattice={setLatticeGemId} party={party} roster={roster} setParty={setParty} setRoster={setRoster} bag={bag} setBag={setBag} worldvein={worldvein} setWorldvein={setWorldvein} setTab={selectTab} equipped={equipped} unlocked={unlocked} locked={!!territory} />}
-        {tab === 'party' && <PartyScreen key={rootKey.party || 0} onOpenLattice={setLatticeGemId} party={party} setParty={setParty} roster={roster} setRoster={setRoster} locked={!!territory} bag={bag} setBag={setBag} setWorldvein={setWorldvein} equipped={equipped} onEmpower={() => selectTab('town')} />}
-        {tab === 'player' && <PlayerScreen key={rootKey.player || 0} worldvein={worldvein} />}
+        {tab === 'party' && <PartyScreen key={rootKey.party || 0} onOpenLattice={setLatticeGemId} bond={bond} party={party} setParty={setParty} roster={roster} setRoster={setRoster} locked={!!territory} bag={bag} setBag={setBag} setWorldvein={setWorldvein} equipped={equipped} onEmpower={() => selectTab('town')} />}
+        {tab === 'player' && <PlayerScreen key={rootKey.player || 0} worldvein={worldvein} party={party} roster={roster} upgrades={playerUpgrades} onBuy={buyUpgrade} />}
         {tab === 'afk' && <AfkScreen key={rootKey.afk || 0} unlocked={unlocked} party={party} roster={roster} inventory={inventory} bag={bag} afk={afk} worldvein={worldvein} deployedIds={runParty ? runParty.map((m) => m.id) : []} onUpdateGatherSlot={onUpdateGatherSlot} onToggleGather={onToggleGather} onUpdateProcess={onUpdateProcess} onToggleProcess={onToggleProcess} onUpdateIdle={onUpdateIdle} onToggleIdle={onToggleIdle} />}
         {tab === 'mountain' && runStage === 'island' && <IslandWorldMap key={rootKey.mountain || 0} areas={AREAS} unlocked={unlocked} onSelectArea={onSelectArea} onHarbor={() => selectTab('town')} />}
         {tab === 'mountain' && runStage === 'rally' && selectedArea && <RallyScreen area={selectedArea} party={party} roster={roster} onSwap={onRallySwap} onExplore={onRallyExplore} onBack={onRallyBack} />}

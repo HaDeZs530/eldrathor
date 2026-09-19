@@ -1,0 +1,42 @@
+/* Player tab — the Veinbinder (Mind View column tokens; Growth Model §2). */
+.eld-player { flex: 1; min-height: 0; overflow-y: auto; padding: 12px 14px 16px; text-align: left; }
+.eld-player-kick { font-size: var(--mv-label, 15px); letter-spacing: 0.24em; text-transform: uppercase; color: var(--eld-muted); font-family: var(--eld-font-display); }
+.eld-player-title { font-size: var(--mv-title, 26px); font-weight: 700; margin-top: 4px; }
+.eld-player-sub { font-size: var(--mv-text, 18px); color: var(--eld-muted); font-style: italic; margin: 4px 0 10px; }
+
+.eld-res { padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+.eld-res-top { display: flex; justify-content: space-between; align-items: flex-end; }
+.eld-res-k { font-size: var(--mv-label, 15px); letter-spacing: 0.12em; text-transform: uppercase; color: var(--eld-muted); }
+.eld-res-v { font-size: 40px; line-height: 1; font-weight: 700; color: var(--eld-accent); font-variant-numeric: tabular-nums; }
+.eld-res-rank { text-align: right; }
+.eld-res-numeral { font-family: var(--eld-font-display); font-size: 40px; line-height: 1; font-weight: 700; color: var(--eld-gold); }
+.eld-res-bar { height: var(--mv-bar, 14px); border-radius: 4px; background: var(--eld-bar-track); border: 1px solid var(--eld-bar-border); overflow: hidden; }
+.eld-res-fill { height: 100%; background: var(--eld-accent); box-shadow: 0 0 10px var(--eld-accent-glow); transition: width 400ms ease; }
+.eld-res-next { font-size: var(--mv-text, 18px); color: var(--eld-text); }
+.eld-res-next strong { color: var(--eld-display); }
+.eld-res-note { font-size: var(--mv-label, 15px); color: var(--eld-muted); line-height: 1.4; }
+.eld-res.is-ranked-up { animation: eld-rank-glow 1800ms ease-out 1; }
+
+.eld-player-vein { display: flex; justify-content: space-between; align-items: center; margin: 10px 0 4px; padding: 8px 4px; font-size: var(--mv-label, 15px); color: var(--eld-muted); letter-spacing: 0.08em; text-transform: uppercase; }
+.eld-player-vein strong { font-size: var(--mv-text, 18px); color: var(--eld-accent); letter-spacing: 0; }
+.eld-player-sec { font-size: var(--mv-text, 18px); font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; font-family: var(--eld-font-display); margin: 12px 0 2px; color: var(--eld-display); }
+.eld-player-note { font-size: var(--mv-label, 15px); color: var(--eld-muted); font-style: italic; margin-bottom: 8px; }
+
+.eld-up-list { display: flex; flex-direction: column; gap: 8px; }
+.eld-up-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; }
+.eld-up-main { flex: 1; min-width: 0; display: grid; grid-template-columns: auto auto; grid-template-areas: 'name level' 'effect effect'; column-gap: 10px; row-gap: 2px; justify-content: start; align-items: baseline; }
+.eld-up-name { grid-area: name; font-size: var(--mv-text, 18px); font-weight: 700; color: var(--eld-display); }
+.eld-up-level { grid-area: level; font-size: var(--mv-label, 15px); color: var(--eld-muted); font-variant-numeric: tabular-nums; }
+.eld-up-effect { grid-area: effect; font-size: var(--mv-label, 15px); color: var(--eld-accent); }
+.eld-up-buy { flex-shrink: 0; width: 132px; min-height: var(--mv-tap, 52px); padding: 6px 8px; font-size: 14px; line-height: 1.15; white-space: normal; }
+.eld-up-buy:disabled { opacity: 0.6; cursor: not-allowed; font-family: var(--eld-font-body); text-transform: none; letter-spacing: 0; font-size: 12.5px; }
+/* ranking up lights every row whose next level just opened */
+.eld-up-row.is-opened { animation: eld-rank-glow 1800ms ease-out 1; }
+@keyframes eld-rank-glow {
+  0% { box-shadow: 0 0 0 1px var(--eld-gold), 0 0 22px rgba(232, 196, 106, 0.75); }
+  100% { box-shadow: var(--eld-panel-shadow); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .eld-res.is-ranked-up, .eld-up-row.is-opened { animation: none; }
+  .eld-res-fill { transition: none; }
+}

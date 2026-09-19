@@ -44,6 +44,15 @@ export const GATHER_VEIN_CHANCE = AFK_TUNING.gatherVeinChance;
 /** RULED 2026-09-19: a Gather job in areas 8–9 also brings back one Artifact Core per 2 h of gathering. */
 export const GATHER_CORE_EVERY_MS = 2 * 60 * 60 * 1000;
 export const GATHER_CORE_AREAS = [8, 9];
+/** Gather slots: three to start; the Veinbinder's Hearth upgrade adds one at levels 4 and 8 (Growth Model §2). */
+export const BASE_GATHER_SLOTS = 3;
+export const gatherSlotCount = (extraSlots = 0) => BASE_GATHER_SLOTS + Math.max(0, extraSlots | 0);
+/** Grow the slot list to `count` (never shrinks — a slot, once earned, is kept). */
+export function withGatherSlots(state, count) {
+  const have = state.gatherSlots.length;
+  if (have >= count) return state;
+  return { ...state, gatherSlots: [...state.gatherSlots, ...Array.from({ length: count - have }, () => emptyGatherSlot())] };
+}
 export const CYCLE_MS = { gather: GATHER_CYCLE_MS, process: PROCESS_CYCLE_MS, idle: IDLE_CYCLE_MS };
 /** §7: what a Train slot says once its Adventurer reaches the roster ceiling. */
 export const TRAIN_CAP_STOP = 'at roster cap';
@@ -195,7 +204,10 @@ export function cyclesElapsed(progress, elapsedMs, cycleMs) {
  * { elapsedMs, raw: {family: n}, gatherXp, vein, infused: {quality: n}, processXp, xp: [{id,name,gain,from,to}],
  *   stops: ['process: out of raw wood'] }. `null` when no job is running.
  */
-export function reconcileAfk({ state, inventory, bag = [], worldvein, party, roster, unlocked, now, rng = Math.random }) {
+export function reconcileAfk({ state, inventory, bag = [], worldvein, party, roster, unlocked, now, rng = Math.random, craft = null }) {
+  // Growth Model §2 Craft upgrades: gather output ×, Process time × (absent → ×1, identical to before)
+  const yieldMult = craft?.yieldMult || 1;
+  const processCycleMs = PROCESS_CYCLE_MS * (craft?.processTimeMult || 1);
   const jobs = [...state.gatherSlots, state.process, state.idle];
   if (!jobs.some((j) => j.running && !j.suspended)) return null;
 
@@ -220,6 +232,7 @@ export function reconcileAfk({ state, inventory, bag = [], worldvein, party, ros
     const tier = area?.tier || 1;
     if ((area?.id || 1) > unlocked) { summary.stops.push(`gather ${i + 1}: area locked`); return stopped(slot); }
     const elapsed = span(slot);
+    let yieldCarry = slot.yieldCarry || 0;
     const { cycles, progress } = cyclesElapsed(slot.progress, elapsed, GATHER_CYCLE_MS);
     // areas 8–9: one Artifact Core per 2 h gathered — the remainder carries like a cycle does
     let coreMs = slot.coreMs || 0;
@@ -231,20 +244,23 @@ export function reconcileAfk({ state, inventory, bag = [], worldvein, party, ros
     } else coreMs = 0;
     if (cycles > 0) {
       const y = gatherYield(tier);
-      const gain = y.gain * cycles;
+      // Yield: +5 % gather output per level — whole mats only, the fraction carries on the slot
+      const exact = y.gain * cycles * yieldMult + (slot.yieldCarry || 0);
+      const gain = Math.floor(exact + 1e-9);
+      yieldCarry = exact - gain;
       inv = { ...inv, raw: { ...inv.raw, [slot.family]: (inv.raw[slot.family] || 0) + gain } };
       next.gatherSkillXp[slot.family] = (next.gatherSkillXp[slot.family] || 0) + y.xp * cycles;
       summary.raw[slot.family] = (summary.raw[slot.family] || 0) + gain;
       summary.gatherXp += y.xp * cycles;
       for (let c = 0; c < cycles; c++) if (rng() < GATHER_VEIN_CHANCE) { vein += 1; summary.vein += 1; }
     }
-    return { ...slot, progress, coreMs, lastReconciledAt: now };
+    return { ...slot, progress, coreMs, yieldCarry, lastReconciledAt: now };
   });
 
   if (next.process.running && !next.process.suspended && next.process.charKey) {
     const job = next.process;
     const fam = job.family;
-    const { cycles, progress } = cyclesElapsed(job.progress, span(job), PROCESS_CYCLE_MS);
+    const { cycles, progress } = cyclesElapsed(job.progress, span(job), processCycleMs); // Haste: −5 % Process time per level
     let done = 0;
     let exhausted = null;
     let raw = { ...inv.raw };
