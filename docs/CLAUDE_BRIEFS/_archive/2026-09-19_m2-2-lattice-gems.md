@@ -1,5 +1,5 @@
 # BRIEF — M2 lock 2: lattice engine + class gems live (drop, equip, gem-bound fragments, lattice screen)
-**Status:** READY · **Date:** 2026-09-19 · **Author:** Claude Design Chat  
+**Status:** DONE (PR #70, 2026-09-19, Claude Code) — one lock conflict flagged, see the PR · **Date:** 2026-09-19 · **Author:** Claude Design Chat  
 **Specs (authoritative):** `docs/Eldrathor_Growth_Model_Lock.md` §1, §4, §5 · `docs/Eldrathor_ClassGems_Live_Lock.md` §3 (numbers table), §4 (drops), §5 (equip / crossing / matching) · `docs/Eldrathor_ClassGemTrees_Lock.md` (facet contents per class). Bump `SAVE_VERSION`. Replaces the withdrawn row-tree brief; the words "talent" and "tree" do not appear in UI text — it's *facets* and *the lattice*.
 
 ## Deliverables
