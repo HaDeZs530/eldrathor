@@ -267,7 +267,7 @@ Three swappable layers per character:
 - **Talent tree structure:** a main **spine** (linearly scale the ability's core numbers + role stats), **branch** nodes (specialization forks — e.g. Healer: single-target-burst vs party-heal; Tank: self-survival vs party-protection), and **capstone(s)** deep in the tree. The tree also governs the size of the matching-amplify.
 - **Archetype tilts the gem:** all combos valid, no bad pairings.
 
-### 6f. Veinbinder Skill Trees (SUPERSEDED 2026-09-19 — replaced by **Resonance ranks** derived from roster levels; `Eldrathor_Growth_Model_Lock.md` §2)
+### 6f. Veinbinder Skill Trees (SUPERSEDED 2026-09-19 — Bond/Craft are Worldvein-bought upgrade lines **capped by Resonance rank** (Σ√level over the roster); `Eldrathor_Growth_Model_Lock.md` §2)
 The player character's own permanent progression — the roguelite meta-layer. **Funded by Worldvein** (pure currency spend; every run's harvest converts into permanent account power). Separate from gem trees.
 - **TREE 1 — The Bond (party buffs):** permanent stat boosts your essence grants ALL bonded Adventurers — attack, defense, vitality, etc. Party-wide combat power.
 - **TREE 2 — The Craft (passive/economy buffs):** crafting improvements, gathering yield/speed, idle-slot speed, farming bonuses (drop luck, Worldvein per node, crystal yields) — the "in-UI passives."

@@ -4,7 +4,7 @@
 
 ## 0. The list (nothing grows that isn't here)
 **Adventurer:** 1 Level · 2 Archetype (fixed) · 3 Weapon (item: tier·rarity·rating + empower) · 4 Armor (crafted item, same axes; sockets later) · 5 Class gem (a crystal grown as a lattice).
-**Player (Veinbinder):** 6 Resonance — derived from the whole roster's levels; grants Bond (party stats) and Craft (economy) bonuses by rank. No purchase.
+**Player (Veinbinder):** 6 Resonance (Σ√level over the roster) sets a rank; the rank **caps** Bond (party stats) and Craft (economy) upgrades that are **bought with Worldvein** level by level.
 **Account:** areas (boss kills), roster size (recruits), Artifact/Mythic grades (Cores), gathering skills + mastery (later, unchanged).
 **Cut:** weapon skill trees. "Talents" as a word: gone — the game says *facets* and *the lattice*.
 
@@ -21,11 +21,14 @@
 - **Respec:** none. Finisher swap: 200 ❖ + 2 fragments.
 - **Crossing / matching, drops, equip:** as ClassGems_Live §4–§5 (rares 20%, bosses 35%, one gem per Adventurer, crossing grants the Core ability, matching amplifies the archetype's innate by `1 + 0.5 × imbuedFacets/40`).
 
-## 2. Resonance — how the player grows
+## 2. Resonance and the Veinbinder's upgrades — how the player grows (RULED 2026-09-19, revised same day)
 - **Resonance** = `Σ over the whole roster of √(level_i)` — every Adventurer counts, fielded or benched. Ten level-5 Adventurers (22.4) out-resonate three at level 17 (12.4) or one at 50 (7.1). Breadth beats depth by design.
-- **Ranks** at thresholds (tune): I 0 · II 8 · III 14 · IV 22 · V 32 · VI 44 · VII 58 · VIII 74 · IX 92 · X 112.
-- Each rank grants **Bond** (party-wide: +2% all nine stats per rank) and **Craft** (economy: per rank one of — +5% gather yield, +5% Worldvein from nodes, +3% loot one-up chance, −5% Process time, +1 Hearth job slot at IV and VIII). Fixed per rank, no choices, no purchase. The Player tab shows Resonance, rank, the bar to the next rank, and the bonus list with the next rank's preview.
-- Recruiting more Adventurers is therefore player growth: the Recruit row matters.
+- **Ranks** I–X at thresholds (tune): 0 · 8 · 14 · 22 · 32 · 44 · 58 · 74 · 92 · 112. **Rank is a cap, not a reward:** it sets how far each purchasable upgrade can be taken.
+- **Upgrades are bought with Worldvein**, each with its own level, **capped at the current rank** (rank IV → every upgrade can reach level 4). Cost per level on an upgrade: `50 × 1.25^n` (tune). No respec.
+  - **Bond** (party-wide, applies to every Adventurer): Vitality +2% HP/level · Might +2% Power/level · Ward +1% mitigation/level · Tempo +1.5% attack speed/level · Grace +2% healing/level · Keen +1% crit chance/level · Flow +2% mana regen/level.
+  - **Craft** (economy): Yield +5% gather output/level · Vein +5% Worldvein from nodes/level · Fortune +3% loot one-up chance/level · Haste −5% Process time/level · Hearth +1 job slot at levels 4 and 8 (cap 8).
+- **Player tab** shows: Resonance, rank, bar to next rank; then the Bond and Craft upgrade rows (`Might  lvl 3/4  +6% Power  ·  Buy 98 ❖`), Buy disabled with reason (at cap / no Worldvein). Raising a rank lights every row's next level.
+- Recruiting and levelling the bench raise Resonance, Worldvein buys the growth: both loops feed the player.
 
 ## 3. Where each system lives (UI map)
 | System | Screen | Bracket |
@@ -34,7 +37,7 @@
 | Weapon / Armor | Bag rows · character-sheet slots · Smith (empower, grade) · Crafter | Veinharbor / Mind View |
 | Class gem lattice | character-sheet Gem slot → **Lattice screen**; Bag → gem sheet → Lattice | Mind View |
 | Fragments · Worldvein | header counters; spent only on the Lattice screen (fragments) and Smith/Crafter/Market/Lattice (Worldvein) | all |
-| Resonance / rank | Player tab root | Mind View |
+| Resonance / rank / Bond + Craft upgrades | Player tab root | Mind View |
 | Gathering skills (later) | Hearth | Hearth |
 
 ## 4. Lattice screen (Mind View)
