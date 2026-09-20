@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import './shell.css';
 import { Sheet } from '../ui/index.jsx';
+import { isTestFightLength, setTestFightLength } from '../../debug/testFightLength.js';
 import { useTestNumbers } from '../../debug/useTestNumbers.js';
 import { setTestNumbers } from '../../debug/testNumbers.js';
 
@@ -15,6 +16,7 @@ export default function SettingsSheet({ store, onClose, onGrantTestGems }) {
   const [note, setNote] = useState(null);
   const taRef = useRef(null);
   const testNumbers = useTestNumbers();
+  const [fightLen, setFightLen] = useState(isTestFightLength);
 
   async function doExport() {
     const t = store.exportText();
@@ -42,6 +44,8 @@ export default function SettingsSheet({ store, onClose, onGrantTestGems }) {
             <button type="button" className="eld-card eld-menu-item" onClick={() => { setText(''); setNote(null); setMode('import'); }}><span className="eld-menu-glyph">⇩</span><span>Import save</span><span className="eld-menu-note">paste JSON</span></button>
             <button type="button" className="eld-card eld-menu-item" onClick={() => setMode('reset')}><span className="eld-menu-glyph">⟲</span><span>Reset save</span><span className="eld-menu-note">start over</span></button>
             <button type="button" className={`eld-card eld-menu-item${testNumbers ? ' is-current' : ''}`} onClick={() => setTestNumbers(!testNumbers)} aria-pressed={testNumbers}><span className="eld-menu-glyph">Σ</span><span>Show test numbers</span><span className="eld-menu-note">{testNumbers ? 'on' : 'off'} · item power, stat sources, enemy blocks, raw → mitigated</span></button>
+            {/* TEMPORARY (Anthony, 2026-09-20): fight-length test — remove before TestFlight */}
+            <button type="button" className={`eld-card eld-menu-item${fightLen ? ' is-current' : ''}`} onClick={() => { setTestFightLength(!fightLen); setFightLen(!fightLen); }} aria-pressed={fightLen}><span className="eld-menu-glyph">⏱</span><span>Test fight length</span><span className="eld-menu-note">{fightLen ? 'on' : 'off'} · testing only · pack fights rescaled to 14–18 s against your party (rares and bosses untouched)</span></button>
             {/* TEMPORARY (Anthony, 2026-09-19): test kit — remove before TestFlight */}
             {onGrantTestGems && <button type="button" className="eld-card eld-menu-item" onClick={() => setNote(onGrantTestGems())}><span className="eld-menu-glyph">◆</span><span>Grant test gems</span><span className="eld-menu-note">testing only · a gem on each party member, all four classes in the bag, 40 fragments each, +20,000 ❖</span></button>}
           </div>
