@@ -18,3 +18,16 @@
 Next lever to test: a harder wall (maxed Epic set wins ~35 %, or only at the area's level target), not rarer drops.
 
 Rerun: `PACK_SEC=18 RATE_SCALE=1 node scripts/sim/calibrateFive.mjs <outDir> 150` from `app/`.
+
+## Update — walls tuned against gems and player upgrades (same day)
+
+Wall party = three maxed Epics at the area's level **plus** a matching gem at ~4 imbues per area (40 by the dragon, placeholder Anthony OK'd) **plus** every Bond upgrade its Resonance rank allows. The bot holds the same gem pace and pays for it. 18 s fights, original drop rates.
+
+| Wall definition | Efficient | 2 h/day player |
+|---|---|---|
+| Epic +10 wins ~60 % (`growth-wall-0.6/`) | ~99 h | 216 h · 102 days |
+| Epic +10 wins ~35 % (`growth-wall-0.35/`) | ~109 h | 238 h · 111 days |
+
+- **Gems are the biggest single piece of power.** The same wall party with no imbues wins 0 % from wall 2 on. Bond upgrades matter early (wall 1–3: 60 % → 10–25 % without them) and barely at all later.
+- **A flat +10 per tier stops mattering high up.** Tier 9 → 10 is +10 %, less than one rarity rung (+14 %), so last area's Legendary +10 beats the next boss as well as the new tier's Epic +10 (walls 6–10). Walls there are skipped on old gear.
+- Still ~100 days against a 150-day target.
