@@ -17,7 +17,8 @@ import { simulateFight, mulberry32, SUSTAIN } from '../../src/combat/simulate.js
 import { deriveStats, equip } from '../../src/combat/derive.js';
 import { rollRewards } from '../../src/combat/rewards.js';
 import { fightXp, splitXp, xpToNext, withStarterWeapons, previewEmpower, starterWeapon, LEVEL_CAP } from '../../src/progression/progression.js';
-import { ARMOR_TYPES, tierForArea, armorBonus, sellValue, craftableRarities } from '../../src/progression/items.js';
+import { ARMOR_TYPES, tierForArea, armorBonus, sellValue, craftableRarities, UNARMED_MULT } from '../../src/progression/items.js';
+import { WEAPONS } from '../../src/data.js';
 import { awardLevelFragments, isGem, isMatching, canImbueGem, imbueGem } from '../../src/progression/gems.js';
 import { latticeFor } from '../../src/lattice/classGems.js';
 import { resonance, rankFor } from '../../src/player/resonance.js';
@@ -59,7 +60,7 @@ const avg = (a) => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0);
  * Tuning overrides (this process only). `pack` / `boss` are per-area multipliers on the spawned units' hp and dmg
  * (index = area id); `heal` scales the party's sustain; `xp[level]` replaces xpToNext; `gems:false` drops no gems.
  */
-export const NO_TUNING = { walls: 9, pack: {}, boss: {}, heal: 1, xp: null, gems: true, levelPower: null };
+export const NO_TUNING = { walls: 9, pack: {}, boss: {}, heal: 1, xp: null, gems: true, levelPower: null, items: null, dropRates: null };
 /**
  * `levelPower` (e.g. 0.10): what one level is worth, compounding. The game gives +5 % of BASE per level (additive), so a
  * level late on is worth under 2 %. To try a stronger level without touching derive.js, the simulator hands the resolver
@@ -92,8 +93,32 @@ export function newGame(seed) {
 }
 export const snapshot = (S) => structuredClone(S);
 const spend = (S, what, n) => { S.worldvein -= n; S.stats.veinSpent[what] = (S.stats.veinSpent[what] || 0) + n; };
-const fieldedOf = (S, tuning = NO_TUNING) => S.party.map((m) => equip({ ...m, level: effLevel(m.level, tuning.levelPower) }, S.bag, bondMods(S.upgrades)));
-const blankArea = (a) => ({ area: a.id, name: a.name, firstDay: null, clearedDay: null, playHours: 0, runs: 0, fights: 0, wins: 0, wipes: 0, extracts: 0, bossAttempts: 0, levelOnArrival: null, levelOnClear: null, weaponOnClear: null, armorOnClear: null, powerOnClear: null, packSec: 0, packFights: 0, packLoss: 0, packHealShare: 0, bossSec: 0, bossFights: 0, sanctuaries: 0, firstBossWinRate: null });
+/**
+ * The FIVE-RUNG item model under test (Anthony, 2026-09-20) — `tuning.items === 'five'`:
+ *   Common · Rare · Epic · Legendary · Mythic = ×1.0 / 1.2 / 1.4 / 1.6 / 1.8 of the tier's Common
+ *   one item tier per wall, a FLAT step: tier T Common = base × (1 + 0.5 × (T − 1))  → Greatsword 20, 30 … 110
+ *   upgrades +1 … +10, each +2.5 % of base (a 20-damage Common gains +1 per 2 upgrades)
+ * The game's resolver is fed the resulting multiplier through the Bond power slot with no weapon item, so no game code changes.
+ */
+export const FIVE = { rarities: ['Common', 'Rare', 'Epic', 'Legendary', 'Mythic'], mult: { Common: 1, Rare: 1.2, Epic: 1.4, Legendary: 1.6, Mythic: 1.8 }, tierStep: 0.5, upgPer: 0.025, upgMax: 10 };
+export const w5Mult = (w) => (w ? (1 + FIVE.tierStep * (w.tier - 1)) * FIVE.mult[w.rarity] * (1 + FIVE.upgPer * (w.upg || 0)) : 1);
+export const w5Power = (w) => (WEAPONS[w.type]?.dmg || 0) * w5Mult(w);
+const w5Dps = (w) => ((WEAPONS[w.type]?.dmg || 0) / (WEAPONS[w.type]?.tempo || 1)) * w5Mult(w);
+let w5Seq = 0;
+export const makeW5 = (type, tier, rarity, upg = 0) => ({ id: `w5-${++w5Seq}`, kind: 'w5', type, tier, rarity, upg });
+function fiveMember(m, w, tuning, bond) {
+  const bp = (w5Mult(w) / UNARMED_MULT) * (1 + (bond.mult.power || 0)) - 1;
+  return { ...m, level: effLevel(m.level, tuning.levelPower), weapon: w ? w.type : m.weapon, weaponItem: null, armorItems: [], gemItem: null, bond: { mult: { ...bond.mult, power: bp }, add: bond.add } };
+}
+/** A party as it would stand with the given gear and level — used to DEFINE a wall (e.g. three maxed Epics at the area's level). */
+export function referenceParty(S, tuning, { tier, rarity, upg, level }) {
+  const bond = bondMods(S.upgrades);
+  return S.party.map((m) => fiveMember({ ...m, level }, makeW5(S.bag.find((i) => i.id === m.equipped?.w5)?.type || m.weapon, tier, rarity, upg), tuning, bond));
+}
+const fieldedOf = (S, tuning = NO_TUNING) => (tuning.items === 'five'
+  ? S.party.map((m) => fiveMember(m, S.bag.find((i) => i.id === m.equipped?.w5) || null, tuning, bondMods(S.upgrades)))
+  : S.party.map((m) => equip({ ...m, level: effLevel(m.level, tuning.levelPower) }, S.bag, bondMods(S.upgrades))));
+const blankArea = (a) => ({ area: a.id, name: a.name, firstDay: null, clearedDay: null, playHours: 0, runs: 0, fights: 0, wins: 0, wipes: 0, extracts: 0, bossAttempts: 0, levelOnArrival: null, levelOnClear: null, weaponOnClear: null, armorOnClear: null, powerOnClear: null, items: 0, epics: 0, legendaries: 0, mythics: 0, epicSetHour: null, maxedEpicHour: null, packSec: 0, packFights: 0, packLoss: 0, packHealShare: 0, bossSec: 0, bossFights: 0, sanctuaries: 0, firstBossWinRate: null });
 const areaStat = (S, a) => (S.stats.areas[a.id] ||= blankArea(a));
 
 // ------------------------------------------------------------------------------------------------ fights
@@ -148,7 +173,17 @@ function playRun(S, area, P, tuning) {
     const mapClear = bossKill && allCleared({ ...t, nodes: t.nodes.map((x) => (x.id === node.id ? { ...x, cleared: true } : x)) });
     const rewards = rollRewards({ area: area.id, nodeType: eff, attuneVein: sim.result.attuneVein, rng: frng, named: !!node.namedRare, mapClear, bossName: bossKill ? area.boss : null, veinMult: craft.veinMult, oneUpChance: craft.oneUpChance });
     runVein += rewards.worldvein;
-    for (const g of rewards.gears) S.bag.push(g);
+    if (tuning.items === 'five') {
+      // a fight drops an item half the time; a miss pays the node's Worldvein again. Rares and bosses always drop, at three times the odds.
+      const special = eff === 'rare' || eff === 'boss';
+      if (special || frng() < 0.5) {
+        const rt = tuning.dropRates(area.id); const k = special ? 3 : 1; const roll = frng();
+        const rarity = roll < rt.mythic * k ? 'Mythic' : roll < (rt.mythic + rt.legendary) * k ? 'Legendary' : roll < (rt.mythic + rt.legendary + rt.epic) * k ? 'Epic' : roll < (rt.mythic + rt.legendary + rt.epic) * k + rt.rare ? 'Rare' : 'Common';
+        const types = Object.keys(WEAPONS);
+        S.bag.push(makeW5(types[Math.floor(frng() * types.length)], area.id, rarity));
+        A.items += 1; if (rarity === 'Epic') A.epics += 1; if (rarity === 'Legendary') A.legendaries += 1; if (rarity === 'Mythic') A.mythics += 1;
+      } else runVein += rewards.worldvein;
+    } else for (const g of rewards.gears) S.bag.push(g);
     if (tuning.gems !== false) for (const g of rewards.gems || []) { S.bag.push(g); S.stats.gemsFound += 1; }
     const total$ = Math.round(fightXp(enemies, area.tier)); S.stats.xpEarned += total$;
     const gains = splitXp(total$, party, sim.result.partyHpFrac);
@@ -207,12 +242,18 @@ function playRun(S, area, P, tuning) {
   if (outcome === 'boss' && A.clearedDay == null) {
     A.clearedDay = S.day; A.levelOnClear = avg(S.party.map((m) => m.level));
     const f = fieldedOf(S, tuning);
-    A.weaponOnClear = f.map((m) => (m.weaponItem ? `T${m.weaponItem.tier} ${m.weaponItem.rarity}${m.weaponItem.empower ? ` +${m.weaponItem.empower}` : ''}` : 'unarmed')).join(' · ');
+    A.weaponOnClear = tuning.items === 'five' ? S.party.map((m) => { const w = S.bag.find((i) => i.id === m.equipped?.w5); return w ? `T${w.tier} ${w.rarity} +${w.upg}` : '—'; }).join(' · ') : f.map((m) => (m.weaponItem ? `T${m.weaponItem.tier} ${m.weaponItem.rarity}${m.weaponItem.empower ? ` +${m.weaponItem.empower}` : ''}` : 'unarmed')).join(' · ');
     A.armorOnClear = avg(f.map((m) => m.armorItems.length));
     A.powerOnClear = { hp: Math.round(avg(f.map((m) => deriveStats(m).maxHp))), dps: +f.reduce((n, m) => { const d = deriveStats(m); return n + d.hitDamage / d.swingInterval; }, 0).toFixed(1) };
   }
   if (outcome === 'boss') S.unlocked = Math.max(S.unlocked, area.id + 1);
   S.playSec += sec; A.playHours += sec / 3600;
+  if (tuning.items === 'five') {
+    const ws = S.party.map((m) => S.bag.find((i) => i.id === m.equipped?.w5)).filter(Boolean);
+    const epicPlus = (w) => w.tier >= area.id && FIVE.rarities.indexOf(w.rarity) >= 2;
+    if (A.epicSetHour == null && ws.length === 3 && ws.every(epicPlus)) A.epicSetHour = +A.playHours.toFixed(1);
+    if (A.maxedEpicHour == null && ws.length === 3 && ws.every((w) => epicPlus(w) && w.upg >= FIVE.upgMax)) A.maxedEpicHour = +A.playHours.toFixed(1);
+  }
   return { outcome, sec };
 }
 
@@ -222,6 +263,7 @@ function townVisit(S, P, tuning) {
   const all = () => [...S.party, ...S.roster];
   const setMember = (m2) => { S.party = S.party.map((m) => (m.id === m2.id ? m2 : m)); S.roster = S.roster.map((m) => (m.id === m2.id ? m2 : m)); };
   const me = (id) => S.party.find((x) => x.id === id);
+  if (tuning.items === 'five') { townFive(S, tuning, me, setMember); townCommon(S, tuning, all); return; }
   const taken = new Set();
   for (const m of S.party) {
     const pool = S.bag.filter((w) => w.kind === 'weapon' && !taken.has(w.id) && !S.roster.some((r) => r.equipped?.weapon === w.id));
@@ -245,13 +287,7 @@ function townVisit(S, P, tuning) {
     for (const m of S.party) { const id = me(m.id).equipped?.gem; if (!id) continue;
       for (let k = 0; k < 40; k++) { const gem = S.bag.find((i) => i.id === id); const next = latticeFor(gem.gemClass).facets.filter((f) => f.kind !== 'dormant').sort((a, b) => a.ring - b.ring).find((f) => canImbueGem(gem, f.id, { worldvein: S.worldvein * 0.5, worn: true }).ok); if (!next) break; const r = imbueGem(gem, next.id); spend(S, 'gems', r.cost); S.bag = S.bag.map((i) => (i.id === id ? r.gem : i)); } }
   }
-  const rank = rankFor(resonance(all()));
-  for (let k = 0; k < 60; k++) {
-    const o = UPGRADE_IDS.map((id) => ({ id, c: canBuy(S.upgrades, id, { rank, worldvein: S.worldvein }) })).filter((x) => x.c.ok && x.c.cost <= S.worldvein * 0.2).sort((a, b) => a.c.cost - b.c.cost)[0];
-    if (!o) break;
-    spend(S, 'upgrades', o.c.cost); S.upgrades = buy(S.upgrades, o.id);
-    if (o.id === 'hearth') S.afk = withGatherSlots(S.afk, gatherSlotCount(craftMods(S.upgrades).extraSlots));
-  }
+  townCommon(S, tuning, all);
   const worn = new Set(all().flatMap((m) => Object.values(m.equipped || {})));
   for (const m of S.party) { const wid = me(m.id).equipped?.weapon; if (!wid) continue;
     for (const f of S.bag.filter((i) => i.kind === 'weapon' && !worn.has(i.id))) { const pv = previewEmpower(S.bag.find((i) => i.id === wid), f, S.worldvein); if (!pv || !pv.useful || !pv.affordable || pv.cost > S.worldvein * 0.1) continue; spend(S, 'empower', pv.cost); S.bag = S.bag.filter((i) => i.id !== f.id).map((i) => (i.id === wid ? { ...i, empower: pv.next } : i)); } }
@@ -259,7 +295,50 @@ function townVisit(S, P, tuning) {
   const spare = S.bag.filter((x) => (x.kind === 'weapon' || x.kind === 'armor') && !worn2.has(x.id));
   for (const i of spare) { S.worldvein += sellValue(i); S.stats.veinEarned += sellValue(i); }
   S.bag = S.bag.filter((x) => !spare.includes(x));
-  while (S.hired < FREE_RECRUITS) { const c = candidatesForDay(S.day + S.hired)[0]; const w = starterWeapon(c.weapon); if (recruitCost(S.hired) > 0) break; S.bag.push(w); S.roster.push({ id: `c-rec${S.hired}`, name: `${c.name}${S.hired}`, archetype: c.archetype, weapon: c.weapon, level: 1, xp: 0, equipped: { weapon: w.id } }); S.hired += 1; }
+}
+
+/** Shared by both item models: the Veinbinder's upgrades and the free recruits. */
+function townCommon(S, tuning, all) {
+  const rank = rankFor(resonance(all()));
+  for (let k = 0; k < 60; k++) {
+    const o = UPGRADE_IDS.map((id) => ({ id, c: canBuy(S.upgrades, id, { rank, worldvein: S.worldvein }) })).filter((x) => x.c.ok && x.c.cost <= S.worldvein * 0.2).sort((a, b) => a.c.cost - b.c.cost)[0];
+    if (!o) break;
+    spend(S, 'upgrades', o.c.cost); S.upgrades = buy(S.upgrades, o.id);
+    if (o.id === 'hearth') S.afk = withGatherSlots(S.afk, gatherSlotCount(craftMods(S.upgrades).extraSlots));
+  }
+  while (S.hired < FREE_RECRUITS) { const c = candidatesForDay(S.day + S.hired)[0]; if (recruitCost(S.hired) > 0) break; const eq = {}; if (tuning.items !== 'five') { const w = starterWeapon(c.weapon); S.bag.push(w); eq.weapon = w.id; } S.roster.push({ id: `c-rec${S.hired}`, name: `${c.name}${S.hired}`, archetype: c.archetype, weapon: c.weapon, level: 1, xp: 0, equipped: eq }); S.hired += 1; }
+}
+
+/**
+ * Town, five-rung model: wear the best weapon by damage per second (the tank keeps a shield or greatsword when one is within 70 %),
+ * then upgrade what is worn. ASSUMPTION (not ruled): upgrade level n costs n spare weapons of the same tier plus 20 × tier × n ❖,
+ * so +10 takes 55 spares. A better-rarity drop replaces the worn weapon and its upgrades start over.
+ */
+function townFive(S, tuning, me, setMember) {
+  for (const m of S.party) if (!me(m.id).equipped?.w5) { const w = makeW5(m.weapon, 1, 'Common'); S.bag.push(w); setMember({ ...me(m.id), equipped: { ...(me(m.id).equipped || {}), w5: w.id } }); }
+  const wornIds = () => new Set(S.party.map((m) => m.equipped?.w5));
+  for (const m of S.party) {
+    const cur = S.bag.find((i) => i.id === me(m.id).equipped.w5);
+    const pool = S.bag.filter((i) => i.kind === 'w5' && (!wornIds().has(i.id) || i.id === cur.id));
+    let best = pool.reduce((a, b) => (w5Dps(b) > w5Dps(a) ? b : a), cur);
+    if (m.archetype === 'Bulwark') { const tanky = pool.filter((w) => ['Sword + Shield', 'Greatsword'].includes(w.type)); if (tanky.length) { const tb = tanky.reduce((a, b) => (w5Dps(b) > w5Dps(a) ? b : a)); if (w5Dps(tb) >= 0.7 * w5Dps(best)) best = tb; } }
+    if (best.id !== cur.id) setMember({ ...me(m.id), equipped: { ...me(m.id).equipped, w5: best.id }, weapon: best.type });
+  }
+  for (const m of S.party) {
+    for (let guard = 0; guard < FIVE.upgMax; guard++) {
+      const w = S.bag.find((i) => i.id === me(m.id).equipped.w5); if (w.upg >= FIVE.upgMax) break;
+      const need = w.upg + 1; const cost = 20 * w.tier * need;
+      const worn = wornIds();
+      const fodder = S.bag.filter((i) => i.kind === 'w5' && !worn.has(i.id) && i.tier === w.tier && (i.rarity === 'Common' || i.rarity === 'Rare')).sort((a, b) => w5Mult(a) - w5Mult(b)).slice(0, need);
+      if (fodder.length < need || S.worldvein < cost) break;
+      const gone = new Set(fodder.map((f) => f.id)); S.bag = S.bag.filter((i) => !gone.has(i.id)).map((i) => (i.id === w.id ? { ...i, upg: need } : i)); spend(S, 'upgrade weapons', cost);
+    }
+  }
+  // keep a stock of spares at the current tier, sell the rest for a little Worldvein
+  const worn = wornIds(); const topTier = Math.max(...S.party.map((m) => S.bag.find((i) => i.id === m.equipped.w5).tier));
+  let kept = 0; const out = [];
+  for (const i of S.bag) { if (i.kind !== 'w5' || worn.has(i.id)) { out.push(i); continue; } if (i.tier >= topTier && kept < 80) { kept += 1; out.push(i); } else { const v = 2 * i.tier * (FIVE.rarities.indexOf(i.rarity) + 1); S.worldvein += v; S.stats.veinEarned += v; } }
+  S.bag = out;
 }
 
 // ------------------------------------------------------------------------------------------------ the Hearth

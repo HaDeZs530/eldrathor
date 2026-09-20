@@ -1,0 +1,922 @@
+{
+ "generated": "2026-09-20T22:14:39.982Z",
+ "target": {
+  "efficientHours": 150,
+  "packSec": 20,
+  "packLoss": 0.12,
+  "levelPerArea": 4.5,
+  "levelPower": 0.04,
+  "heal": 0.5,
+  "wallWin": 0.6
+ },
+ "five": {
+  "rarities": [
+   "Common",
+   "Rare",
+   "Epic",
+   "Legendary",
+   "Mythic"
+  ],
+  "mult": {
+   "Common": 1,
+   "Rare": 1.2,
+   "Epic": 1.4,
+   "Legendary": 1.6,
+   "Mythic": 1.8
+  },
+  "tierStep": 0.5,
+  "upgPer": 0.025,
+  "upgMax": 10
+ },
+ "rates": [
+  {
+   "fromArea": 1,
+   "rare": 0.25,
+   "epic": 0.06,
+   "legendary": 0.01,
+   "mythic": 0.003
+  },
+  {
+   "fromArea": 4,
+   "rare": 0.25,
+   "epic": 0.035,
+   "legendary": 0.003,
+   "mythic": 0.0005
+  },
+  {
+   "fromArea": 7,
+   "rare": 0.25,
+   "epic": 0.02,
+   "legendary": 0.0005,
+   "mythic": 0.0001
+  }
+ ],
+ "tuning": {
+  "walls": 10,
+  "pack": {
+   "1": {
+    "hp": 11.125,
+    "dmg": 1.528
+   },
+   "2": {
+    "hp": 13.909,
+    "dmg": 0.918
+   },
+   "3": {
+    "hp": 13.148,
+    "dmg": 0.72
+   },
+   "4": {
+    "hp": 12.211,
+    "dmg": 0.502
+   },
+   "5": {
+    "hp": 10.513,
+    "dmg": 0.433
+   },
+   "6": {
+    "hp": 9.878,
+    "dmg": 0.377
+   },
+   "7": {
+    "hp": 8.27,
+    "dmg": 0.321
+   },
+   "8": {
+    "hp": 7.047,
+    "dmg": 0.265
+   },
+   "9": {
+    "hp": 5.279,
+    "dmg": 0.206
+   },
+   "10": {
+    "hp": 4.026,
+    "dmg": 0.168
+   }
+  },
+  "boss": {
+   "1": {
+    "hp": 1.2472,
+    "dmg": 1.1168
+   },
+   "2": {
+    "hp": 1.0422,
+    "dmg": 1.0209
+   },
+   "3": {
+    "hp": 0.9577,
+    "dmg": 0.9786
+   },
+   "4": {
+    "hp": 0.8392,
+    "dmg": 0.9161
+   },
+   "5": {
+    "hp": 0.7012,
+    "dmg": 0.8374
+   },
+   "6": {
+    "hp": 0.5767,
+    "dmg": 0.7594
+   },
+   "7": {
+    "hp": 0.4595,
+    "dmg": 0.6779
+   },
+   "8": {
+    "hp": 0.3473,
+    "dmg": 0.5893
+   },
+   "9": {
+    "hp": 0.2556,
+    "dmg": 0.5056
+   },
+   "10": {
+    "hp": 0.1766,
+    "dmg": 0.4203
+   }
+  },
+  "heal": 0.5,
+  "xp": {
+   "1": 2649,
+   "2": 3637,
+   "3": 3637,
+   "4": 3637,
+   "5": 4615,
+   "6": 4615,
+   "7": 4615,
+   "8": 4615,
+   "9": 4615,
+   "10": 4615,
+   "11": 4615,
+   "12": 9602,
+   "13": 9602,
+   "14": 9602,
+   "15": 9602,
+   "16": 11676,
+   "17": 11676,
+   "18": 11676,
+   "19": 11676,
+   "20": 11676,
+   "21": 11676,
+   "22": 19897,
+   "23": 19815,
+   "24": 19815,
+   "25": 19815,
+   "26": 19815,
+   "27": 19815,
+   "28": 19815,
+   "29": 19815,
+   "30": 19815,
+   "31": 51529,
+   "32": 51529,
+   "33": 51529,
+   "34": 51529,
+   "35": 51529,
+   "36": 51529,
+   "37": 51529,
+   "38": 51529,
+   "39": 51529,
+   "40": 51529,
+   "41": 51529,
+   "42": 51529,
+   "43": 51529,
+   "44": 51529,
+   "45": 64411,
+   "46": 80514,
+   "47": 100643,
+   "48": 125803,
+   "49": 157254,
+   "50": 196568,
+   "51": 245709,
+   "52": 307137,
+   "53": 383921,
+   "54": 479901,
+   "55": 599877,
+   "56": 749846,
+   "57": 937307,
+   "58": 1171634,
+   "59": 1464542
+  },
+  "gems": false,
+  "levelPower": 0.04,
+  "items": "five"
+ },
+ "rows": [
+  {
+   "area": 1,
+   "name": "Gullwatch Trail",
+   "hoursTarget": 12.8,
+   "hours": 0.2,
+   "cleared": true,
+   "day": 1,
+   "runs": 3,
+   "fights": 41,
+   "fightsPerRun": 13.7,
+   "wipes": 1,
+   "bossAttempts": 1,
+   "items": 23,
+   "epics": 1,
+   "legendaries": 2,
+   "mythics": 0,
+   "epicSetHour": null,
+   "maxedEpicHour": null,
+   "levelIn": 1,
+   "levelOut": 1,
+   "levelTarget": 5,
+   "weapons": "T1 Rare +3 · T1 Legendary +1 · T1 Legendary +1",
+   "pack": {
+    "hp": 11.125,
+    "dmg": 1.528
+   },
+   "boss": {
+    "hp": 1.2472,
+    "dmg": 1.1168
+   },
+   "packMid": {
+    "sec": 20.1,
+    "loss": 0.114
+   },
+   "packArrive": {
+    "sec": 17.1,
+    "loss": 0.109,
+    "win": 1
+   },
+   "packPlayed": {
+    "sec": 16.5,
+    "loss": 0.073
+   },
+   "bossSec": 46,
+   "wall": {
+    "rare10": 0.16666666666666666,
+    "epic0": 0.03333333333333333,
+    "epic10": 0.6,
+    "legendary10": 0.8666666666666667,
+    "mythic10": 1,
+    "epic10Under": 0.06666666666666667
+   },
+   "xpPerLevel": 5254,
+   "power": {
+    "hp": 233,
+    "dps": 80.6
+   }
+  },
+  {
+   "area": 2,
+   "name": "The Saltcliffs",
+   "hoursTarget": 12.8,
+   "hours": 0.7,
+   "cleared": true,
+   "day": 1,
+   "runs": 7,
+   "fights": 109,
+   "fightsPerRun": 15.6,
+   "wipes": 0,
+   "bossAttempts": 1,
+   "items": 59,
+   "epics": 3,
+   "legendaries": 1,
+   "mythics": 0,
+   "epicSetHour": 0.5,
+   "maxedEpicHour": null,
+   "levelIn": 1,
+   "levelOut": 1,
+   "levelTarget": 9,
+   "weapons": "T2 Epic +7 · T2 Legendary +3 · T2 Epic +3",
+   "pack": {
+    "hp": 13.909,
+    "dmg": 0.918
+   },
+   "boss": {
+    "hp": 1.0422,
+    "dmg": 1.0209
+   },
+   "packMid": {
+    "sec": 20,
+    "loss": 0.126
+   },
+   "packArrive": {
+    "sec": 26.3,
+    "loss": 0.199,
+    "win": 1
+   },
+   "packPlayed": {
+    "sec": 21.2,
+    "loss": 0.083
+   },
+   "bossSec": 38,
+   "wall": {
+    "rare10": 0.16666666666666666,
+    "epic0": 0.03333333333333333,
+    "epic10": 0.6,
+    "legendary10": 0.9666666666666667,
+    "mythic10": 1,
+    "epic10Under": 0
+   },
+   "xpPerLevel": 3395,
+   "power": {
+    "hp": 238,
+    "dps": 129.8
+   }
+  },
+  {
+   "area": 3,
+   "name": "Drowned Quay",
+   "hoursTarget": 12.8,
+   "hours": 0.7,
+   "cleared": true,
+   "day": 1,
+   "runs": 10,
+   "fights": 104,
+   "fightsPerRun": 10.4,
+   "wipes": 1,
+   "bossAttempts": 1,
+   "items": 60,
+   "epics": 3,
+   "legendaries": 0,
+   "mythics": 0,
+   "epicSetHour": null,
+   "maxedEpicHour": null,
+   "levelIn": 1,
+   "levelOut": 2,
+   "levelTarget": 14,
+   "weapons": "T2 Epic +8 · T2 Legendary +4 · T3 Rare +8",
+   "pack": {
+    "hp": 13.148,
+    "dmg": 0.72
+   },
+   "boss": {
+    "hp": 0.9577,
+    "dmg": 0.9786
+   },
+   "packMid": {
+    "sec": 19.9,
+    "loss": 0.121
+   },
+   "packArrive": {
+    "sec": 26.3,
+    "loss": 0.216,
+    "win": 1
+   },
+   "packPlayed": {
+    "sec": 22.4,
+    "loss": 0.083
+   },
+   "bossSec": 49,
+   "wall": {
+    "rare10": 0.26666666666666666,
+    "epic0": 0,
+    "epic10": 0.5333333333333333,
+    "legendary10": 1,
+    "mythic10": 1,
+    "epic10Under": 0
+   },
+   "xpPerLevel": 2649,
+   "power": {
+    "hp": 252,
+    "dps": 172.2
+   }
+  },
+  {
+   "area": 4,
+   "name": "Serpent’s Stair",
+   "hoursTarget": 16,
+   "hours": 2.6,
+   "cleared": true,
+   "day": 2,
+   "runs": 32,
+   "fights": 392,
+   "fightsPerRun": 12.3,
+   "wipes": 6,
+   "bossAttempts": 1,
+   "items": 215,
+   "epics": 7,
+   "legendaries": 2,
+   "mythics": 0,
+   "epicSetHour": null,
+   "maxedEpicHour": null,
+   "levelIn": 2,
+   "levelOut": 5,
+   "levelTarget": 18,
+   "weapons": "T4 Rare +10 · T4 Legendary +10 · T4 Epic +10",
+   "pack": {
+    "hp": 12.211,
+    "dmg": 0.502
+   },
+   "boss": {
+    "hp": 0.8392,
+    "dmg": 0.9161
+   },
+   "packMid": {
+    "sec": 20,
+    "loss": 0.109
+   },
+   "packArrive": {
+    "sec": 25.9,
+    "loss": 0.199,
+    "win": 1
+   },
+   "packPlayed": {
+    "sec": 19.7,
+    "loss": 0.078
+   },
+   "bossSec": 38,
+   "wall": {
+    "rare10": 0.03333333333333333,
+    "epic0": 0,
+    "epic10": 0.6,
+    "legendary10": 0.8333333333333334,
+    "mythic10": 1,
+    "epic10Under": 0
+   },
+   "xpPerLevel": 3637,
+   "power": {
+    "hp": 284,
+    "dps": 314.1
+   }
+  },
+  {
+   "area": 5,
+   "name": "Ashfall Strand",
+   "hoursTarget": 16,
+   "hours": 5.7,
+   "cleared": true,
+   "day": 3,
+   "runs": 90,
+   "fights": 852,
+   "fightsPerRun": 9.5,
+   "wipes": 13,
+   "bossAttempts": 2,
+   "items": 447,
+   "epics": 12,
+   "legendaries": 2,
+   "mythics": 0,
+   "epicSetHour": null,
+   "maxedEpicHour": null,
+   "levelIn": 5,
+   "levelOut": 12,
+   "levelTarget": 23,
+   "weapons": "T5 Epic +10 · T4 Legendary +10 · T5 Legendary +10",
+   "pack": {
+    "hp": 10.513,
+    "dmg": 0.433
+   },
+   "boss": {
+    "hp": 0.7012,
+    "dmg": 0.8374
+   },
+   "packMid": {
+    "sec": 20,
+    "loss": 0.121
+   },
+   "packArrive": {
+    "sec": 25.8,
+    "loss": 0.257,
+    "win": 1
+   },
+   "packPlayed": {
+    "sec": 19.6,
+    "loss": 0.1
+   },
+   "bossSec": 36,
+   "wall": {
+    "rare10": 0.06666666666666667,
+    "epic0": 0,
+    "epic10": 0.5333333333333333,
+    "legendary10": 0.9333333333333333,
+    "mythic10": 0.9666666666666667,
+    "epic10Under": 0
+   },
+   "xpPerLevel": 4615,
+   "power": {
+    "hp": 381,
+    "dps": 555.3
+   }
+  },
+  {
+   "area": 6,
+   "name": "The Hollow Ward",
+   "hoursTarget": 16,
+   "hours": 3.9,
+   "cleared": true,
+   "day": 4,
+   "runs": 50,
+   "fights": 621,
+   "fightsPerRun": 12.4,
+   "wipes": 7,
+   "bossAttempts": 3,
+   "items": 335,
+   "epics": 10,
+   "legendaries": 2,
+   "mythics": 0,
+   "epicSetHour": null,
+   "maxedEpicHour": null,
+   "levelIn": 12,
+   "levelOut": 16,
+   "levelTarget": 27,
+   "weapons": "T5 Epic +10 · T6 Legendary +10 · T5 Legendary +10",
+   "pack": {
+    "hp": 9.878,
+    "dmg": 0.377
+   },
+   "boss": {
+    "hp": 0.5767,
+    "dmg": 0.7594
+   },
+   "packMid": {
+    "sec": 20,
+    "loss": 0.12
+   },
+   "packArrive": {
+    "sec": 24.2,
+    "loss": 0.212,
+    "win": 1
+   },
+   "packPlayed": {
+    "sec": 18.2,
+    "loss": 0.082
+   },
+   "bossSec": 36,
+   "wall": {
+    "rare10": 0.06666666666666667,
+    "epic0": 0,
+    "epic10": 0.6,
+    "legendary10": 0.9666666666666667,
+    "mythic10": 1,
+    "epic10Under": 0
+   },
+   "xpPerLevel": 9602,
+   "power": {
+    "hp": 454,
+    "dps": 727.4
+   }
+  },
+  {
+   "area": 7,
+   "name": "The Temple Forge",
+   "hoursTarget": 16,
+   "hours": 5.1,
+   "cleared": true,
+   "day": 6,
+   "runs": 90,
+   "fights": 738,
+   "fightsPerRun": 8.2,
+   "wipes": 15,
+   "bossAttempts": 1,
+   "items": 383,
+   "epics": 6,
+   "legendaries": 0,
+   "mythics": 0,
+   "epicSetHour": null,
+   "maxedEpicHour": null,
+   "levelIn": 16,
+   "levelOut": 22,
+   "levelTarget": 32,
+   "weapons": "T5 Epic +10 · T6 Legendary +10 · T5 Legendary +10",
+   "pack": {
+    "hp": 8.27,
+    "dmg": 0.321
+   },
+   "boss": {
+    "hp": 0.4595,
+    "dmg": 0.6779
+   },
+   "packMid": {
+    "sec": 20,
+    "loss": 0.124
+   },
+   "packArrive": {
+    "sec": 23.8,
+    "loss": 0.223,
+    "win": 1
+   },
+   "packPlayed": {
+    "sec": 20.1,
+    "loss": 0.111
+   },
+   "bossSec": 33,
+   "wall": {
+    "rare10": 0.06666666666666667,
+    "epic0": 0.03333333333333333,
+    "epic10": 0.6333333333333333,
+    "legendary10": 0.9666666666666667,
+    "mythic10": 1,
+    "epic10Under": 0
+   },
+   "xpPerLevel": 11676,
+   "power": {
+    "hp": 585,
+    "dps": 950.7
+   }
+  },
+  {
+   "area": 8,
+   "name": "The Bastion",
+   "hoursTarget": 16,
+   "hours": 1.8,
+   "cleared": true,
+   "day": 6,
+   "runs": 30,
+   "fights": 245,
+   "fightsPerRun": 8.2,
+   "wipes": 5,
+   "bossAttempts": 1,
+   "items": 128,
+   "epics": 0,
+   "legendaries": 0,
+   "mythics": 0,
+   "epicSetHour": null,
+   "maxedEpicHour": null,
+   "levelIn": 22,
+   "levelOut": 23,
+   "levelTarget": 36,
+   "weapons": "T8 Rare +10 · T6 Legendary +10 · T5 Legendary +10",
+   "pack": {
+    "hp": 7.047,
+    "dmg": 0.265
+   },
+   "boss": {
+    "hp": 0.3473,
+    "dmg": 0.5893
+   },
+   "packMid": {
+    "sec": 20,
+    "loss": 0.12
+   },
+   "packArrive": {
+    "sec": 22.7,
+    "loss": 0.184,
+    "win": 1
+   },
+   "packPlayed": {
+    "sec": 21.7,
+    "loss": 0.117
+   },
+   "bossSec": 39,
+   "wall": {
+    "rare10": 0.13333333333333333,
+    "epic0": 0.03333333333333333,
+    "epic10": 0.6666666666666666,
+    "legendary10": 1,
+    "mythic10": 1,
+    "epic10Under": 0
+   },
+   "xpPerLevel": 19897,
+   "power": {
+    "hp": 608,
+    "dps": 1046.5
+   }
+  },
+  {
+   "area": 9,
+   "name": "The Worldforge",
+   "hoursTarget": 16,
+   "hours": 5.5,
+   "cleared": true,
+   "day": 8,
+   "runs": 107,
+   "fights": 776,
+   "fightsPerRun": 7.3,
+   "wipes": 14,
+   "bossAttempts": 1,
+   "items": 408,
+   "epics": 8,
+   "legendaries": 1,
+   "mythics": 0,
+   "epicSetHour": null,
+   "maxedEpicHour": null,
+   "levelIn": 23,
+   "levelOut": 31,
+   "levelTarget": 41,
+   "weapons": "T8 Rare +10 · T6 Legendary +10 · T9 Legendary +10",
+   "pack": {
+    "hp": 5.279,
+    "dmg": 0.206
+   },
+   "boss": {
+    "hp": 0.2556,
+    "dmg": 0.5056
+   },
+   "packMid": {
+    "sec": 20,
+    "loss": 0.117
+   },
+   "packArrive": {
+    "sec": 24.1,
+    "loss": 0.229,
+    "win": 1
+   },
+   "packPlayed": {
+    "sec": 20.6,
+    "loss": 0.12
+   },
+   "bossSec": 28,
+   "wall": {
+    "rare10": 0.26666666666666666,
+    "epic0": 0.06666666666666667,
+    "epic10": 0.6333333333333333,
+    "legendary10": 1,
+    "mythic10": 1,
+    "epic10Under": 0.1
+   },
+   "xpPerLevel": 19815,
+   "power": {
+    "hp": 832,
+    "dps": 1661.7
+   }
+  },
+  {
+   "area": 10,
+   "name": "Above the Worldforge (Vaelyx)",
+   "hoursTarget": 16,
+   "hours": 4,
+   "cleared": true,
+   "day": 9,
+   "runs": 66,
+   "fights": 610,
+   "fightsPerRun": 9.2,
+   "wipes": 8,
+   "bossAttempts": 1,
+   "items": 313,
+   "epics": 4,
+   "legendaries": 0,
+   "mythics": 0,
+   "epicSetHour": null,
+   "maxedEpicHour": null,
+   "levelIn": 31,
+   "levelOut": 34,
+   "levelTarget": 45,
+   "weapons": "T10 Epic +7 · T6 Legendary +10 · T9 Legendary +10",
+   "pack": {
+    "hp": 4.026,
+    "dmg": 0.168
+   },
+   "boss": {
+    "hp": 0.1766,
+    "dmg": 0.4203
+   },
+   "packMid": {
+    "sec": 20,
+    "loss": 0.12
+   },
+   "packArrive": {
+    "sec": 22.1,
+    "loss": 0.193,
+    "win": 1
+   },
+   "packPlayed": {
+    "sec": 19.4,
+    "loss": 0.101
+   },
+   "bossSec": 28,
+   "wall": {
+    "rare10": 0.1,
+    "epic0": 0,
+    "epic10": 0.5666666666666667,
+    "legendary10": 0.9333333333333333,
+    "mythic10": 1,
+    "epic10Under": 0.03333333333333333
+   },
+   "xpPerLevel": 51529,
+   "power": {
+    "hp": 936,
+    "dps": 2005.5
+   }
+  }
+ ],
+ "main": {
+  "playHours": 30.2,
+  "days": 9,
+  "veinEarned": 447867,
+  "veinSpent": {
+   "upgrade weapons": 64680,
+   "upgrades": 4932,
+   "process": 208382
+  },
+  "worldvein": 169953
+ },
+ "validation": {
+  "efficient": [
+   {
+    "seed": 1,
+    "done": true,
+    "playHours": 29.1,
+    "days": 9,
+    "unlocked": 11,
+    "runs": 426,
+    "wipes": 77,
+    "legendaries": 11,
+    "mythics": 0,
+    "perArea": [
+     0.5,
+     0.5,
+     1,
+     4,
+     5,
+     5.6,
+     5.3,
+     1,
+     3.9,
+     2.3
+    ]
+   },
+   {
+    "seed": 2,
+    "done": true,
+    "playHours": 30,
+    "days": 9,
+    "unlocked": 11,
+    "runs": 461,
+    "wipes": 69,
+    "legendaries": 6,
+    "mythics": 3,
+    "perArea": [
+     0.7,
+     0.7,
+     0.5,
+     3,
+     4.5,
+     6.3,
+     2.6,
+     3.1,
+     4.7,
+     3.8
+    ]
+   },
+   {
+    "seed": 3,
+    "done": true,
+    "playHours": 34.4,
+    "days": 10,
+    "unlocked": 11,
+    "runs": 469,
+    "wipes": 64,
+    "legendaries": 7,
+    "mythics": 2,
+    "perArea": [
+     0.3,
+     0.7,
+     1.1,
+     6.1,
+     2.2,
+     5,
+     3.9,
+     6.5,
+     5.2,
+     3.4
+    ]
+   }
+  ],
+  "typical": [
+   {
+    "seed": 1,
+    "done": true,
+    "playHours": 62.8,
+    "days": 18,
+    "unlocked": 11,
+    "runs": 423,
+    "wipes": 61,
+    "legendaries": 7,
+    "mythics": 3,
+    "perArea": [
+     1,
+     0.9,
+     2.9,
+     5.8,
+     5.4,
+     12.7,
+     10.8,
+     10.2,
+     4.8,
+     8.2
+    ]
+   }
+  ],
+  "casual": [
+   {
+    "seed": 1,
+    "done": true,
+    "playHours": 69,
+    "days": 34,
+    "unlocked": 11,
+    "runs": 454,
+    "wipes": 74,
+    "legendaries": 14,
+    "mythics": 2,
+    "perArea": [
+     1.1,
+     1,
+     3.3,
+     6.3,
+     11.7,
+     12.2,
+     4.5,
+     15.5,
+     6.9,
+     6.5
+    ]
+   }
+  ]
+ }
+}
