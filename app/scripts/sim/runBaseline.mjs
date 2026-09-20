@@ -9,7 +9,8 @@ import { AREAS } from '../../src/data.js';
 
 const OUT = process.argv[2] || '../docs/balance/baseline';
 const SEEDS = (process.argv[3] || '1,2,3').split(',').map(Number);
-const MAX_DAYS = Number(process.argv[4] || 150);
+const MAX_HOURS = Number(process.argv[4] || 600);
+const MAX_DAYS = `${MAX_HOURS} h`;
 const TARGET = { hoursLow: 180, hoursHigh: 360, hoursEfficient: 210, daysLow: 60, daysHigh: 90 };
 mkdirSync(OUT, { recursive: true });
 
@@ -22,17 +23,17 @@ for (const policy of Object.keys(POLICIES)) {
   results[policy] = [];
   for (const seed of SEEDS) {
     const t0 = Date.now();
-    const r = playCampaign({ seed, policy, maxDays: MAX_DAYS });
+    const r = playCampaign({ seed, policy, maxHours: MAX_HOURS });
     results[policy].push(r);
     console.log(`${policy} seed ${seed}: ${r.done ? 'mountain cleared' : `stopped at area ${r.unlocked}`} · day ${r.days} · ${r.playHours} h · ${((Date.now() - t0) / 1000).toFixed(0)} s`);
   }
 }
-writeFileSync(join(OUT, 'baseline.json'), JSON.stringify({ generated: new Date().toISOString(), seeds: SEEDS, maxDays: MAX_DAYS, target: TARGET, results: Object.fromEntries(Object.entries(results).map(([k, v]) => [k, v.map((r) => ({ ...r, daily: r.daily.filter((d, i) => i % 5 === 0 || i === r.daily.length - 1) }))])) }, null, 1));
+writeFileSync(join(OUT, 'baseline.json'), JSON.stringify({ generated: new Date().toISOString(), seeds: SEEDS, maxDays: MAX_DAYS, target: TARGET, results }, null, 1));
 
 // ------------------------------------------------------------------ the report
 const L = [];
 L.push('# Progression baseline — the mountain as the numbers stand today', '');
-L.push(`*Generated ${new Date().toISOString().slice(0, 10)} by \`app/scripts/sim/runBaseline.mjs\` — ${SEEDS.length} seeds per play style, up to ${MAX_DAYS} days each. No game number was changed to produce this.*`, '');
+L.push(`*Generated ${new Date().toISOString().slice(0, 10)} by \`app/scripts/sim/runBaseline.mjs\` — ${SEEDS.length} seeds per play style, up to ${MAX_DAYS} of play each. No game number was changed to produce this.*`, '');
 L.push('**Target (Anthony, 2026-09-19):** a player at 3–4 h a day takes the whole mountain in 2–3 months — about **180–360 hours of play**, and about **210 hours (2 months)** on the most efficient route. Past that: gear grinding, levelling more Adventurers, events.', '');
 
 L.push('## 1. Headline', '');
@@ -52,7 +53,7 @@ for (const a of AREAS) {
   const rows = eff.map((r) => r.stats.areas[a.id]).filter(Boolean);
   if (!rows.length) { L.push(`| ${a.id} ${a.name} | ${a.tier} | ${ITEM_TIER[a.id]} | — | — | — | — | — | — | — | — | — |`); continue; }
   const m = (fn) => med(rows.map(fn));
-  L.push(`| ${a.id} ${a.name} | ${a.tier} | ${ITEM_TIER[a.id]} | ${m((x) => x.firstDay) ?? '—'} | ${m((x) => x.clearedDay) ?? '—'} | ${f1(m((x) => x.playHours))} | ${f0(m((x) => x.runs))} | ${f0(m((x) => x.fights))} | ${f0(m((x) => x.wipes))} | ${f0(m((x) => x.bossAttempts))} | ${f1(m((x) => x.levelOnArrival))} → ${f1(m((x) => x.levelOnClear))} | ${f1(m((x) => (x.fightSecs.length ? x.fightSecs.reduce((p, q) => p + q, 0) / x.fightSecs.length : null)))} |`);
+  L.push(`| ${a.id} ${a.name} | ${a.tier} | ${ITEM_TIER[a.id]} | ${m((x) => x.firstDay) ?? '—'} | ${m((x) => x.clearedDay) ?? '—'} | ${f1(m((x) => x.playHours))} | ${f0(m((x) => x.runs))} | ${f0(m((x) => x.fights))} | ${f0(m((x) => x.wipes))} | ${f0(m((x) => x.bossAttempts))} | ${f1(m((x) => x.levelOnArrival))} → ${f1(m((x) => x.levelOnClear))} | ${f1(m((x) => (x.packFights ? x.packSec / x.packFights : null)))} |`);
 }
 L.push('');
 const one = eff[0];
@@ -84,7 +85,7 @@ L.push('## 5. How the bot plays, and what it leaves out', '');
 for (const a of ASSUMPTIONS) L.push(`- ${a}`);
 L.push('');
 L.push('| Play style | Fight speed | Decision time / node | Town time / run | Clears before the boss | Boss attempted at |', '|---|---|---|---|---|---|');
-for (const p of Object.values(POLICIES)) L.push(`| ${p.label} | ${p.skipFights ? 'skipped' : `${p.fightSpeed}×`} | ${p.decisionSec} s | ${p.townSec} s | ${Math.round(p.clearShare * 100)} % of the map | ≥ ${Math.round(p.bossAt * 100)} % dry-run wins |`);
+for (const p of Object.values(POLICIES)) L.push(`| ${p.label} | ${p.fightSpeed}× | ${p.decisionSec} s | ${p.townSec} s | ${Math.round(p.clearShare * 100)} % of the map | ≥ ${Math.round(p.bossAt * 100)} % dry-run wins |`);
 L.push('');
 writeFileSync(join(OUT, 'BASELINE.md'), L.join('\n'));
 console.log('wrote', join(OUT, 'BASELINE.md'));

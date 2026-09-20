@@ -1,0 +1,795 @@
+{
+ "generated": "2026-09-20T13:25:48.855Z",
+ "target": {
+  "totalHours": 210,
+  "walls": 10,
+  "packSec": 22,
+  "packLoss": 0.26,
+  "midSec": 10,
+  "midLoss": 0.12,
+  "healShare": 0.33,
+  "levelPerArea": 4.5,
+  "levelPower": 0.1,
+  "firstVisitBossWin": 0.1
+ },
+ "tuning": {
+  "walls": 10,
+  "pack": {
+   "1": {
+    "hp": 8.939,
+    "dmg": 2.27
+   },
+   "2": {
+    "hp": 32.521,
+    "dmg": 2.103
+   },
+   "3": {
+    "hp": 23.804,
+    "dmg": 1.684
+   },
+   "4": {
+    "hp": 72.55,
+    "dmg": 2.724
+   },
+   "5": {
+    "hp": 91.713,
+    "dmg": 2.345
+   },
+   "6": {
+    "hp": 165.096,
+    "dmg": 2.695
+   },
+   "7": {
+    "hp": 251.754,
+    "dmg": 1.623
+   },
+   "8": {
+    "hp": 326.064,
+    "dmg": 2.223
+   },
+   "9": {
+    "hp": 436.606,
+    "dmg": 1.823
+   },
+   "10": {
+    "hp": 429.616,
+    "dmg": 2.632
+   }
+  },
+  "boss": {
+   "1": {
+    "hp": 4.0365,
+    "dmg": 2.0091
+   },
+   "2": {
+    "hp": 4.4304,
+    "dmg": 2.1049
+   },
+   "3": {
+    "hp": 7.746,
+    "dmg": 2.7832
+   },
+   "4": {
+    "hp": 13.5427,
+    "dmg": 3.68
+   },
+   "5": {
+    "hp": 17.9069,
+    "dmg": 4.2317
+   },
+   "6": {
+    "hp": 21.5723,
+    "dmg": 4.6446
+   },
+   "7": {
+    "hp": 28.524,
+    "dmg": 5.3408
+   },
+   "8": {
+    "hp": 31.3075,
+    "dmg": 5.5953
+   },
+   "9": {
+    "hp": 37.716,
+    "dmg": 6.1413
+   },
+   "10": {
+    "hp": 49.8701,
+    "dmg": 7.0619
+   }
+  },
+  "heal": 0.5,
+  "xp": {
+   "1": 7180,
+   "2": 7180,
+   "3": 7180,
+   "4": 7180,
+   "5": 8975,
+   "6": 9579,
+   "7": 9579,
+   "8": 6808,
+   "9": 6808,
+   "10": 6808,
+   "11": 6808,
+   "12": 6808,
+   "13": 6808,
+   "14": 8510,
+   "15": 10638,
+   "16": 13297,
+   "17": 16621,
+   "18": 115498,
+   "19": 32581,
+   "20": 32581,
+   "21": 32581,
+   "22": 32581,
+   "23": 40726,
+   "24": 50908,
+   "25": 101494,
+   "26": 101494,
+   "27": 50533,
+   "28": 50533,
+   "29": 50533,
+   "30": 50533,
+   "31": 50533,
+   "32": 63166,
+   "33": 78958,
+   "34": 199023,
+   "35": 199023,
+   "36": 121855,
+   "37": 121855,
+   "38": 121855,
+   "39": 121855,
+   "40": 121855,
+   "41": 152319,
+   "42": 364692,
+   "43": 364692,
+   "44": 364692,
+   "45": 455865,
+   "46": 569831,
+   "47": 712289,
+   "48": 890361,
+   "49": 1112952,
+   "50": 1391190,
+   "51": 1738987,
+   "52": 2173734,
+   "53": 2717167,
+   "54": 3396459,
+   "55": 4245574,
+   "56": 5306967,
+   "57": 6633709,
+   "58": 8292136,
+   "59": 10365170
+  },
+  "gems": false,
+  "levelPower": 0.1
+ },
+ "rows": [
+  {
+   "area": 1,
+   "name": "Gullwatch Trail",
+   "hoursTarget": 17.9,
+   "hours": 17.8,
+   "searchHours": 14.9,
+   "done": true,
+   "pack": {
+    "hp": 8.939,
+    "dmg": 2.27
+   },
+   "boss": {
+    "hp": 4.0365,
+    "dmg": 2.0091
+   },
+   "arrive": {
+    "sec": 22,
+    "loss": 0.285,
+    "healShare": 0.32
+   },
+   "played": {
+    "packSec": 5.5,
+    "packLoss": 0.03,
+    "healShare": 0.82,
+    "bossSec": 45
+   },
+   "runs": 193,
+   "fights": 4691,
+   "wipes": 12,
+   "extracts": 180,
+   "sanctuaries": 384,
+   "bossAttempts": 1,
+   "firstVisitBossWin": 0,
+   "levelIn": 1,
+   "levelOut": 6,
+   "levelTarget": 5,
+   "xpPerLevel": 7180,
+   "xpPerHour": 1605,
+   "weapons": "T1 Legendary +100 · T1 Artifact +100 · T1 Legendary +100",
+   "armor": 0,
+   "power": {
+    "hp": 398,
+    "dps": 253.1
+   },
+   "day": 5
+  },
+  {
+   "area": 2,
+   "name": "The Saltcliffs",
+   "hoursTarget": 17.9,
+   "hours": 11.6,
+   "searchHours": 17.5,
+   "done": true,
+   "pack": {
+    "hp": 32.521,
+    "dmg": 2.103
+   },
+   "boss": {
+    "hp": 4.4304,
+    "dmg": 2.1049
+   },
+   "arrive": {
+    "sec": 22,
+    "loss": 0.257,
+    "healShare": 0.28
+   },
+   "played": {
+    "packSec": 18.8,
+    "packLoss": 0.148,
+    "healShare": 0.44,
+    "bossSec": 76
+   },
+   "runs": 283,
+   "fights": 1583,
+   "wipes": 45,
+   "extracts": 237,
+   "sanctuaries": 112,
+   "bossAttempts": 1,
+   "firstVisitBossWin": 0,
+   "levelIn": 6,
+   "levelOut": 8,
+   "levelTarget": 9,
+   "xpPerLevel": 9579,
+   "xpPerHour": 1605,
+   "weapons": "T1 Legendary +100 · T1 Artifact +100 · T1 Legendary +100",
+   "armor": 0,
+   "power": {
+    "hp": 482,
+    "dps": 306.3
+   },
+   "day": 9
+  },
+  {
+   "area": 3,
+   "name": "Drowned Quay",
+   "hoursTarget": 17.9,
+   "hours": 22.2,
+   "searchHours": 20.8,
+   "done": true,
+   "pack": {
+    "hp": 23.804,
+    "dmg": 1.684
+   },
+   "boss": {
+    "hp": 7.746,
+    "dmg": 2.7832
+   },
+   "arrive": {
+    "sec": 22,
+    "loss": 0.259,
+    "healShare": 0.24
+   },
+   "played": {
+    "packSec": 7.5,
+    "packLoss": 0.039,
+    "healShare": 0.53,
+    "bossSec": 37
+   },
+   "runs": 260,
+   "fights": 5284,
+   "wipes": 33,
+   "extracts": 226,
+   "sanctuaries": 440,
+   "bossAttempts": 4,
+   "firstVisitBossWin": 0,
+   "levelIn": 8,
+   "levelOut": 18,
+   "levelTarget": 14,
+   "xpPerLevel": 6808,
+   "xpPerHour": 2282,
+   "weapons": "T2 Artifact +100 · T2 Artifact +100 · T2 Legendary +100",
+   "armor": 0,
+   "power": {
+    "hp": 1274,
+    "dps": 1553.4
+   },
+   "day": 15
+  },
+  {
+   "area": 4,
+   "name": "Serpent’s Stair",
+   "hoursTarget": 22.3,
+   "hours": 28.2,
+   "searchHours": 23,
+   "done": true,
+   "pack": {
+    "hp": 72.55,
+    "dmg": 2.724
+   },
+   "boss": {
+    "hp": 13.5427,
+    "dmg": 3.68
+   },
+   "arrive": {
+    "sec": 22,
+    "loss": 0.257,
+    "healShare": 0.17
+   },
+   "played": {
+    "packSec": 11.6,
+    "packLoss": 0.079,
+    "healShare": 0.31,
+    "bossSec": 65
+   },
+   "runs": 448,
+   "fights": 5411,
+   "wipes": 80,
+   "extracts": 367,
+   "sanctuaries": 428,
+   "bossAttempts": 2,
+   "firstVisitBossWin": 0,
+   "levelIn": 18,
+   "levelOut": 19,
+   "levelTarget": 18,
+   "xpPerLevel": 92398,
+   "xpPerHour": 4143,
+   "weapons": "T3 Artifact +100 · T3 Artifact +100 · T3 Legendary +100",
+   "armor": 0,
+   "power": {
+    "hp": 1427,
+    "dps": 3217.9
+   },
+   "day": 23
+  },
+  {
+   "area": 5,
+   "name": "Ashfall Strand",
+   "hoursTarget": 22.3,
+   "hours": 21.5,
+   "searchHours": 19.9,
+   "done": true,
+   "pack": {
+    "hp": 91.713,
+    "dmg": 2.345
+   },
+   "boss": {
+    "hp": 17.9069,
+    "dmg": 4.2317
+   },
+   "arrive": {
+    "sec": 22,
+    "loss": 0.258,
+    "healShare": 0.17
+   },
+   "played": {
+    "packSec": 10.1,
+    "packLoss": 0.056,
+    "healShare": 0.35,
+    "bossSec": 44
+   },
+   "runs": 266,
+   "fights": 4578,
+   "wipes": 35,
+   "extracts": 230,
+   "sanctuaries": 378,
+   "bossAttempts": 1,
+   "firstVisitBossWin": 0,
+   "levelIn": 19,
+   "levelOut": 25,
+   "levelTarget": 23,
+   "xpPerLevel": 32581,
+   "xpPerHour": 5844,
+   "weapons": "T4 Legendary +100 · T4 Artifact +100 · T4 Legendary +100",
+   "armor": 0,
+   "power": {
+    "hp": 2528,
+    "dps": 9586.1
+   },
+   "day": 29
+  },
+  {
+   "area": 6,
+   "name": "The Hollow Ward",
+   "hoursTarget": 22.3,
+   "hours": 24.8,
+   "searchHours": 20.1,
+   "done": true,
+   "pack": {
+    "hp": 165.096,
+    "dmg": 2.695
+   },
+   "boss": {
+    "hp": 21.5723,
+    "dmg": 4.6446
+   },
+   "arrive": {
+    "sec": 22.1,
+    "loss": 0.242,
+    "healShare": 0.16
+   },
+   "played": {
+    "packSec": 10.8,
+    "packLoss": 0.087,
+    "healShare": 0.23,
+    "bossSec": 41
+   },
+   "runs": 462,
+   "fights": 4783,
+   "wipes": 85,
+   "extracts": 376,
+   "sanctuaries": 361,
+   "bossAttempts": 1,
+   "firstVisitBossWin": 0,
+   "levelIn": 25,
+   "levelOut": 27,
+   "levelTarget": 27,
+   "xpPerLevel": 101494,
+   "xpPerHour": 9103,
+   "weapons": "T5 Artifact +100 · T5 Artifact +100 · T5 Legendary +100",
+   "armor": 0,
+   "power": {
+    "hp": 3059,
+    "dps": 23083.7
+   },
+   "day": 36
+  },
+  {
+   "area": 7,
+   "name": "The Temple Forge",
+   "hoursTarget": 22.3,
+   "hours": 18.4,
+   "searchHours": 22.6,
+   "done": true,
+   "pack": {
+    "hp": 251.754,
+    "dmg": 1.623
+   },
+   "boss": {
+    "hp": 28.524,
+    "dmg": 5.3408
+   },
+   "arrive": {
+    "sec": 23.3,
+    "loss": 0.203,
+    "healShare": 0.18
+   },
+   "played": {
+    "packSec": 14.1,
+    "packLoss": 0.055,
+    "healShare": 0.38,
+    "bossSec": 35
+   },
+   "runs": 200,
+   "fights": 3479,
+   "wipes": 28,
+   "extracts": 171,
+   "sanctuaries": 275,
+   "bossAttempts": 1,
+   "firstVisitBossWin": 0,
+   "levelIn": 27,
+   "levelOut": 34,
+   "levelTarget": 32,
+   "xpPerLevel": 50533,
+   "xpPerHour": 11330,
+   "weapons": "T5 Artifact +100 · T5 Artifact +100 · T5 Artifact +100",
+   "armor": 0,
+   "power": {
+    "hp": 5961,
+    "dps": 49268.6
+   },
+   "day": 41
+  },
+  {
+   "area": 8,
+   "name": "The Bastion",
+   "hoursTarget": 22.3,
+   "hours": 25.2,
+   "searchHours": 20.2,
+   "done": true,
+   "pack": {
+    "hp": 326.064,
+    "dmg": 2.223
+   },
+   "boss": {
+    "hp": 31.3075,
+    "dmg": 5.5953
+   },
+   "arrive": {
+    "sec": 23.4,
+    "loss": 0.199,
+    "healShare": 0.17
+   },
+   "played": {
+    "packSec": 14,
+    "packLoss": 0.077,
+    "healShare": 0.28,
+    "bossSec": 37
+   },
+   "runs": 363,
+   "fights": 4553,
+   "wipes": 39,
+   "extracts": 323,
+   "sanctuaries": 346,
+   "bossAttempts": 1,
+   "firstVisitBossWin": 0,
+   "levelIn": 34,
+   "levelOut": 36.7,
+   "levelTarget": 36,
+   "xpPerLevel": 199023,
+   "xpPerHour": 17850,
+   "weapons": "T6 Artifact +100 · T6 Artifact +100 · T6 Legendary +100",
+   "armor": 0,
+   "power": {
+    "hp": 7625,
+    "dps": 103400.6
+   },
+   "day": 48
+  },
+  {
+   "area": 9,
+   "name": "The Worldforge",
+   "hoursTarget": 22.3,
+   "hours": 21.3,
+   "searchHours": 22.1,
+   "done": true,
+   "pack": {
+    "hp": 436.606,
+    "dmg": 1.823
+   },
+   "boss": {
+    "hp": 37.716,
+    "dmg": 6.1413
+   },
+   "arrive": {
+    "sec": 25,
+    "loss": 0.197,
+    "healShare": 0.19
+   },
+   "played": {
+    "packSec": 17.8,
+    "packLoss": 0.067,
+    "healShare": 0.38,
+    "bossSec": 37
+   },
+   "runs": 238,
+   "fights": 3623,
+   "wipes": 20,
+   "extracts": 217,
+   "sanctuaries": 221,
+   "bossAttempts": 1,
+   "firstVisitBossWin": 0,
+   "levelIn": 36.7,
+   "levelOut": 42.3,
+   "levelTarget": 41,
+   "xpPerLevel": 121855,
+   "xpPerHour": 27322,
+   "weapons": "T6 Artifact +100 · T6 Artifact +100 · T6 Legendary +100",
+   "armor": 0,
+   "power": {
+    "hp": 13568,
+    "dps": 180422
+   },
+   "day": 54
+  },
+  {
+   "area": 10,
+   "name": "Above the Worldforge (Vaelyx)",
+   "hoursTarget": 22.3,
+   "hours": 20.3,
+   "searchHours": 24,
+   "done": true,
+   "pack": {
+    "hp": 429.616,
+    "dmg": 2.632
+   },
+   "boss": {
+    "hp": 49.8701,
+    "dmg": 7.0619
+   },
+   "arrive": {
+    "sec": 22.6,
+    "loss": 0.215,
+    "healShare": 0.15
+   },
+   "played": {
+    "packSec": 11.6,
+    "packLoss": 0.065,
+    "healShare": 0.25,
+    "bossSec": 36
+   },
+   "runs": 282,
+   "fights": 4138,
+   "wipes": 37,
+   "extracts": 244,
+   "sanctuaries": 232,
+   "bossAttempts": 1,
+   "firstVisitBossWin": 0,
+   "levelIn": 42.3,
+   "levelOut": 45.3,
+   "levelTarget": 45,
+   "xpPerLevel": 364692,
+   "xpPerHour": 49062,
+   "weapons": "T7 Artifact +100 · T7 Artifact +100 · T7 Legendary +100",
+   "armor": 0,
+   "power": {
+    "hp": 18059,
+    "dps": 429274.2
+   },
+   "day": 60
+  }
+ ],
+ "main": {
+  "playHours": 211.3,
+  "days": 60,
+  "worldvein": 332104,
+  "veinEarned": 2918838,
+  "veinSpent": {
+   "empower": 56461,
+   "upgrades": 6768,
+   "process": 2523585
+  },
+  "rank": 6,
+  "party": [
+   {
+    "name": "Kessa",
+    "archetype": "Bulwark",
+    "level": 46
+   },
+   {
+    "name": "Orin",
+    "archetype": "Warden",
+    "level": 45
+   },
+   {
+    "name": "Vayle",
+    "archetype": "Striker",
+    "level": 45
+   }
+  ]
+ },
+ "validation": {
+  "efficient": [
+   {
+    "seed": 1,
+    "done": true,
+    "playHours": 210.5,
+    "days": 60,
+    "unlocked": 11,
+    "wipes": 412,
+    "runs": 2929,
+    "perArea": {
+     "1": 18.9,
+     "2": 14.5,
+     "3": 15.4,
+     "4": 32.2,
+     "5": 20.3,
+     "6": 24.4,
+     "7": 24.8,
+     "8": 15.8,
+     "9": 22.9,
+     "10": 21.2
+    },
+    "level": [
+     45,
+     45,
+     45
+    ]
+   },
+   {
+    "seed": 2,
+    "done": true,
+    "playHours": 218.8,
+    "days": 62,
+    "unlocked": 11,
+    "wipes": 434,
+    "runs": 3138,
+    "perArea": {
+     "1": 16,
+     "2": 20.1,
+     "3": 18.1,
+     "4": 28.2,
+     "5": 22,
+     "6": 20.9,
+     "7": 22.5,
+     "8": 20.6,
+     "9": 24.9,
+     "10": 25.5
+    },
+    "level": [
+     46,
+     46,
+     46
+    ]
+   },
+   {
+    "seed": 3,
+    "done": true,
+    "playHours": 200.6,
+    "days": 57,
+    "unlocked": 11,
+    "wipes": 410,
+    "runs": 2845,
+    "perArea": {
+     "1": 18.2,
+     "2": 7.6,
+     "3": 20.4,
+     "4": 31.8,
+     "5": 21.5,
+     "6": 20.5,
+     "7": 22.6,
+     "8": 20.2,
+     "9": 18,
+     "10": 19.8
+    },
+    "level": [
+     45,
+     45,
+     45
+    ]
+   }
+  ],
+  "typical": [
+   {
+    "seed": 1,
+    "done": true,
+    "playHours": 392.5,
+    "days": 111,
+    "unlocked": 11,
+    "wipes": 418,
+    "runs": 3020,
+    "perArea": {
+     "1": 23.3,
+     "2": 38.2,
+     "3": 26.8,
+     "4": 62.4,
+     "5": 32.8,
+     "6": 40.5,
+     "7": 50.3,
+     "8": 24.6,
+     "9": 37.1,
+     "10": 56.6
+    },
+    "level": [
+     46,
+     47,
+     47
+    ]
+   }
+  ],
+  "casual": [
+   {
+    "seed": 1,
+    "done": true,
+    "playHours": 430.1,
+    "days": 207,
+    "unlocked": 11,
+    "wipes": 380,
+    "runs": 2877,
+    "perArea": {
+     "1": 31.9,
+     "2": 31.3,
+     "3": 41.1,
+     "4": 53.8,
+     "5": 47.6,
+     "6": 38.3,
+     "7": 58.7,
+     "8": 32.5,
+     "9": 58.6,
+     "10": 36.2
+    },
+    "level": [
+     45,
+     45,
+     46
+    ]
+   }
+  ]
+ }
+}
