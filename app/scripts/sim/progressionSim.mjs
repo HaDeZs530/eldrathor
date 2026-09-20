@@ -19,10 +19,11 @@ import { rollRewards } from '../../src/combat/rewards.js';
 import { fightXp, splitXp, xpToNext, withStarterWeapons, previewEmpower, starterWeapon, LEVEL_CAP } from '../../src/progression/progression.js';
 import { ARMOR_TYPES, tierForArea, armorBonus, sellValue, craftableRarities, UNARMED_MULT } from '../../src/progression/items.js';
 import { WEAPONS } from '../../src/data.js';
-import { awardLevelFragments, isGem, isMatching, canImbueGem, imbueGem } from '../../src/progression/gems.js';
+import { awardLevelFragments, isGem, isMatching, canImbueGem, imbueGem, makeGem } from '../../src/progression/gems.js';
+import { ROLE_MATCH, GEM_TUNING } from '../../src/lattice/classGems.js';
 import { latticeFor } from '../../src/lattice/classGems.js';
 import { resonance, rankFor } from '../../src/player/resonance.js';
-import { UPGRADE_IDS, canBuy, buy, bondMods, craftMods } from '../../src/player/upgrades.js';
+import { UPGRADE_IDS, BOND_IDS, canBuy, buy, bondMods, craftMods, levelCap } from '../../src/player/upgrades.js';
 import { armorRecipe, canCraft, consume, craftArmor } from '../../src/town/recipes.js';
 import { emptyAfkState, assignJob, startJob, reconcileAfk, withGatherSlots, gatherSlotCount, PROCESS_VEIN_COST } from '../../src/afkRuntime.js';
 import { candidatesForDay, recruitCost, FREE_RECRUITS } from '../../src/progression/roster.js';
@@ -106,17 +107,31 @@ export const w5Power = (w) => (WEAPONS[w.type]?.dmg || 0) * w5Mult(w);
 const w5Dps = (w) => ((WEAPONS[w.type]?.dmg || 0) / (WEAPONS[w.type]?.tempo || 1)) * w5Mult(w);
 let w5Seq = 0;
 export const makeW5 = (type, tier, rarity, upg = 0) => ({ id: `w5-${++w5Seq}`, kind: 'w5', type, tier, rarity, upg });
-function fiveMember(m, w, tuning, bond) {
+function fiveMember(m, w, tuning, bond, gem = null) {
   const bp = (w5Mult(w) / UNARMED_MULT) * (1 + (bond.mult.power || 0)) - 1;
-  return { ...m, level: effLevel(m.level, tuning.levelPower), weapon: w ? w.type : m.weapon, weaponItem: null, armorItems: [], gemItem: null, bond: { mult: { ...bond.mult, power: bp }, add: bond.add } };
+  return { ...m, level: effLevel(m.level, tuning.levelPower), weapon: w ? w.type : m.weapon, weaponItem: null, armorItems: [], gemItem: gem, bond: { mult: { ...bond.mult, power: bp }, add: bond.add } };
 }
 /** A party as it would stand with the given gear and level — used to DEFINE a wall (e.g. three maxed Epics at the area's level). */
-export function referenceParty(S, tuning, { tier, rarity, upg, level }) {
-  const bond = bondMods(S.upgrades);
-  return S.party.map((m) => fiveMember({ ...m, level }, makeW5(S.bag.find((i) => i.id === m.equipped?.w5)?.type || m.weapon, tier, rarity, upg), tuning, bond));
+export function referenceParty(S, tuning, { tier, rarity, upg, level, imbues = 0, bondAtCap = false }) {
+  const bond = bondMods(bondAtCap ? expectedUpgrades(S, level) : S.upgrades);
+  return S.party.map((m) => fiveMember({ ...m, level }, makeW5(S.bag.find((i) => i.id === m.equipped?.w5)?.type || m.weapon, tier, rarity, upg), tuning, bond, imbues > 0 ? gemWithImbues(ROLE_MATCH[m.archetype], imbues) : null));
+}
+/** A matching gem grown to `n` imbues, inner ring first — the growth a player is ASSUMED to have at a wall (`tuning.gemPace`). */
+const gemCache = new Map();
+export function gemWithImbues(gemClass, n) {
+  const key = `${gemClass}:${n}`; if (gemCache.has(key)) return gemCache.get(key);
+  let gem = makeGem({ gemClass, id: `ref-${key}`, fragments: { unspent: GEM_TUNING.points, imbued: 0 } });
+  for (let k = 0; k < n; k++) { const next = nextFacet(gem, Infinity); if (!next) break; gem = imbueGem(gem, next.id).gem; }
+  gemCache.set(key, gem); return gem;
+}
+const nextFacet = (gem, worldvein) => latticeFor(gem.gemClass).facets.filter((f) => f.kind !== 'dormant').sort((a, b) => a.ring - b.ring).find((f) => canImbueGem(gem, f.id, { worldvein, worn: true }).ok);
+/** Every Bond upgrade at the cap its Resonance rank allows, with the party at `level` — what a steady player has bought by a wall. */
+export function expectedUpgrades(S, level) {
+  const rank = rankFor(resonance([...S.party.map((m) => ({ ...m, level: Math.max(m.level, level) })), ...S.roster]));
+  return Object.fromEntries(BOND_IDS.map((id) => [id, levelCap(id, rank)]));
 }
 const fieldedOf = (S, tuning = NO_TUNING) => (tuning.items === 'five'
-  ? S.party.map((m) => fiveMember(m, S.bag.find((i) => i.id === m.equipped?.w5) || null, tuning, bondMods(S.upgrades)))
+  ? S.party.map((m) => fiveMember(m, S.bag.find((i) => i.id === m.equipped?.w5) || null, tuning, bondMods(S.upgrades), S.bag.find((i) => i.id === m.equipped?.gem) || null))
   : S.party.map((m) => equip({ ...m, level: effLevel(m.level, tuning.levelPower) }, S.bag, bondMods(S.upgrades))));
 const blankArea = (a) => ({ area: a.id, name: a.name, firstDay: null, clearedDay: null, playHours: 0, runs: 0, fights: 0, wins: 0, wipes: 0, extracts: 0, bossAttempts: 0, levelOnArrival: null, levelOnClear: null, weaponOnClear: null, armorOnClear: null, powerOnClear: null, items: 0, epics: 0, legendaries: 0, mythics: 0, epicSetHour: null, maxedEpicHour: null, packSec: 0, packFights: 0, packLoss: 0, packHealShare: 0, bossSec: 0, bossFights: 0, sanctuaries: 0, firstBossWinRate: null });
 const areaStat = (S, a) => (S.stats.areas[a.id] ||= blankArea(a));
@@ -333,6 +348,12 @@ function townFive(S, tuning, me, setMember) {
       if (fodder.length < need || S.worldvein < cost) break;
       const gone = new Set(fodder.map((f) => f.id)); S.bag = S.bag.filter((i) => !gone.has(i.id)).map((i) => (i.id === w.id ? { ...i, upg: need } : i)); spend(S, 'upgrade weapons', cost);
     }
+  }
+  // gems, paced (ASSUMPTION until shards are designed): each party member is handed a matching gem and may hold `gemPace(area)` imbues, paid in Worldvein
+  if (tuning.gemPace) for (const m of S.party) {
+    if (!me(m.id).equipped?.gem) { const g = makeGem({ gemClass: ROLE_MATCH[m.archetype], fragments: { unspent: GEM_TUNING.points, imbued: 0 } }); S.bag.push(g); setMember({ ...me(m.id), equipped: { ...me(m.id).equipped, gem: g.id } }); }
+    const id = me(m.id).equipped.gem;
+    for (let k = 0; k < 40; k++) { const gem = S.bag.find((i) => i.id === id); if ((gem.lattice?.imbues || 0) >= tuning.gemPace(Math.min(tuning.walls || 10, S.unlocked))) break; const next = nextFacet(gem, S.worldvein * 0.5); if (!next) break; const r = imbueGem(gem, next.id); spend(S, 'gems', r.cost); S.bag = S.bag.map((i) => (i.id === id ? r.gem : i)); }
   }
   // keep a stock of spares at the current tier, sell the rest for a little Worldvein
   const worn = wornIds(); const topTier = Math.max(...S.party.map((m) => S.bag.find((i) => i.id === m.equipped.w5).tier));
