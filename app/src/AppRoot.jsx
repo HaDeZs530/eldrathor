@@ -7,6 +7,7 @@ import RouteMapScreen from './map/RouteMapScreen.jsx';
 import { DEFAULT_PARTY, AREAS, withIds } from './data.js';
 import { simulateFight, spawnEnemies, rollRewards, deriveStats, mulberry32 } from './combat.js';
 import { equip } from './combat/derive.js';
+import { isTestFightLength, tuneFightLength } from './debug/testFightLength.js';
 import { withStarterWeapons, equippedIds, fightXp, splitXp, applyXp, xpToNext } from './progression/progression.js';
 import { awardLevelFragments, fragmentLine } from './progression/gems.js';
 import { bondMods, craftMods, normalizeUpgrades, canBuy, buy } from './player/upgrades.js';
@@ -596,7 +597,12 @@ export default function Eldrathor() {
     fightIndex.current += 1;
     const seed = (runSeed.current ^ Math.imul(fightIndex.current, 0x9e3779b1)) >>> 0;
     const rng = mulberry32(seed ^ 0x5bd1e995);
-    const enemies = (opts.enemies && opts.enemies.length ? opts.enemies : enemiesFor(t, n, rng)).map((e) => ({ ...e }));
+    let enemies = (opts.enemies && opts.enemies.length ? opts.enemies : enemiesFor(t, n, rng)).map((e) => ({ ...e }));
+    // TEMPORARY (Anthony, 2026-09-20): Settings → Test fight length — pack fights rescaled to ~16 s. Remove before TestFlight.
+    if (isTestFightLength() && eff !== 'boss' && eff !== 'rare' && enemies.length) {
+      const tuned = tuneFightLength({ party: fielded, enemies, seed, startHpFrac: hpArrFor(fielded), runMods, enemyFirst: !!opts.enemyFirst });
+      enemies = tuned.enemies; pushLog(`Test fight length: enemy health ×${tuned.hpMult.toFixed(2)}, damage ×${tuned.dmgMult.toFixed(2)} → ${tuned.sec.toFixed(1)} s`, 'sys');
+    }
     const sim = simulateFight({ party: fielded, enemies, seed, startHpFrac: hpArrFor(fielded), runMods, enemyFirst: !!opts.enemyFirst });
     const bossKill = sim.result.win && eff === 'boss';
     const mapClear = bossKill && allCleared({ ...t, nodes: t.nodes.map((x) => (x.id === n.id ? { ...x, cleared: true } : x)) });
