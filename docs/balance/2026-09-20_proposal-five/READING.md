@@ -31,3 +31,15 @@ Wall party = three maxed Epics at the area's level **plus** a matching gem at ~4
 - **Gems are the biggest single piece of power.** The same wall party with no imbues wins 0 % from wall 2 on. Bond upgrades matter early (wall 1–3: 60 % → 10–25 % without them) and barely at all later.
 - **A flat +10 per tier stops mattering high up.** Tier 9 → 10 is +10 %, less than one rarity rung (+14 %), so last area's Legendary +10 beats the next boss as well as the new tier's Epic +10 (walls 6–10). Walls there are skipped on old gear.
 - Still ~100 days against a 150-day target.
+
+## Update — upward tier curve (2026-09-21)
+
+Tier T Common = base × growth^(T − 1) instead of a flat +10 (`TIER_GROWTH` env). Greatsword at 1.2: 20, 24, 29, 35, 41, 50, 60, 72, 86, 103. Pack damage raised (tuned to −20 % for a mid-geared party; plays at −8–10 %).
+
+| Curve | Efficient | 2 h/day player |
+|---|---|---|
+| ×1.2 per tier (`tier-curve-1.2/`) | ~80 h | 156 h · 75 days |
+| ×1.25 per tier (`tier-curve-1.25/`) | ~80 h | 197 h · 95 days |
+
+- The curve works for gear: parties now wear the current tier at each kill, and pack fights cost 8–10 % of life.
+- **But walls got softer, not harder — weapon rarity barely moves the boss.** Rare +10 wins 30–50 % where Epic +10 wins 60 %; several walls fell in 1–3 tries on Rare gear (wall 8 in 1.6 h, wall 10 in 2.6 h). One rarity rung is +17 % power; the gem is worth far more (no imbues → 0 %). The loot chase is not what breaks a wall — gems and levels are.

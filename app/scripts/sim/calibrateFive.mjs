@@ -14,7 +14,7 @@ import { simulateFight, mulberry32 } from '../../src/combat/simulate.js';
 const OUT = process.argv[2] || '../docs/balance/proposal-five';
 const TOTAL = Number(process.argv[3] || 150);
 const WALLS = 10;
-const T = { packSec: Number(process.env.PACK_SEC || 18), packLoss: 0.12, levelPerArea: 4.5, levelPower: 0.04, heal: 0.5, wallWin: Number(process.env.WALL_WIN || 0.6), imbuesPerArea: 4 };
+const T = { packSec: Number(process.env.PACK_SEC || 18), packLoss: Number(process.env.PACK_LOSS || 0.12), levelPerArea: 4.5, levelPower: 0.04, heal: 0.5, wallWin: Number(process.env.WALL_WIN || 0.6), imbuesPerArea: 4 };
 const gemPace = (area) => Math.min(40, T.imbuesPerArea * area); // ASSUMPTION (Anthony OK'd as a placeholder 2026-09-20): ~4 imbues per area, 40 by the dragon
 const K = Number(process.env.RATE_SCALE || 1); // scales Epic / Legendary / Mythic odds for a variant run
 const RATES0 = (area) => (area <= 3 ? { rare: 0.25, epic: 0.06, legendary: 0.01, mythic: 0.003 } : area <= 6 ? { rare: 0.25, epic: 0.035, legendary: 0.003, mythic: 0.0005 } : { rare: 0.25, epic: 0.02, legendary: 0.0005, mythic: 0.0001 });
