@@ -110,7 +110,12 @@ export const w5Power = (w) => (WEAPONS[w.type]?.dmg || 0) * w5Mult(w);
 const w5Dps = (w) => ((WEAPONS[w.type]?.dmg || 0) / (WEAPONS[w.type]?.tempo || 1)) * w5Mult(w);
 let w5Seq = 0;
 export const makeW5 = (type, tier, rarity, upg = 0) => ({ id: `w5-${++w5Seq}`, kind: 'w5', type, tier, rarity, upg });
-function fiveMember(m, w, tuning, bond, gem = null) {
+// ASSUMPTION (armor has no five-rung rules yet): with `tuning.armor`, each Adventurer's armor mirrors the worn weapon's tier, rung and
+// upgrade — HP grows at 60 % of the weapon's curve, mitigation +2 points per rung and +0.3 per upgrade. So old gear is weak on BOTH sides.
+const a5 = (w) => (w ? { hp: 0.6 * (w5Mult(w) - 1), mit: 0.02 * FIVE.rarities.indexOf(w.rarity) + 0.003 * (w.upg || 0) } : { hp: 0, mit: 0 });
+function fiveMember(m, w, tuning, bond0, gem = null) {
+  const ar = tuning.armor ? a5(w) : { hp: 0, mit: 0 };
+  const bond = { mult: { ...bond0.mult, hp: (1 + (bond0.mult.hp || 0)) * (1 + ar.hp) - 1 }, add: { ...bond0.add, mitigation: (bond0.add.mitigation || 0) + ar.mit } };
   const bp = (w5Mult(w) / UNARMED_MULT) * (1 + (bond.mult.power || 0)) - 1;
   return { ...m, level: effLevel(m.level, tuning.levelPower), weapon: w ? w.type : m.weapon, weaponItem: null, armorItems: [], gemItem: gem, bond: { mult: { ...bond.mult, power: bp }, add: bond.add } };
 }
@@ -146,7 +151,8 @@ export function enemiesFor(area, nodeType, { rng, depth01 = 0, named = false } =
   // the dragon's tier sits one step above the generator's top tier
   const step = area.tier > 9 ? { hp: ENEMY_TUNING.hpGrowth ** (area.tier - 9), dmg: ENEMY_TUNING.dmgGrowth ** (area.tier - 9) } : { hp: 1, dmg: 1 };
   const m = (nodeType === 'boss' ? tuning.boss : tuning.pack)?.[area.id] || { hp: 1, dmg: 1 };
-  return units.map((u) => ({ ...u, hp: u.hp * step.hp * m.hp, maxHp: u.hp * step.hp * m.hp, dmg: u.dmg * step.dmg * m.dmg }));
+  const def = tuning.enemyDef ? tuning.enemyDef(area.id, nodeType) : null; // late monsters mitigate and heal (Anthony, 2026-09-21)
+  return units.map((u) => ({ ...u, hp: u.hp * step.hp * m.hp, maxHp: u.hp * step.hp * m.hp, dmg: u.dmg * step.dmg * m.dmg, ...(def ? { mit: Math.min(0.75, (u.mit || 0) + def.mit), regen: def.regen } : {}) }));
 }
 export function estimate(party, enemies, hp, runMods, seed0, n = DRY_RUNS) {
   let wins = 0;
