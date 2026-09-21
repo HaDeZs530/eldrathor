@@ -102,7 +102,10 @@ const spend = (S, what, n) => { S.worldvein -= n; S.stats.veinSpent[what] = (S.s
  * The game's resolver is fed the resulting multiplier through the Bond power slot with no weapon item, so no game code changes.
  */
 export const FIVE = { rarities: ['Common', 'Rare', 'Epic', 'Legendary', 'Mythic'], mult: { Common: 1, Rare: 1.2, Epic: 1.4, Legendary: 1.6, Mythic: 1.8 }, tierStep: 0.5, upgPer: 0.025, upgMax: 10 };
-export const w5Mult = (w) => (w ? (1 + FIVE.tierStep * (w.tier - 1)) * FIVE.mult[w.rarity] * (1 + FIVE.upgPer * (w.upg || 0)) : 1);
+// TIER_GROWTH (env) swaps the flat step for an upward curve: tier T Common = base × growth^(T − 1) — 1.2 → Greatsword 20, 24, 29 … 103
+const TIER_GROWTH = Number(process.env.TIER_GROWTH || 0);
+export const tierBase = (tier) => (TIER_GROWTH ? TIER_GROWTH ** (tier - 1) : 1 + FIVE.tierStep * (tier - 1));
+export const w5Mult = (w) => (w ? tierBase(w.tier) * FIVE.mult[w.rarity] * (1 + FIVE.upgPer * (w.upg || 0)) : 1);
 export const w5Power = (w) => (WEAPONS[w.type]?.dmg || 0) * w5Mult(w);
 const w5Dps = (w) => ((WEAPONS[w.type]?.dmg || 0) / (WEAPONS[w.type]?.tempo || 1)) * w5Mult(w);
 let w5Seq = 0;
