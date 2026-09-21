@@ -25,6 +25,10 @@ const AREAS = areasFor(WALLS); const P = POLICIES.efficient;
 const avg = (a) => a.reduce((x, y) => x + y, 0) / Math.max(1, a.length);
 const log = (...a) => console.log(new Date().toISOString().slice(11, 19), ...a);
 const tuning = { walls: WALLS, pack: {}, boss: {}, heal: T.heal, xp: {}, gems: false, levelPower: T.levelPower, items: 'five', dropRates: RATES, gemPace };
+// SURVIVAL=1: armor on; from area 4 monsters gain mitigation and regeneration on an upward curve, and boss damage scales WITH boss health
+// (not its square root), so an under-geared party is out-healed and dies instead of just fighting longer. ASSUMED numbers, for the test only.
+const SURVIVAL = process.env.SURVIVAL === '1';
+if (SURVIVAL) { tuning.armor = true; tuning.enemyDef = (area, type) => { const k = Math.max(0, area - 3) / 7; return { mit: 0.35 * k ** 1.5, regen: (type === 'boss' ? 0.012 : 0.02) * k ** 1.5 }; }; }
 
 function measurePacks(party, area, n = 24) {
   const d = [], l = []; let wins = 0;
@@ -42,7 +46,7 @@ const BOOSTS = { dmgMult: 1.2, mitAdd: 0.2 };
 const bossWin = (party, area, n = 30) => estimate(party, enemiesFor(area, 'boss', { rng: mulberry32(3) }, tuning), party.map(() => 1), BOOSTS, 99, n);
 function tuneBoss(wallParty, area) {
   let lo = Math.log(0.01), hi = Math.log(500);
-  for (let s = 0; s < 12; s++) { const k = Math.exp((lo + hi) / 2); tuning.boss[area.id] = { hp: +k.toFixed(4), dmg: +Math.sqrt(k).toFixed(4) }; if (bossWin(wallParty, area) > T.wallWin) lo = Math.log(k); else hi = Math.log(k); }
+  for (let s = 0; s < 12; s++) { const k = Math.exp((lo + hi) / 2); tuning.boss[area.id] = { hp: +k.toFixed(4), dmg: +(SURVIVAL ? k ** 0.8 : Math.sqrt(k)).toFixed(4) }; if (bossWin(wallParty, area) > T.wallWin) lo = Math.log(k); else hi = Math.log(k); }
   return tuning.boss[area.id];
 }
 function xpPerHour(S, area) {

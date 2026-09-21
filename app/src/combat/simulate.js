@@ -184,6 +184,9 @@ export function simulateFight({ party, enemies, seed = 1, startHpFrac, runMods, 
       }
     }
 
+    // --- enemy regeneration: only for enemies that carry `regen` (share of max HP per second). No enemy in the game does yet —
+    // DESIGN-OPEN: balance-test hook (Anthony, 2026-09-21: late monsters with their own healing); fights without it are unchanged.
+    if (t % 1000 === 0) for (const e of livingE()) if (e.regen > 0 && e.hp < e.maxHp) e.hp = Math.min(e.maxHp, e.hp + round(e.maxHp * e.regen));
     // --- boss enrage tick: next hit ×2 ---
     for (const e of livingE()) {
       if (t >= e.nextEnrage) {

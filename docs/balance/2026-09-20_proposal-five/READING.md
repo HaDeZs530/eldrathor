@@ -43,3 +43,15 @@ Tier T Common = base × growth^(T − 1) instead of a flat +10 (`TIER_GROWTH` en
 
 - The curve works for gear: parties now wear the current tier at each kill, and pack fights cost 8–10 % of life.
 - **But walls got softer, not harder — weapon rarity barely moves the boss.** Rare +10 wins 30–50 % where Epic +10 wins 60 %; several walls fell in 1–3 tries on Rare gear (wall 8 in 1.6 h, wall 10 in 2.6 h). One rarity rung is +17 % power; the gem is worth far more (no imbues → 0 %). The loot chase is not what breaks a wall — gems and levels are.
+
+## Update — survival walls (2026-09-21, `survival-walls/`)
+
+Anthony's method: by mid game players stack healing and mitigation, so fights must push back — old-tier gear can still hurt the monster, but its damage, mitigation and healing make the fight too long and the party dies. Tested with `SURVIVAL=1`: armor on (ASSUMED to mirror the worn weapon's tier / rung / upgrade), monsters from area 4 gain mitigation (to 35 %) and regeneration on an upward curve, boss damage scales with boss health instead of its square root.
+
+| | Efficient | 2 h/day player |
+|---|---|---|
+| Survival walls, ×1.2 tier curve, 18 s fights | ~118 h | 205 h · 98 days |
+
+- **The wall is now sharp.** Rare +10 wins 0 % on every wall from 2 up (was 30–50 %); Epic +10 ~60 %; Legendary +10 90–100 %. Last tier's Legendary +10 wins 0–3 % on walls 6, 8, 9, 10 (was ~60 %). Gear is the wall again.
+- Hours per wall are still uneven (wall 10 fell in 4.9 h on Legendaries, walls 6 and 8 took 22–25 h) and the total is ~100 days against 150.
+- Anthony's follow-up: monster healing should be an **ability on some monsters** (a heal or lifesteal, used only when needed to prolong the fight), not blanket regeneration. The blanket regen here is a stand-in; `regen` in the resolver is an inert hook no game enemy carries.
